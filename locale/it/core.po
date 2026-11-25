@@ -1,0 +1,1509 @@
+# files: core link stack apps scenario main ui menu guide launch
+# netlab - Italian translation of the core (kernel, links, stack, basic tools,
+# scenario language, command line, interface, menu, guide browser, launcher).
+# Module catalogs live next to this file, one per module.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: netlab\n"
+"PO-Revision-Date: 2026-11-25 12:00+0100\n"
+"Last-Translator: netlab\n"
+"Language-Team: Italian\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/core.c:425
+msgid "Physical"
+msgstr "Fisico"
+
+#: src/core.c:426
+msgid "Link"
+msgstr "Collegamento"
+
+#: src/core.c:427 src/ui.c:320
+msgid "Network"
+msgstr "Rete"
+
+#: src/core.c:428
+msgid "Transport"
+msgstr "Trasporto"
+
+#: src/core.c:429
+msgid "Application"
+msgstr "Applicazione"
+
+#: src/core.c:430
+msgid "Distributed"
+msgstr "Distribuito"
+
+#: src/core.c:431
+msgid "Simulator"
+msgstr "Simulatore"
+
+#: src/core.c:451 src/apps.c:731 src/ui.c:557
+msgid "lost"
+msgstr "perso"
+
+#: src/core.c:452
+msgid "corrupted"
+msgstr "corrotto"
+
+#: src/core.c:453
+msgid "queue drop"
+msgstr "scartato dalla coda"
+
+#: src/core.c:454
+msgid "link down"
+msgstr "collegamento interrotto"
+
+#: src/core.c:455
+msgid "corrected"
+msgstr "corretto"
+
+#: src/core.c:456
+msgid "bad FCS"
+msgstr "FCS errato"
+
+#: src/core.c:457
+msgid "delivered"
+msgstr "consegnato"
+
+#: src/core.c:662
+msgid "node crashed"
+msgstr "nodo guasto"
+
+#: src/core.c:670
+msgid "node recovered"
+msgstr "nodo ripristinato"
+
+#: src/link.c:60
+#, c-format
+msgid "unknown queue discipline '%s'"
+msgstr "disciplina di coda '%s' sconosciuta"
+
+#: src/link.c:66
+#, c-format
+msgid "unknown link code '%s'"
+msgstr "codice di linea '%s' sconosciuto"
+
+#: src/link.c:76
+#, c-format
+msgid "bad value in '%s'"
+msgstr "valore non valido in '%s'"
+
+#: src/link.c:167
+msgid "link up:"
+msgstr "collegamento attivo:"
+
+#: src/link.c:167
+msgid "link down:"
+msgstr "collegamento interrotto:"
+
+#: src/link.c:233
+msgid "queue full"
+msgstr "coda piena"
+
+#: src/link.c:337 src/link.c:349
+msgid "cannot listen on UDP port"
+msgstr "impossibile ascoltare sulla porta UDP"
+
+#: src/link.c:535
+msgid "lost on the link"
+msgstr "perso sul collegamento"
+
+#: src/link.c:541 src/link.c:548 src/link.c:555
+msgid "bit errors"
+msgstr "errori sui bit"
+
+#: src/link.c:542
+msgid "detected, frame discarded"
+msgstr "rilevati, frame scartato"
+
+#: src/link.c:549
+msgid "corrected by the link code"
+msgstr "corretti dal codice di linea"
+
+#: src/link.c:556
+msgid "NOT detected by the link: delivered damaged"
+msgstr "NON rilevati dal collegamento: frame consegnato danneggiato"
+
+#: src/stack.c:400
+msgid "no answer for"
+msgstr "nessuna risposta per"
+
+#: src/stack.c:466
+msgid "cache"
+msgstr "cache"
+
+#: src/stack.c:575
+msgid "learned"
+msgstr "appreso"
+
+#: src/stack.c:576
+msgid " (moved)"
+msgstr " (spostato)"
+
+#: src/stack.c:593 src/apps.c:127 src/apps.c:297 src/apps.c:486 src/apps.c:592
+msgid "unknown destination"
+msgstr "destinazione sconosciuta"
+
+#: src/stack.c:594
+msgid "flooding"
+msgstr "inoltro su tutte le porte (flooding)"
+
+#: src/stack.c:635
+msgid "fragmentation"
+msgstr "frammentazione"
+
+#: src/stack.c:636
+msgid "fragments"
+msgstr "frammenti"
+
+#: src/stack.c:707 src/stack.c:1122
+msgid "no route to"
+msgstr "nessuna rotta verso"
+
+#: src/stack.c:723
+msgid "packet too big and DF set: not sent"
+msgstr "pacchetto troppo grande con DF impostato: non inviato"
+
+#: src/stack.c:804
+msgid "wrong checksum: discarded"
+msgstr "checksum errato: scartato"
+
+#: src/stack.c:852 src/apps.c:99 src/apps.c:108 src/apps.c:381 src/apps.c:453
+msgid "from"
+msgstr "da"
+
+#: src/stack.c:961
+msgid "wrong checksum: datagram discarded"
+msgstr "checksum errato: datagramma scartato"
+
+#: src/stack.c:1062
+msgid "datagram reassembled"
+msgstr "datagramma riassemblato"
+
+#: src/stack.c:1096
+msgid "wrong header checksum: packet discarded"
+msgstr "checksum dell'intestazione errato: pacchetto scartato"
+
+#: src/stack.c:1114
+msgid "expired"
+msgstr "scaduto"
+
+#: src/stack.c:1142
+msgid "too big and DF set: dropped, ICMP sent"
+msgstr "troppo grande con DF impostato: scartato, inviato ICMP"
+
+#: src/apps.c:42
+msgid "sent"
+msgstr "inviati"
+
+#: src/apps.c:43 src/apps.c:729
+msgid "received"
+msgstr "ricevuti"
+
+#: src/apps.c:43 src/scenario.c:171 src/ui.c:547
+msgid "loss"
+msgstr "perdita"
+
+#: src/apps.c:44
+msgid " — destination unreachable?"
+msgstr " — destinazione irraggiungibile?"
+
+#: src/apps.c:57
+msgid "no reply"
+msgstr "nessuna risposta"
+
+#: src/apps.c:69
+msgid "cannot send (no route or packet too big)"
+msgstr "impossibile inviare (nessuna rotta o pacchetto troppo grande)"
+
+#: src/apps.c:99
+msgid "reply"
+msgstr "risposta"
+
+#: src/apps.c:109
+msgid "time to live exceeded"
+msgstr "tempo di vita (TTL) esaurito"
+
+#: src/apps.c:110
+msgid "fragmentation needed (packet too big)"
+msgstr "frammentazione necessaria (pacchetto troppo grande)"
+
+#: src/apps.c:111
+msgid "port unreachable"
+msgstr "porta irraggiungibile"
+
+#: src/apps.c:111
+msgid "host unreachable"
+msgstr "host irraggiungibile"
+
+#: src/apps.c:112
+msgid "network unreachable"
+msgstr "rete irraggiungibile"
+
+#: src/apps.c:142
+msgid "too many sessions"
+msgstr "troppe sessioni"
+
+#: src/apps.c:159
+msgid "data bytes"
+msgstr "byte di dati"
+
+#: src/apps.c:190
+msgid "replies"
+msgstr "risposte"
+
+#: src/apps.c:199
+msgid "ping — is a host reachable, and how far is it?"
+msgstr "ping — un host è raggiungibile, e quanto è lontano?"
+
+#: src/apps.c:200
+msgid ""
+"run NODE ping DEST [count=4] [interval=1s] [size=56] [ttl=64] [df=1]\n"
+"  DEST is an address or a node name; count=0 pings forever."
+msgstr ""
+"run NODO ping DEST [count=4] [interval=1s] [size=56] [ttl=64] [df=1]\n"
+"  DEST è un indirizzo o il nome di un nodo; con count=0 il ping non si ferma."
+
+#: src/apps.c:202
+msgid "ping sends ICMP Echo Request messages and waits for the matching Echo Reply. Each request carries an identifier and a sequence number, so the sender can match replies, measure the round-trip time and notice losses. Routers on the path only forward the packets; if one cannot, it answers with an ICMP error (destination unreachable, time exceeded) that ping reports."
+msgstr "ping invia messaggi ICMP Echo Request e attende l'Echo Reply corrispondente. Ogni richiesta porta un identificatore e un numero di sequenza, così il mittente può abbinare le risposte, misurare il tempo di andata e ritorno e accorgersi delle perdite. I router lungo il percorso si limitano a inoltrare i pacchetti; se uno non ci riesce, risponde con un errore ICMP (destinazione irraggiungibile, tempo esaurito) che ping riporta."
+
+#: src/apps.c:235
+msgid "no answer"
+msgstr "nessuna risposta"
+
+#: src/apps.c:244
+msgid "destination reached in"
+msgstr "destinazione raggiunta in"
+
+#: src/apps.c:244
+msgid "destination not reached"
+msgstr "destinazione non raggiunta"
+
+#: src/apps.c:245
+msgid "hops"
+msgstr "salti"
+
+#: src/apps.c:320
+msgid "max hops"
+msgstr "salti massimi"
+
+#: src/apps.c:343
+msgid "to"
+msgstr "verso"
+
+#: src/apps.c:357
+msgid "traceroute — which routers does a packet cross?"
+msgstr "traceroute — quali router attraversa un pacchetto?"
+
+#: src/apps.c:358
+msgid "run NODE traceroute DEST [maxhops=16]"
+msgstr "run NODO traceroute DEST [maxhops=16]"
+
+#: src/apps.c:359
+msgid "traceroute sends probes with TTL 1, 2, 3, ... Every router decrements the TTL; the one that brings it to zero discards the packet and reports back with an ICMP Time Exceeded message, revealing its address. The probe that finally reaches the destination is answered directly, and the list of hops is complete."
+msgstr "traceroute invia sonde con TTL 1, 2, 3, ... Ogni router decrementa il TTL; quello che lo porta a zero scarta il pacchetto e lo segnala con un messaggio ICMP Time Exceeded, rivelando il proprio indirizzo. La sonda che infine raggiunge la destinazione riceve una risposta diretta, e l'elenco dei salti è completo."
+
+#: src/apps.c:382
+msgid "sent back"
+msgstr "rimandato indietro"
+
+#: src/apps.c:399
+msgid "server listening on UDP port"
+msgstr "server in ascolto sulla porta UDP"
+
+#: src/apps.c:420
+msgid "UDP port"
+msgstr "porta UDP"
+
+#: src/apps.c:421
+msgid "datagrams echoed"
+msgstr "datagrammi rimandati"
+
+#: src/apps.c:426
+msgid "UDP echo server"
+msgstr "Server echo UDP"
+
+#: src/apps.c:427
+msgid "run NODE echo [port=7]"
+msgstr "run NODO echo [port=7]"
+
+#: src/apps.c:428
+msgid "The simplest possible service: every datagram received is sent back to its sender. UDP adds only ports and a checksum to IP: no connection, no retransmission, no order."
+msgstr "Il servizio più semplice possibile: ogni datagramma ricevuto viene rimandato al mittente. UDP aggiunge a IP soltanto le porte e un checksum: nessuna connessione, nessuna ritrasmissione, nessun ordinamento."
+
+#: src/apps.c:452
+msgid "answer"
+msgstr "risposta"
+
+#: src/apps.c:524
+msgid "UDP client: send datagrams and show the answers"
+msgstr "Client UDP: invia datagrammi e mostra le risposte"
+
+#: src/apps.c:525
+msgid ""
+"run NODE udp DEST [port=7] [msg=hello] [count=1] [interval=1s] [size=N]\n"
+"  size pads the datagram to N bytes (try more than the MTU to see fragmentation)."
+msgstr ""
+"run NODO udp DEST [port=7] [msg=hello] [count=1] [interval=1s] [size=N]\n"
+"  size riempie il datagramma fino a N byte (prova oltre la MTU per vedere la frammentazione)."
+
+#: src/apps.c:564
+msgid "finished"
+msgstr "terminato"
+
+#: src/apps.c:564
+msgid "datagrams sent"
+msgstr "datagrammi inviati"
+
+#: src/apps.c:633
+msgid "Constant-bit-rate UDP traffic generator"
+msgstr "Generatore di traffico UDP a bit rate costante"
+
+#: src/apps.c:634
+msgid ""
+"run NODE cbr DEST [rate=1M] [size=500] [port=9000] [duration=10s] [tos=N]\n"
+"run NODE cbr stop\n"
+"  Pair it with `run DEST sink` to measure throughput, loss and delay."
+msgstr ""
+"run NODO cbr DEST [rate=1M] [size=500] [port=9000] [duration=10s] [tos=N]\n"
+"run NODO cbr stop\n"
+"  Abbinalo a `run DEST sink` per misurare throughput, perdita e ritardo."
+
+#: src/apps.c:729
+msgid "datagrams"
+msgstr "datagrammi"
+
+#: src/apps.c:733
+msgid "out of order"
+msgstr "fuori ordine"
+
+#: src/apps.c:734
+msgid "mean delay / jitter"
+msgstr "ritardo medio / jitter"
+
+#: src/apps.c:742
+msgid "Traffic sink: throughput, loss, delay and jitter of a cbr flow"
+msgstr "Pozzo di traffico: throughput, perdita, ritardo e jitter di un flusso cbr"
+
+#: src/apps.c:744
+msgid "run NODE sink [port=9000]"
+msgstr "run NODO sink [port=9000]"
+
+#: src/scenario.c:123
+msgid "usage: node NAME host|router|switch [x=N y=N] [role=TEXT]"
+msgstr "uso: node NOME host|router|switch [x=N y=N] [role=TESTO]"
+
+#: src/scenario.c:127
+#, c-format
+msgid "unknown node kind '%s' (host, router, switch)"
+msgstr "tipo di nodo '%s' sconosciuto (host, router, switch)"
+
+#: src/scenario.c:129
+#, c-format
+msgid "node '%s' already exists"
+msgstr "il nodo '%s' esiste già"
+
+#: src/scenario.c:131
+#, c-format
+msgid "bad node name '%s' (a letter first, at most 12 characters)"
+msgstr "nome di nodo '%s' non valido (prima una lettera, al massimo 12 caratteri)"
+
+#: src/scenario.c:134
+#, c-format
+msgid "too many nodes (max %d)"
+msgstr "troppi nodi (massimo %d)"
+
+#: src/scenario.c:154
+msgid "usage: link A[:IF] B[:IF] [bw=10M delay=10ms loss=0 queue=50 ...] | link A B up|down"
+msgstr "uso: link A[:IF] B[:IF] [bw=10M delay=10ms loss=0 queue=50 ...] | link A B up|down"
+
+#: src/scenario.c:158
+#, c-format
+msgid "unknown node or interface in 'link %s %s'"
+msgstr "nodo o interfaccia sconosciuti in 'link %s %s'"
+
+#: src/scenario.c:171 src/ui.c:546
+msgid "delay"
+msgstr "ritardo"
+
+#: src/scenario.c:175
+#, c-format
+msgid "no link between %s and %s"
+msgstr "nessun collegamento fra %s e %s"
+
+#: src/scenario.c:177
+msgid "a link needs two different nodes"
+msgstr "un collegamento richiede due nodi diversi"
+
+#: src/scenario.c:181
+#, c-format
+msgid "too many interfaces on a node (max %d)"
+msgstr "troppe interfacce su un nodo (massimo %d)"
+
+#: src/scenario.c:183
+#, c-format
+msgid "interface already connected in 'link %s %s'"
+msgstr "interfaccia già collegata in 'link %s %s'"
+
+#: src/scenario.c:188
+#, c-format
+msgid "too many links (max %d)"
+msgstr "troppi collegamenti (massimo %d)"
+
+#: src/scenario.c:200
+msgid "usage: ip NODE[:IF] A.B.C.D/LEN"
+msgstr "uso: ip NODO[:IF] A.B.C.D/LUN"
+
+#: src/scenario.c:203
+#, c-format
+msgid "unknown node or interface '%s'"
+msgstr "nodo o interfaccia '%s' sconosciuti"
+
+#: src/scenario.c:208
+#, c-format
+msgid "node %s has no free interface for an address"
+msgstr "il nodo %s non ha un'interfaccia libera per un indirizzo"
+
+#: src/scenario.c:221
+msgid "usage: gw NODE GATEWAY"
+msgstr "uso: gw NODO GATEWAY"
+
+#: src/scenario.c:235
+#, c-format
+msgid "gateway '%s' is not on a subnet of %s"
+msgstr "il gateway '%s' non è su una sottorete di %s"
+
+#: src/scenario.c:242 src/scenario.c:287
+#, c-format
+msgid "gateway %s is not on a subnet of %s"
+msgstr "il gateway %s non è su una sottorete di %s"
+
+#: src/scenario.c:259 src/scenario.c:265
+msgid "usage: route NODE [add|del] PREFIX via GATEWAY | route NODE PREFIX dev IF"
+msgstr "uso: route NODO [add|del] PREFISSO via GATEWAY | route NODO PREFISSO dev IF"
+
+#: src/scenario.c:269
+#, c-format
+msgid "unknown interface '%s'"
+msgstr "interfaccia '%s' sconosciuta"
+
+#: src/scenario.c:272
+#, c-format
+msgid "unknown gateway '%s'"
+msgstr "gateway '%s' sconosciuto"
+
+#: src/scenario.c:300
+msgid "usage: vlan SWITCH:PORT N|trunk"
+msgstr "uso: vlan SWITCH:PORTA N|trunk"
+
+#: src/scenario.c:303
+#, c-format
+msgid "unknown port '%s'"
+msgstr "porta '%s' sconosciuta"
+
+#: src/scenario.c:337
+#, c-format
+msgid "unknown node '%s'"
+msgstr "nodo '%s' sconosciuto"
+
+#: src/scenario.c:339
+#, c-format
+msgid "unknown module '%s' (try: help)"
+msgstr "modulo '%s' sconosciuto (prova: help)"
+
+#: src/scenario.c:343
+#, c-format
+msgid "node %s is down"
+msgstr "il nodo %s è spento"
+
+#: src/scenario.c:360
+#, c-format
+msgid "module '%s' cannot be run"
+msgstr "il modulo '%s' non può essere eseguito"
+
+#: src/scenario.c:361
+#, c-format
+msgid "%s on %s failed (see the log)"
+msgstr "%s su %s non riuscito (vedi il registro)"
+
+#: src/scenario.c:427
+msgid "Commands: NODE MODULE args… · link A B up|down|key=value · node N up|down · stop NODE MODULE · set speed|detail N · help MODULE"
+msgstr "Comandi: NODO MODULO argomenti… · link A B up|down|chiave=valore · node N up|down · stop NODO MODULO · set speed|detail N · help MODULO"
+
+#: src/scenario.c:559
+msgid "usage: note TIME text"
+msgstr "uso: note TEMPO testo"
+
+#: src/scenario.c:576
+msgid "usage: duration TIME"
+msgstr "uso: duration TEMPO"
+
+#: src/scenario.c:589
+msgid "usage: auto addr|routes|all"
+msgstr "uso: auto addr|routes|all"
+
+#: src/scenario.c:595
+msgid "usage: place NODE HOST[:PORT]"
+msgstr "uso: place NODO HOST[:PORTA]"
+
+#: src/scenario.c:603
+msgid "usage: monitor HOST[:PORT]"
+msgstr "uso: monitor HOST[:PORTA]"
+
+#: src/scenario.c:611
+msgid "usage: expect NODE COUNTER ==|!=|>=|<=|>|< VALUE"
+msgstr "uso: expect NODO CONTATORE ==|!=|>=|<=|>|< VALORE"
+
+#: src/scenario.c:628
+msgid "usage: at TIME command"
+msgstr "uso: at TEMPO comando"
+
+#: src/scenario.c:633
+msgid "usage: run NODE MODULE [args]"
+msgstr "uso: run NODO MODULO [argomenti]"
+
+#: src/scenario.c:640
+msgid "usage: stop NODE MODULE"
+msgstr "uso: stop NODO MODULO"
+
+#: src/scenario.c:653
+msgid "usage: node NAME up|down"
+msgstr "uso: node NOME up|down"
+
+#: src/scenario.c:661
+msgid "usage: set speed|detail|baseport VALUE"
+msgstr "uso: set speed|detail|baseport VALORE"
+
+#: src/scenario.c:665
+#, c-format
+msgid "unknown setting '%s'"
+msgstr "impostazione '%s' sconosciuta"
+
+#: src/scenario.c:675
+#, c-format
+msgid "unknown command '%s' (try: help)"
+msgstr "comando '%s' sconosciuto (prova: help)"
+
+#: src/scenario.c:721
+msgid "cannot open scenario"
+msgstr "impossibile aprire lo scenario"
+
+#: src/scenario.c:1039
+msgid "got"
+msgstr "ottenuto"
+
+#: src/main.c:20
+msgid ""
+"netlab — a network laboratory in your terminal\n"
+"\n"
+"Usage:\n"
+"  netlab                         interactive menu: catalog, guide, wizard\n"
+"  netlab run SCENARIO [k=v ...]  simulate every node in this window\n"
+"  netlab windows SCENARIO [...]  one tiled window per node plus a monitor\n"
+"  netlab node SCENARIO NODE[,NODE...]   run only these nodes (other machines\n"
+"                                 or windows run the others; links are UDP tunnels)\n"
+"  netlab monitor SCENARIO        global view of a distributed run\n"
+"  netlab plan SCENARIO           print the commands for a distributed run\n"
+"  netlab check [SCENARIO ...]    run headless and verify the `expect` lines\n"
+"  netlab list                    scenarios in the catalog\n"
+"  netlab modules | help MODULE   protocols and tools, and how to use them\n"
+"  netlab guide [TOPIC]           study guide and curriculum\n"
+"\n"
+"Options:\n"
+"  --headless        no interface: print the event log (default when not a terminal)\n"
+"  --until TIME      headless run length (default: the scenario's `duration`)\n"
+"  --detail 1|2|3    overview, protocol messages, every frame\n"
+"  --speed X         time scale (0.1 slow motion ... 100)\n"
+"  --seed N          random seed (same seed, same run)\n"
+"  --quiet           headless: only the result of the expectations\n"
+"  --monitor H[:P]   node mode: report to a monitor\n"
+"  --mode M          windows: auto, kitty, tmux, print\n"
+"  --nodes a,b,c     windows: the nodes that get a window of their own\n"
+"  --hub             node mode: also be the monitor for the other processes\n"
+"  --baseport N      first UDP port used by tunnels (monitor: N-1)\n"
+"  --lang xx         language (default from NETLAB_LANG / LANG)\n"
+"\n"
+"SCENARIO is a file or a catalog name (see `netlab list`); k=v pairs set the\n"
+"scenario parameters.\n"
+msgstr ""
+"netlab — un laboratorio di reti nel tuo terminale\n"
+"\n"
+"Uso:\n"
+"  netlab                         menu interattivo: catalogo, guida, procedura guidata\n"
+"  netlab run SCENARIO [k=v ...]  simula tutti i nodi in questa finestra\n"
+"  netlab windows SCENARIO [...]  una finestra affiancata per nodo più un monitor\n"
+"  netlab node SCENARIO NODO[,NODO...]   esegue solo questi nodi (altre macchine o\n"
+"                                 finestre eseguono gli altri; i collegamenti sono tunnel UDP)\n"
+"  netlab monitor SCENARIO        vista globale di un'esecuzione distribuita\n"
+"  netlab plan SCENARIO           stampa i comandi per un'esecuzione distribuita\n"
+"  netlab check [SCENARIO ...]    esegue senza interfaccia e verifica le righe `expect`\n"
+"  netlab list                    scenari del catalogo\n"
+"  netlab modules | help MODULO   protocolli e strumenti, e come usarli\n"
+"  netlab guide [ARGOMENTO]       guida allo studio e programma\n"
+"\n"
+"Opzioni:\n"
+"  --headless        senza interfaccia: stampa il registro eventi (predefinito fuori da un terminale)\n"
+"  --until TEMPO     durata dell'esecuzione senza interfaccia (predefinita: `duration` dello scenario)\n"
+"  --detail 1|2|3    panoramica, messaggi dei protocolli, ogni frame\n"
+"  --speed X         scala dei tempi (0.1 al rallentatore ... 100)\n"
+"  --seed N          seme casuale (stesso seme, stessa esecuzione)\n"
+"  --quiet           senza interfaccia: solo l'esito delle verifiche\n"
+"  --monitor H[:P]   modalità nodo: riferisce a un monitor\n"
+"  --mode M          windows: auto, kitty, tmux, print\n"
+"  --nodes a,b,c     windows: i nodi che hanno una finestra tutta per sé\n"
+"  --hub             modalità nodo: fa anche da monitor per gli altri processi\n"
+"  --baseport N      prima porta UDP usata dai tunnel (monitor: N-1)\n"
+"  --lang xx         lingua (predefinita da NETLAB_LANG / LANG)\n"
+"\n"
+"SCENARIO è un file o un nome del catalogo (vedi `netlab list`); le coppie k=v\n"
+"impostano i parametri dello scenario.\n"
+
+#: src/main.c:94 src/main.c:396
+msgid "which scenario? (see `netlab list`)"
+msgstr "quale scenario? (vedi `netlab list`)"
+
+#: src/main.c:98 src/launch.c:54
+msgid "scenario not found (see `netlab list`)"
+msgstr "scenario non trovato (vedi `netlab list`)"
+
+#: src/main.c:128
+msgid "bad time"
+msgstr "tempo non valido"
+
+#: src/main.c:179 src/ui.c:1370
+msgid "expectations"
+msgstr "verifiche"
+
+#: src/main.c:193
+msgid "usage: netlab node SCENARIO NODE[,NODE...]"
+msgstr "uso: netlab node SCENARIO NODO[,NODO...]"
+
+#: src/main.c:210
+msgid "unknown node"
+msgstr "nodo sconosciuto"
+
+#: src/main.c:260 src/menu.c:418 src/guide.c:122
+msgid "Foundations"
+msgstr "Rudimenti"
+
+#: src/main.c:260 src/menu.c:419 src/guide.c:123
+msgid "Core"
+msgstr "Fondamenti"
+
+#: src/main.c:260 src/menu.c:420 src/guide.c:124
+msgid "Advanced"
+msgstr "Avanzato"
+
+#: src/main.c:260 src/menu.c:421 src/guide.c:125
+msgid "Frontier"
+msgstr "Frontiera"
+
+#: src/main.c:273
+msgid "Other"
+msgstr "Altro"
+
+#: src/main.c:280
+msgid "no scenarios found in"
+msgstr "nessuno scenario trovato in"
+
+#: src/main.c:305
+msgid "error or crash"
+msgstr "errore o arresto anomalo"
+
+#: src/main.c:308
+msgid "scenarios"
+msgstr "scenari"
+
+#: src/main.c:308
+msgid "failed"
+msgstr "falliti"
+
+#: src/main.c:320
+msgid "unknown module"
+msgstr "modulo sconosciuto"
+
+#: src/main.c:335
+msgid "Queue disciplines (link ... qdisc=NAME):"
+msgstr "Discipline di coda (link ... qdisc=NOME):"
+
+#: src/main.c:336
+msgid "drop arrivals when the queue is full (default)"
+msgstr "scarta gli arrivi quando la coda è piena (predefinita)"
+
+#: src/main.c:339
+msgid "Link codes (link ... codec=NAME):"
+msgstr "Codici di linea (link ... codec=NOME):"
+
+#: src/main.c:340
+msgid "frame check sequence: damaged frames are discarded (default)"
+msgstr "frame check sequence: i frame danneggiati vengono scartati (predefinito)"
+
+#: src/main.c:341
+msgid "no check: damaged frames reach the upper layers"
+msgstr "nessun controllo: i frame danneggiati arrivano ai livelli superiori"
+
+#: src/main.c:356
+msgid "# Copy netlab and the scenario file to every machine, then run:"
+msgstr "# Copia netlab e il file dello scenario su ogni macchina, poi esegui:"
+
+#: src/main.c:361
+msgid "# and, on the machine named in the `monitor` line:"
+msgstr "# e, sulla macchina indicata nella riga `monitor`:"
+
+#: src/main.c:362
+msgid ""
+"# Each node listens on the UDP port of its `place` line (default: baseport + index).\n"
+"# Nodes placed on the same machine can share one process: netlab node FILE a,b,c"
+msgstr ""
+"# Ogni nodo ascolta sulla porta UDP della sua riga `place` (predefinita: baseport + indice).\n"
+"# I nodi sulla stessa macchina possono condividere un processo: netlab node FILE a,b,c"
+
+#: src/main.c:408
+msgid "unknown command"
+msgstr "comando sconosciuto"
+
+#: src/ui.c:167
+msgid "(no data yet)"
+msgstr "(ancora nessun dato)"
+
+#: src/ui.c:328
+msgid "waiting for:"
+msgstr "in attesa di:"
+
+#: src/ui.c:329
+msgid "Enter starts anyway"
+msgstr "Invio avvia comunque"
+
+#: src/ui.c:332
+msgid "waiting for the monitor to start the lab"
+msgstr "in attesa che il monitor avvii il laboratorio"
+
+#: src/ui.c:332
+msgid "Enter starts now"
+msgstr "Invio avvia subito"
+
+#: src/ui.c:408
+msgid "(remote)"
+msgstr "(remoto)"
+
+#: src/ui.c:420 src/ui.c:574
+msgid "Node"
+msgstr "Nodo"
+
+#: src/ui.c:421
+msgid "MAC table"
+msgstr "Tabella MAC"
+
+#: src/ui.c:421
+msgid "Routes"
+msgstr "Rotte"
+
+#: src/ui.c:424
+msgid "Links"
+msgstr "Collegamenti"
+
+#: src/ui.c:437
+msgid "router"
+msgstr "router"
+
+#: src/ui.c:437
+msgid "switch"
+msgstr "switch"
+
+#: src/ui.c:437
+msgid "host"
+msgstr "host"
+
+#: src/ui.c:438
+msgid " — DOWN"
+msgstr " — SPENTO"
+
+#: src/ui.c:438
+msgid " — runs elsewhere"
+msgstr " — eseguito altrove"
+
+#: src/ui.c:462
+msgid "Counters"
+msgstr "Contatori"
+
+#: src/ui.c:474
+msgid "port"
+msgstr "porta"
+
+#: src/ui.c:474
+msgid "age"
+msgstr "età"
+
+#: src/ui.c:485
+msgid "(empty: nothing learned yet)"
+msgstr "(vuota: ancora nulla di appreso)"
+
+#: src/ui.c:488
+msgid "destination"
+msgstr "destinazione"
+
+#: src/ui.c:488
+msgid "next hop"
+msgstr "prossimo salto"
+
+#: src/ui.c:488
+msgid "dev"
+msgstr "if"
+
+#: src/ui.c:489
+msgid "m"
+msgstr "m"
+
+#: src/ui.c:489
+msgid "source"
+msgstr "origine"
+
+#: src/ui.c:500
+msgid "direct"
+msgstr "diretto"
+
+#: src/ui.c:511
+msgid "state"
+msgstr "stato"
+
+#: src/ui.c:518
+msgid "resolving"
+msgstr "in risoluzione"
+
+#: src/ui.c:521
+msgid "expires in"
+msgstr "scade fra"
+
+#: src/ui.c:525
+msgid "(empty: no neighbor resolved yet)"
+msgstr "(vuota: ancora nessun vicino risolto)"
+
+#: src/ui.c:545
+msgid "DOWN"
+msgstr "INTERROTTO"
+
+#: src/ui.c:549
+msgid "corrupt"
+msgstr "corruzione"
+
+#: src/ui.c:550
+msgid "code"
+msgstr "codice"
+
+#: src/ui.c:551
+msgid "queue"
+msgstr "coda"
+
+#: src/ui.c:557
+msgid "damaged"
+msgstr "danneggiati"
+
+#: src/ui.c:558
+msgid "queue drops"
+msgstr "scarti in coda"
+
+#: src/ui.c:601
+msgid "(this node runs in another process)"
+msgstr "(questo nodo è eseguito in un altro processo)"
+
+#: src/ui.c:643
+msgid "(End: newest)"
+msgstr "(Fine: più recenti)"
+
+#: src/ui.c:714 src/ui.c:755
+msgid "(no frame transmitted yet)"
+msgstr "(ancora nessun frame trasmesso)"
+
+#: src/ui.c:723
+msgid "link"
+msgstr "collegamento"
+
+#: src/ui.c:723
+msgid "summary"
+msgstr "riepilogo"
+
+#: src/ui.c:776
+msgid "(too many nodes for this width: widen the window or zoom with z)"
+msgstr "(troppi nodi per questa larghezza: allarga la finestra o ingrandisci con z)"
+
+#: src/ui.c:817
+msgid "(the selected node records no time series; pick another node with n)"
+msgstr "(il nodo selezionato non registra serie temporali; scegline un altro con n)"
+
+#: src/ui.c:944
+msgid "What happens"
+msgstr "Che cosa succede"
+
+#: src/ui.c:954
+msgid "Try it"
+msgstr "Prova tu"
+
+#: src/ui.c:955
+msgid "Press : and type a command, for example:  h1 ping h2   ·   link r1 r2 down   ·   link h1 r1 loss=0.3   ·   node r2 down   ·   help"
+msgstr "Premi : e scrivi un comando, per esempio:  h1 ping h2   ·   link r1 r2 down   ·   link h1 r1 loss=0.3   ·   node r2 down   ·   help"
+
+#: src/ui.c:962
+msgid "Log"
+msgstr "Registro"
+
+#: src/ui.c:962
+msgid "Packets"
+msgstr "Pacchetti"
+
+#: src/ui.c:962
+msgid "Sequence"
+msgstr "Sequenza"
+
+#: src/ui.c:962
+msgid "Graphs"
+msgstr "Grafici"
+
+#: src/ui.c:962
+msgid "Guide"
+msgstr "Guida"
+
+#: src/ui.c:970
+msgid "only"
+msgstr "solo"
+
+#: src/ui.c:989
+msgid "pause / resume"
+msgstr "pausa / riprendi"
+
+#: src/ui.c:990
+msgid "when paused: advance to the next event"
+msgstr "in pausa: avanza al prossimo evento"
+
+#: src/ui.c:991
+msgid "faster / slower"
+msgstr "più veloce / più lento"
+
+#: src/ui.c:992
+msgid "skip idle time automatically (on/off)"
+msgstr "salta automaticamente i tempi morti (sì/no)"
+
+#: src/ui.c:993
+msgid "detail: overview, protocol messages, every frame"
+msgstr "dettaglio: panoramica, messaggi dei protocolli, ogni frame"
+
+#: src/ui.c:994
+msgid "move the focus: network, node, bottom panel"
+msgstr "sposta il fuoco: rete, nodo, pannello inferiore"
+
+#: src/ui.c:995
+msgid "focused panel: select node / change tab / scroll"
+msgstr "pannello attivo: seleziona nodo / cambia scheda / scorri"
+
+#: src/ui.c:996
+msgid "next / previous node"
+msgstr "nodo successivo / precedente"
+
+#: src/ui.c:997
+msgid "bottom panel: log, packets, sequence, graphs, guide"
+msgstr "pannello inferiore: registro, pacchetti, sequenza, grafici, guida"
+
+#: src/ui.c:998
+msgid "packets: open or close the dissection of the selected frame"
+msgstr "pacchetti: apri o chiudi l'analisi del frame selezionato"
+
+#: src/ui.c:999
+msgid "packet dissection: previous / next field (highlights its bytes)"
+msgstr "analisi del pacchetto: campo precedente / successivo (ne evidenzia i byte)"
+
+#: src/ui.c:1000
+msgid "log: show only the selected node (on/off)"
+msgstr "registro: mostra solo il nodo selezionato (sì/no)"
+
+#: src/ui.c:1001
+msgid "zoom the focused panel to the whole window"
+msgstr "ingrandisci il pannello attivo a tutta la finestra"
+
+#: src/ui.c:1002
+msgid "crash / recover the selected node"
+msgstr "guasta / ripristina il nodo selezionato"
+
+#: src/ui.c:1003
+msgid "command line (h1 ping h2 · link a b down · help)"
+msgstr "riga di comando (h1 ping h2 · link a b down · help)"
+
+#: src/ui.c:1004
+msgid "this help"
+msgstr "questo aiuto"
+
+#: src/ui.c:1005 src/ui.c:1092
+msgid "quit"
+msgstr "esci"
+
+#: src/ui.c:1012
+msgid "Keys"
+msgstr "Tasti"
+
+#: src/ui.c:1045
+msgid "  [node]"
+msgstr "  [nodo]"
+
+#: src/ui.c:1045
+msgid "  [monitor]"
+msgstr "  [monitor]"
+
+#: src/ui.c:1048 src/ui.c:1090
+msgid "speed"
+msgstr "velocità"
+
+#: src/ui.c:1049 src/ui.c:1090
+msgid "detail"
+msgstr "dettaglio"
+
+#: src/ui.c:1090
+msgid "pause"
+msgstr "pausa"
+
+#: src/ui.c:1090
+msgid "step"
+msgstr "passo"
+
+#: src/ui.c:1091
+msgid "focus"
+msgstr "fuoco"
+
+#: src/ui.c:1091
+msgid "node"
+msgstr "nodo"
+
+#: src/ui.c:1091
+msgid "views"
+msgstr "viste"
+
+#: src/ui.c:1091
+msgid "command"
+msgstr "comando"
+
+#: src/ui.c:1092
+msgid "help"
+msgstr "aiuto"
+
+#: src/ui.c:1256
+msgid "idle time is skipped"
+msgstr "i tempi morti vengono saltati"
+
+#: src/ui.c:1256
+msgid "real pace: idle time is not skipped"
+msgstr "ritmo reale: i tempi morti non vengono saltati"
+
+#: src/ui.c:1350
+msgid "press ? for the keys, u for the guide"
+msgstr "premi ? per i tasti, u per la guida"
+
+#: src/menu.c:39
+msgid "Press Enter to go back to the menu..."
+msgstr "Premi Invio per tornare al menu..."
+
+#: src/menu.c:134
+msgid "↑ ↓ move · ← → choose · type to edit · Enter confirm · Esc back"
+msgstr "↑ ↓ sposta · ← → scegli · scrivi per modificare · Invio conferma · Esc indietro"
+
+#: src/menu.c:208
+msgid "↑ ↓ scroll · Esc back"
+msgstr "↑ ↓ scorri · Esc indietro"
+
+#: src/menu.c:226
+msgid "this window"
+msgstr "questa finestra"
+
+#: src/menu.c:226
+msgid "tiled windows"
+msgstr "finestre affiancate"
+
+#: src/menu.c:226
+msgid "several machines"
+msgstr "più macchine"
+
+#: src/menu.c:227
+msgid "simple"
+msgstr "semplici"
+
+#: src/menu.c:227
+msgid "advanced"
+msgstr "avanzate"
+
+#: src/menu.c:228
+msgid "1 overview"
+msgstr "1 panoramica"
+
+#: src/menu.c:228
+msgid "2 protocols"
+msgstr "2 protocolli"
+
+#: src/menu.c:228
+msgid "3 every frame"
+msgstr "3 ogni frame"
+
+#: src/menu.c:243
+msgid "Settings"
+msgstr "Impostazioni"
+
+#: src/menu.c:247
+msgid "Run in"
+msgstr "Esegui in"
+
+#: src/menu.c:249
+msgid "Detail"
+msgstr "Dettaglio"
+
+#: src/menu.c:250
+msgid "Time scale (empty = automatic)"
+msgstr "Scala dei tempi (vuoto = automatica)"
+
+#: src/menu.c:251
+msgid "Random seed (empty = new each run)"
+msgstr "Seme casuale (vuoto = nuovo a ogni esecuzione)"
+
+#: src/menu.c:254 src/menu.c:766
+msgid "Start"
+msgstr "Avvia"
+
+#: src/menu.c:319
+msgid "Address of the machine that runs each node (same address = same machine)"
+msgstr "Indirizzo della macchina che esegue ogni nodo (stesso indirizzo = stessa macchina)"
+
+#: src/menu.c:322
+msgid "Monitor (global view)"
+msgstr "Monitor (vista globale)"
+
+#: src/menu.c:323
+msgid "Write the scenario and show the commands"
+msgstr "Scrivi lo scenario e mostra i comandi"
+
+#: src/menu.c:324
+msgid "Distributed lab"
+msgstr "Laboratorio distribuito"
+
+#: src/menu.c:422
+msgid "My scenarios"
+msgstr "I miei scenari"
+
+#: src/menu.c:469
+msgid "Scenarios"
+msgstr "Scenari"
+
+#: src/menu.c:470 src/menu.c:473
+msgid "layer:"
+msgstr "livello:"
+
+#: src/menu.c:471 src/menu.c:473
+msgid "all"
+msgstr "tutti"
+
+#: src/menu.c:471 src/menu.c:474 src/guide.c:249
+msgid "search:"
+msgstr "cerca:"
+
+#: src/menu.c:515
+msgid "(nothing matches)"
+msgstr "(nessun risultato)"
+
+#: src/menu.c:522
+msgid "level"
+msgstr "difficoltà"
+
+#: src/menu.c:523
+msgid "layer"
+msgstr "livello"
+
+#: src/menu.c:523
+msgid "nodes"
+msgstr "nodi"
+
+#: src/menu.c:523
+msgid "links"
+msgstr "collegamenti"
+
+#: src/menu.c:530
+msgid "Parameters"
+msgstr "Parametri"
+
+#: src/menu.c:538
+msgid "↑ ↓ choose · Enter configure and start · / search · Tab filter by layer · Esc back"
+msgstr "↑ ↓ scegli · Invio configura e avvia · / cerca · Tab filtra per livello · Esc indietro"
+
+#: src/menu.c:571
+msgid "LAN"
+msgstr "LAN"
+
+#: src/menu.c:571
+msgid "line"
+msgstr "linea"
+
+#: src/menu.c:571
+msgid "ring"
+msgstr "anello"
+
+#: src/menu.c:571
+msgid "star"
+msgstr "stella"
+
+#: src/menu.c:571
+msgid "tree"
+msgstr "albero"
+
+#: src/menu.c:571
+msgid "mesh"
+msgstr "maglia"
+
+#: src/menu.c:572
+msgid "dumbbell"
+msgstr "manubrio"
+
+#: src/menu.c:573
+msgid "automatic static"
+msgstr "statico automatico"
+
+#: src/menu.c:574
+msgid "ping"
+msgstr "ping"
+
+#: src/menu.c:574
+msgid "ping + traceroute"
+msgstr "ping + traceroute"
+
+#: src/menu.c:574
+msgid "UDP stream"
+msgstr "flusso UDP"
+
+#: src/menu.c:574
+msgid "TCP transfer"
+msgstr "trasferimento TCP"
+
+#: src/menu.c:575
+msgid "none"
+msgstr "nessuno"
+
+#: src/menu.c:588
+msgid "Name"
+msgstr "Nome"
+
+#: src/menu.c:589
+msgid "Topology"
+msgstr "Topologia"
+
+#: src/menu.c:590
+msgid "Routers (LAN: hosts; dumbbell: pairs)"
+msgstr "Router (LAN: host; manubrio: coppie)"
+
+#: src/menu.c:591
+msgid "Hosts per router"
+msgstr "Host per router"
+
+#: src/menu.c:592
+msgid "Link bandwidth"
+msgstr "Larghezza di banda dei collegamenti"
+
+#: src/menu.c:593
+msgid "Link delay"
+msgstr "Ritardo dei collegamenti"
+
+#: src/menu.c:594
+msgid "Link loss (0..1)"
+msgstr "Perdita dei collegamenti (0..1)"
+
+#: src/menu.c:595
+msgid "Bottleneck bandwidth (dumbbell)"
+msgstr "Larghezza di banda del collo di bottiglia (manubrio)"
+
+#: src/menu.c:596
+msgid "Queue length (packets)"
+msgstr "Lunghezza della coda (pacchetti)"
+
+#: src/menu.c:597
+msgid "Routing"
+msgstr "Instradamento"
+
+#: src/menu.c:598
+msgid "Traffic"
+msgstr "Traffico"
+
+#: src/menu.c:599
+msgid "Create and open"
+msgstr "Crea e apri"
+
+#: src/menu.c:600 src/menu.c:833
+msgid "Build your own network"
+msgstr "Costruisci la tua rete"
+
+#: src/menu.c:709 src/menu.c:835
+msgid "Modules"
+msgstr "Moduli"
+
+#: src/menu.c:725
+msgid "Usage"
+msgstr "Uso"
+
+#: src/menu.c:728
+msgid "↑ ↓ choose · PgUp PgDn scroll · Esc back"
+msgstr "↑ ↓ scegli · PagSu PagGiù scorri · Esc indietro"
+
+#: src/menu.c:749
+msgid "new window"
+msgstr "nuova finestra"
+
+#: src/menu.c:749
+msgid "split this terminal"
+msgstr "dividi questo terminale"
+
+#: src/menu.c:758
+msgid "Protocol"
+msgstr "Protocollo"
+
+#: src/menu.c:759
+msgid "Loss probability"
+msgstr "Probabilità di perdita"
+
+#: src/menu.c:760
+msgid "Corruption probability"
+msgstr "Probabilità di corruzione"
+
+#: src/menu.c:761
+msgid "Propagation delay (ms)"
+msgstr "Ritardo di propagazione (ms)"
+
+#: src/menu.c:762
+msgid "Window N (GBN, SR)"
+msgstr "Finestra N (GBN, SR)"
+
+#: src/menu.c:763
+msgid "Sequence number bits (GBN, SR)"
+msgstr "Bit dei numeri di sequenza (GBN, SR)"
+
+#: src/menu.c:764
+msgid "Text to send (empty = default)"
+msgstr "Testo da inviare (vuoto = predefinito)"
+
+#: src/menu.c:765
+msgid "Open in"
+msgstr "Apri in"
+
+#: src/menu.c:767
+msgid "Reliable transfer over an unreliable channel"
+msgstr "Trasferimento affidabile su un canale inaffidabile"
+
+#: src/menu.c:812
+msgid "Scenario file or catalog name"
+msgstr "File di scenario o nome del catalogo"
+
+#: src/menu.c:813
+msgid "Open"
+msgstr "Apri"
+
+#: src/menu.c:814 src/menu.c:817
+msgid "Open a scenario"
+msgstr "Apri uno scenario"
+
+#: src/menu.c:817
+msgid "File not found."
+msgstr "File non trovato."
+
+#: src/menu.c:831
+msgid "Scenario catalog"
+msgstr "Catalogo degli scenari"
+
+#: src/menu.c:831
+msgid "ready-made labs, from the first ping to consensus algorithms"
+msgstr "laboratori pronti, dal primo ping agli algoritmi di consenso"
+
+#: src/menu.c:832 src/guide.c:210
+msgid "Study guide"
+msgstr "Guida allo studio"
+
+#: src/menu.c:832
+msgid "the curriculum by level and topic, with theory and linked labs"
+msgstr "il programma per livello e argomento, con teoria e laboratori collegati"
+
+#: src/menu.c:833
+msgid "guided: topology, links, routing, traffic"
+msgstr "guidato: topologia, collegamenti, instradamento, traffico"
+
+#: src/menu.c:834
+msgid "Open a scenario file"
+msgstr "Apri un file di scenario"
+
+#: src/menu.c:834
+msgid "run a .nl file you wrote or downloaded"
+msgstr "esegui un file .nl scritto da te o scaricato"
+
+#: src/menu.c:835
+msgid "every protocol and tool: what it is, how to use it"
+msgstr "ogni protocollo e strumento: che cos'è, come si usa"
+
+#: src/menu.c:836
+msgid "Reliable transfer demos"
+msgstr "Demo di trasferimento affidabile"
+
+#: src/menu.c:836
+msgid "stop-and-wait, Go-Back-N, Selective Repeat over real UDP"
+msgstr "stop-and-wait, Go-Back-N, Selective Repeat su UDP reale"
+
+#: src/menu.c:837
+msgid "Quit"
+msgstr "Esci"
+
+#: src/menu.c:863
+msgid "a network laboratory in your terminal"
+msgstr "un laboratorio di reti nel tuo terminale"
+
+#: src/menu.c:873
+msgid "↑ ↓ and Enter, or the number · q quit"
+msgstr "↑ ↓ e Invio, oppure il numero · q esci"
+
+#: src/menu.c:873
+msgid "language:"
+msgstr "lingua:"
+
+#: src/guide.c:121
+msgid "Getting started"
+msgstr "Per iniziare"
+
+#: src/guide.c:156
+msgid "essentials"
+msgstr "essenziale"
+
+#: src/guide.c:156
+msgid "standard"
+msgstr "standard"
+
+#: src/guide.c:156
+msgid "in depth"
+msgstr "approfondito"
+
+#: src/guide.c:163
+msgid "no guide found in"
+msgstr "nessuna guida trovata in"
+
+#: src/guide.c:236
+msgid "depth:"
+msgstr "profondità:"
+
+#: src/guide.c:243
+msgid "Labs:"
+msgstr "Laboratori:"
+
+#: src/guide.c:252
+msgid "↑ ↓ topic · → read · PgUp PgDn scroll · 1 2 3 depth · a b c run a lab · / search · Esc back"
+msgstr "↑ ↓ argomento · → leggi · PagSu PagGiù scorri · 1 2 3 profondità · a b c avvia un laboratorio · / cerca · Esc indietro"
+
+#: src/launch.c:150
+msgid "Opened a kitty window: the whole network on the left, one pane per node on the right."
+msgstr "Aperta una finestra kitty: l'intera rete a sinistra, un pannello per nodo a destra."
+
+#: src/launch.c:177
+msgid "tmux session started; attach with:"
+msgstr "sessione tmux avviata; collegati con:"
+
+#: src/launch.c:180
+msgid "# Run each command in its own terminal (the first one first):"
+msgstr "# Esegui ogni comando in un terminale separato (il primo per primo):"
