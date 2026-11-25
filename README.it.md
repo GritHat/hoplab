@@ -34,7 +34,7 @@ DNS, …) su collegamenti con larghezza di banda, ritardo, perdita, errori sui
 bit e code. Si guardano i pacchetti attraversare la mappa, si apre ciascuno
 fino ai byte, si leggono le tabelle di ogni nodo, si tracciano i grafici di ciò
 che i protocolli misurano, si rompe qualcosa e si osserva che cosa succede. Un
-catalogo di 71 laboratori e una guida di studio accompagnano da «che cos'è un
+catalogo di 77 laboratori e una guida di studio accompagnano da «che cos'è un
 frame?» fino ai dirottamenti BGP, a CoDel, a Raft sotto partizione e ai CRDT.
 
 È scritto in C11 senza dipendenze, funziona in qualsiasi terminale, parla
@@ -82,9 +82,9 @@ L'interfaccia è in italiano se il sistema è in italiano; altrimenti
 |---|---|
 | Fisico / collegamento | collegamenti con larghezza di banda, ritardo di propagazione, jitter, perdita (indipendente o a raffiche), tasso di errore sui bit, duplicazione, riordino, MTU, code · codici di linea: parità, checksum di Internet, CRC-8/16/32, ripetizione, Hamming(7,4), SECDED, Hamming con interleaving, Reed–Solomon(255,223) · un banco di prova dei codici · laboratorio di accesso al mezzo: ALOHA, slotted ALOHA, CSMA, CSMA/CD, CSMA/CA con terminali nascosti e RTS/CTS |
 | Collegamento | Ethernet, ARP, switch che apprendono, VLAN 802.1Q e trunk, spanning tree e rapid spanning tree |
-| Rete | inoltro IPv4 e IPv6 (Neighbor Discovery, SLAAC, ICMPv6, path MTU) con longest prefix match, TTL, frammentazione e riassemblaggio, ICMP, `ping`, `traceroute` · instradamento: statico, RIP, OSPF (link state), BGP (path vector, politiche, validazione dell'origine) · NAT (quattro comportamenti, port forwarding, hole punching) · discipline di coda: drop-tail, RED, CoDel, PIE, fair queueing, priorità stretta, token bucket · ECN |
+| Rete | inoltro IPv4 e IPv6 (Neighbor Discovery, SLAAC, ICMPv6, path MTU) con longest prefix match, TTL, frammentazione e riassemblaggio, ICMP, `ping`, `traceroute` · instradamento: statico, RIP e RIPng, OSPF e OSPFv3 (link state), BGP con estensioni multiprotocollo (path vector, politiche, validazione dell'origine) · NAT (quattro comportamenti, port forwarding, hole punching) · discipline di coda: drop-tail, RED, CoDel, PIE, fair queueing, priorità stretta, token bucket · ECN |
 | Trasporto | UDP · TCP (handshake, finestra scorrevole, RTO, fast retransmit, controllo di flusso, SACK, ACK ritardati, path MTU discovery, Tahoe / Reno / NewReno / CUBIC / BBR v1, ECN; su IPv4 e IPv6) · bilanciatore di carico di livello 4 (round robin, pesato, least connections, hash, consistent hashing, Maglev, power of two choices, controlli di salute) |
-| Applicazione | DNS (autoritativo, resolver ricorsivo con cache, `dig`, laboratorio di cache poisoning) · DHCP · HTTP/1.1 · generatori e ricevitori di traffico |
+| Applicazione | DNS (A e AAAA, autoritativo, resolver ricorsivo con cache, `dig`, laboratorio di cache poisoning) · DHCP e DHCPv6 · HTTP/1.1 · generatori e ricevitori di traffico |
 | Sistemi distribuiti | Raft · gossip e rilevazione dei guasti SWIM · orologi di Lamport e vettoriali, broadcast causale e totalmente ordinato · commit a due e tre fasi · DHT Chord · CRDT |
 
 Tutto gira su un tempo virtuale guidato da una coda di eventi: un'esecuzione è
@@ -95,7 +95,7 @@ rispetto al protocollo reale.
 
 ### Il catalogo
 
-71 laboratori su quattro livelli — **Rudimenti** (primo contatto),
+77 laboratori su quattro livelli — **Rudimenti** (primo contatto),
 **Fondamenti** (un corso di laurea triennale), **Avanzato** (magistrale),
 **Frontiera** (taglio di ricerca). Ogni laboratorio è un piccolo file di testo con una
 descrizione, parametri regolabili, una cronologia commentata e attese che
@@ -208,7 +208,7 @@ esempio completo.
 - È un emulatore didattico, non un simulatore di prestazioni: al massimo 64
   nodi e 160 collegamenti per laboratorio, e alcuni protocolli sono volutamente
   ridotti (l'aiuto di ogni modulo dice come: per esempio BGP è solo eBGP con un
-  router per AS, i protocolli di instradamento, DNS e DHCP parlano solo IPv4,
-  TCP non ha i timestamp). I frame sono veri, i cavi no: nulla tocca la rete reale
+  router per AS, OSPF ha una sola area e nessun designated router, TCP non ha
+  i timestamp). I frame sono veri, i cavi no: nulla tocca la rete reale
   tranne i tunnel UDP delle modalità a più processi.
 </content>

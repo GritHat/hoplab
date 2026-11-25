@@ -59,7 +59,7 @@ SEGMENTS = [
       (8.2, "Down"), (8.6, "Down"), (9.0, "Down"), (9.4, "Down"), (9.8, "Down"), (10.6, "Right"),
       (11.4, "3"), (12.2, "PageDown"), (13.0, "PageDown")],
      [(0, "One menu: catalog, study guide, topology wizard"),
-      (1.2, "71 ready-made labs in four levels, from the first ping to consensus"),
+      (1.2, "77 ready-made labs in four levels, from the first ping to consensus"),
       (7.2, "A study guide by level and topic, readable at three depths, in English and Italian")]),
     ("windows", "WINDOWS", 11.0, [],
      [(0, "The same lab as separate processes joined by UDP tunnels — on one screen, or on several machines")]),
@@ -197,7 +197,7 @@ def thumbnail(shot, out):
            stroke_width=8, stroke_fill=BG, spacing=10)
     f = ImageFont.truetype(SANS_BOLD, 34)
     y = 520
-    for text, col in (("every packet, every layer", BLUE), ("30+ protocols · 71 labs", GREEN),
+    for text, col in (("every packet, every layer", BLUE), ("30+ protocols · 77 labs", GREEN),
                       ("in your terminal", PINK)):
         d.text((60, y), text, font=f, fill=col, stroke_width=6, stroke_fill=BG)
         y += 52
@@ -246,7 +246,7 @@ def main():
     for i in range(title_frames):
         title.save(os.path.join(fdir, f"{i:05d}.png"))
     end = card("hoplab", "make && ./hoplab",
-               ["30+ protocols and tools · 71 labs · a study guide in four levels",
+               ["30+ protocols and tools · 77 labs · a study guide in four levels",
                 "One process, tiled windows, or several machines",
                 "C11, no dependencies · English and Italian"], shot=hero)
     for i in range(end_frames):

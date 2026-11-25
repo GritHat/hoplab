@@ -35,7 +35,7 @@ exchange **real, byte-exact frames** (Ethernet, ARP, IPv4, ICMP, UDP, TCP, DNS,
 …) over links with bandwidth, delay, loss, bit errors and queues. You watch the
 packets cross the map, open any of them down to the bytes, read each node's
 tables, plot what the protocols measure, break things, and see what happens.
-A catalog of 71 labs and a study guide take you from "what is a frame?" to
+A catalog of 77 labs and a study guide take you from "what is a frame?" to
 BGP hijacks, CoDel, Raft under partitions and CRDTs.
 
 It is written in C11 with no dependencies, runs in any terminal, speaks
@@ -79,9 +79,9 @@ command line (`h1 ping h2`, `link r1 r2 down`, `link h1 r1 loss=0.3`,
 |---|---|
 | Physical / link | links with bandwidth, propagation delay, jitter, loss (independent or in bursts), bit error rate, duplication, reordering, MTU, queues · link codes: parity, Internet checksum, CRC-8/16/32, repetition, Hamming(7,4), SECDED, interleaved Hamming, Reed–Solomon(255,223) · a coding bench · medium access lab: ALOHA, slotted ALOHA, CSMA, CSMA/CD, CSMA/CA with hidden terminals and RTS/CTS |
 | Link | Ethernet, ARP, learning switches, 802.1Q VLANs and trunks, spanning tree and rapid spanning tree |
-| Network | IPv4 and IPv6 (Neighbor Discovery, SLAAC, ICMPv6, path MTU) forwarding with longest prefix match, TTL, fragmentation and reassembly, ICMP, `ping`, `traceroute` · routing: static, RIP, OSPF (link state), BGP (path vector, policies, origin validation) · NAT (four behaviours, port forwarding, hole punching) · queue disciplines: drop-tail, RED, CoDel, PIE, fair queueing, strict priority, token bucket · ECN |
+| Network | IPv4 and IPv6 (Neighbor Discovery, SLAAC, ICMPv6, path MTU) forwarding with longest prefix match, TTL, fragmentation and reassembly, ICMP, `ping`, `traceroute` · routing: static, RIP and RIPng, OSPF and OSPFv3 (link state), BGP with multiprotocol extensions (path vector, policies, origin validation) · NAT (four behaviours, port forwarding, hole punching) · queue disciplines: drop-tail, RED, CoDel, PIE, fair queueing, strict priority, token bucket · ECN |
 | Transport | UDP · TCP (handshake, sliding window, RTO, fast retransmit, flow control, SACK, delayed ACKs, path MTU discovery, Tahoe / Reno / NewReno / CUBIC / BBR v1, ECN; over IPv4 and IPv6) · layer-4 load balancer (round robin, weighted, least connections, hashing, consistent hashing, Maglev, power of two choices, health checks) |
-| Application | DNS (authoritative, recursive resolver with cache, `dig`, cache-poisoning lab) · DHCP · HTTP/1.1 · traffic generators and sinks |
+| Application | DNS (A and AAAA, authoritative, recursive resolver with cache, `dig`, cache-poisoning lab) · DHCP and DHCPv6 · HTTP/1.1 · traffic generators and sinks |
 | Distributed systems | Raft · gossip and SWIM failure detection · Lamport and vector clocks, causal and total order broadcast · two- and three-phase commit · Chord DHT · CRDTs |
 
 Everything runs on virtual time driven by an event queue, so a run is
@@ -91,7 +91,7 @@ one, including what it simplifies with respect to the real protocol.
 
 ### The catalog
 
-71 labs in four levels — **Foundations** (first contact), **Core** (an
+77 labs in four levels — **Foundations** (first contact), **Core** (an
 undergraduate course), **Advanced** (graduate), **Frontier** (research
 flavoured). Each lab is a small text file with a description, tunable
 parameters, a narrated timeline and expectations that `hoplab check` verifies:
@@ -198,8 +198,8 @@ example.
   numpy and ffmpeg only to regenerate the media.
 - It is a teaching emulator, not a performance simulator: at most 64 nodes and
   160 links per lab, and some protocols are deliberately reduced (each
-  module's help says how: for example BGP is eBGP with one router per AS, the
-  routing protocols, DNS and DHCP speak IPv4 only, TCP has no timestamps). Frames are real, wires are not: nothing
+  module's help says how: for example BGP is eBGP with one router per AS, OSPF has
+  one area and no designated router, TCP has no timestamps). Frames are real, wires are not: nothing
   touches your actual network except the UDP tunnels of the multi-process
   modes.
 </content>

@@ -71,8 +71,12 @@ I primi sette laboratori sono il viaggio di una richiesta web visto dal basso ve
 - `230-rip-convergence` RIP: i router scoprono la rete, poi aggirano un guasto
 - `231-rip-count-to-infinity` RIP: il conteggio all'infinito, e come lo evita lo split horizon
 - `232-ospf-costs` OSPF: una mappa uguale per tutti, e costi che guidano il traffico
+- `233-ripng-convergence` RIPng: lo stesso algoritmo per IPv6, fianco a fianco con RIP
+- `234-ospfv3` OSPFv3: link state per IPv6, dove topologia e prefissi si separano
 - `240-dns-hierarchy` La gerarchia del DNS e la cache
 - `241-dhcp-leases` Lease DHCP: rinnovo, scadenza ed esaurimento del pool
+- `242-dns-aaaa` I nomi in un mondo dual-stack: A, AAAA e DNS su IPv6
+- `243-dhcpv6` Autoconfigurazione IPv6: SLAAC, DHCPv6 stateless, DHCPv6 stateful
 - `250-nat-basics` NAT: perché gli indirizzi privati hanno bisogno di un traduttore
 - `251-port-forwarding` Port forwarding: pubblicare un server che sta dietro un NAT
 - `252-load-balancer` Load balancer: un indirizzo, tre server, e uno si guasta
@@ -93,6 +97,7 @@ Un ordine consigliato per un corso: prima il livello di rete (200, 201, 202, poi
 - `321-tcp-sack` Molte perdite in una finestra: NewReno contro SACK
 - `330-ospf-vs-rip` Convergenza dopo un guasto: link state contro distance vector
 - `331-bgp-basics` BGP: sistemi autonomi, AS path e ritiri
+- `332-bgp-ipv6` BGP per due protocolli: prefissi IPv6 in una sessione multiprotocollo
 - `340-dns-ttl` Catene di CNAME, caching negativo e il compromesso del TTL
 - `350-nat-hole-punching` Comportamenti dei NAT e UDP hole punching
 - `351-lb-algorithms` Algoritmi di bilanciamento a confronto
@@ -122,6 +127,7 @@ Tre cammini attraversano questo percorso. **Congestione e code**: 320, poi 371, 
 - `421-bbr-anatomy` Anatomia di BBR: un modello del percorso invece di una reazione alle perdite
 - `430-bgp-policies` Politiche BGP: clienti, peer, provider e percorsi valley-free
 - `431-bgp-hijack` BGP: dirottamento di un prefisso, prefisso più specifico e validazione dell'origine
+- `432-bgp-ipv6-hijack` Una Internet solo IPv6: BGP su IPv6, dirottamento di un sotto-prefisso e validazione dell'origine
 - `440-dns-poisoning` Avvelenamento della cache DNS e perché conta la casualità della porta
 - `450-consistent-hashing` Consistent hashing: cosa succede quando il pool di server cambia
 - `460-hidden-terminal` Il punto cieco del Wi-Fi: terminali nascosti, CSMA/CA e RTS/CTS

@@ -71,8 +71,12 @@ The first seven labs are the journey of a web request seen from the bottom up: a
 - `230-rip-convergence` RIP: routers discover the network, then route around a failure
 - `231-rip-count-to-infinity` RIP: count to infinity, and how split horizon prevents it
 - `232-ospf-costs` OSPF: one map for everybody, and costs that steer the traffic
+- `233-ripng-convergence` RIPng: the same algorithm for IPv6, side by side with RIP
+- `234-ospfv3` OSPFv3: link state for IPv6, where topology and prefixes part ways
 - `240-dns-hierarchy` The DNS hierarchy and the cache
 - `241-dhcp-leases` DHCP leases: renewal, expiry and pool exhaustion
+- `242-dns-aaaa` Names in a dual-stack world: A, AAAA and DNS over IPv6
+- `243-dhcpv6` IPv6 autoconfiguration: SLAAC, stateless DHCPv6, stateful DHCPv6
 - `250-nat-basics` NAT: why private addresses need a translator
 - `251-port-forwarding` Port forwarding: publishing a server that sits behind a NAT
 - `252-load-balancer` Load balancer: one address, three servers, and one of them fails
@@ -93,6 +97,7 @@ A suggested order for a course: the network layer first (200, 201, 202, then the
 - `321-tcp-sack` Many losses in one window: NewReno against SACK
 - `330-ospf-vs-rip` Convergence after a failure: link state against distance vector
 - `331-bgp-basics` BGP: autonomous systems, AS paths and withdrawals
+- `332-bgp-ipv6` BGP for two protocols: IPv6 prefixes in a multiprotocol session
 - `340-dns-ttl` CNAME chains, negative caching and the TTL trade-off
 - `350-nat-hole-punching` NAT behaviours and UDP hole punching
 - `351-lb-algorithms` Load balancing algorithms compared
@@ -122,6 +127,7 @@ Three paths cross this track. **Congestion and queues**: 320, then 371, 372, 373
 - `421-bbr-anatomy` Anatomy of BBR: a model of the path instead of a reaction to loss
 - `430-bgp-policies` BGP policies: customers, peers, providers and valley-free paths
 - `431-bgp-hijack` BGP prefix hijack, more-specific hijack and origin validation
+- `432-bgp-ipv6-hijack` An IPv6-only Internet: BGP over IPv6, a sub-prefix hijack and origin validation
 - `440-dns-poisoning` DNS cache poisoning and why port randomisation matters
 - `450-consistent-hashing` Consistent hashing: what happens when the server pool changes
 - `460-hidden-terminal` Wi-Fi's blind spot: hidden terminals, CSMA/CA and RTS/CTS
