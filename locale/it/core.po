@@ -1534,3 +1534,6 @@ msgstr "in verifica"
 
 msgid "IPv6 neighbors (NDP)"
 msgstr "Vicini IPv6 (NDP)"
+
+msgid "an IPv6 next hop needs `dev IF` unless it is on a prefix of %s"
+msgstr "un next hop IPv6 richiede `dev IF` a meno che non sia su un prefisso di %s"

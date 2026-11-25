@@ -389,6 +389,21 @@ static int cmd_route(const nl_args *a)
         ifx = nl_if_find(n, arg);
         if (ifx < 0)
             return fail(_("unknown interface '%s'"), arg);
+    } else if (strchr(arg, ':')) {
+        /* an IPv6 next hop for an IPv4 prefix: `via fe80::1 dev eth0`, or a global address on a shared prefix */
+        const char *dev = NULL;
+        nl_ip6 gw6;
+
+        for (i = 3; i + 1 < a->argc; i++)
+            if (!strcmp(a->argv[i], "dev"))
+                dev = a->argv[i + 1];
+        if (!nl_parse_ip6(arg, &gw6))
+            return fail(_("unknown gateway '%s'"), arg);
+        ifx = dev ? nl_if_find(n, dev) : onlink6(n, &gw6);
+        if (ifx < 0)
+            return fail(_("an IPv6 next hop needs `dev IF` unless it is on a prefix of %s"), n->name);
+        nl_route_set_via6(n, dst, plen, &gw6, ifx, (int)nl_arg_int(a, "metric", 1), NL_RT_STATIC);
+        return 0;
     } else {
         if (!nl_resolve(arg, &gw))
             return fail(_("unknown gateway '%s'"), arg);

@@ -298,6 +298,8 @@ typedef struct nl_route {
     int   metric;
     int   proto;               /* NL_RT_*: also the administrative distance */
     nl_time since;
+    int   via6;                /* 1 = the next hop is the IPv6 address gw6 (RFC 8950 style) */
+    nl_ip6 gw6;
 } nl_route;
 
 typedef struct nl_route6 {
@@ -484,6 +486,12 @@ void            nl_route_set(nl_node *n, nl_ip dst, int plen, nl_ip gw, int ifx,
 void            nl_route_del(nl_node *n, nl_ip dst, int plen, int proto);
 void            nl_route_flush(nl_node *n, int proto);
 const nl_route *nl_route_lookup(const nl_node *n, nl_ip dst);
+/* An IPv4 route whose next hop is an IPv6 neighbour (as `ip route add
+ * 10.0.0.0/24 via inet6 fe80::1 dev eth0`): packets are still IPv4 frames,
+ * but the link-layer address is found with Neighbor Discovery instead of
+ * ARP, so the link needs no IPv4 addresses. The route has gw == 0, via6 == 1. */
+void            nl_route_set_via6(nl_node *n, nl_ip dst, int plen, const nl_ip6 *gw6, int ifx, int metric,
+                                  int proto);
 const char     *nl_route_proto_name(int proto);
 
 /* Packet hooks (NAT, load balancers, firewalls). The callback may rewrite

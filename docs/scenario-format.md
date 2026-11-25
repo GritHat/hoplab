@@ -411,6 +411,22 @@ Forwarding uses the longest matching prefix, then the lowest administrative
 distance (connected 0, static 1, DHCP 5, BGP 20, OSPF 110, RIP 120), then the
 lowest metric. Routes through an interface that is down are skipped.
 
+An IPv4 prefix can also be routed through an **IPv6 next hop**, as on links
+that carry no IPv4 addresses at all:
+
+```
+route r1 10.0.2.0/24 via 2001:db8:12::2          # a global address on a prefix of r1
+route r2 10.0.1.0/24 via fe80::200:4eff:fe4c:201 dev eth0    # link-local: say which interface
+```
+
+The packets stay IPv4 (EtherType 0x0800); only the link-layer address of the
+next hop is found with Neighbor Discovery instead of ARP. A router that
+originates an IPv4 packet out of such an interface (an ICMP error, for
+instance) uses another of its IPv4 addresses as the source; a router with no
+IPv4 address at all still forwards, but cannot originate IPv4 packets. BGP
+installs such routes by itself when two routers share only IPv6 networks
+(RFC 8950, see `hoplab help bgp`).
+
 ### `auto`
 
 ```

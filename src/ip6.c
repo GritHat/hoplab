@@ -554,7 +554,8 @@ static void frame_out(nl_node *n, int ifx, const uint8_t mac[6], nl_pkt *p)
 {
     memcpy(p->data, mac, 6);
     memcpy(p->data + 6, n->ifc[ifx].mac, 6);
-    nl_put16(p->data + 12, NL_ETH_IP6);
+    /* the neighbor cache also serves IPv4 packets routed via an IPv6 next hop */
+    nl_put16(p->data + 12, (p->data[NL_ETH_HLEN] >> 4) == 4 ? NL_ETH_IP : NL_ETH_IP6);
     nl_link_tx(n, ifx, p);
 }
 
@@ -627,6 +628,11 @@ static void nbr_xmit(nl_node *n, int ifx, const nl_ip6 *nh, nl_pkt *p)
         nd_arm(n);
     }
     frame_out(n, e->ifx, e->mac, p);
+}
+
+void nl_ip6_xmit4(nl_node *n, int ifx, const nl_ip6 *nh, nl_pkt *p)
+{
+    nbr_xmit(n, ifx, nh, p);
 }
 
 static void ip6_hdr(uint8_t *h, int plen, int nxt, int hlim, int tc, const nl_ip6 *src, const nl_ip6 *dst)

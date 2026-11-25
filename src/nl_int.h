@@ -141,6 +141,7 @@ void nl_ip6_start(void);                       /* after the scenario is loaded: 
 void nl_ip6_input(nl_node *n, int ifx, nl_pkt *p);            /* takes ownership */
 void nl_ip6_node_down(nl_node *n);
 void nl_ip6_node_up(nl_node *n);
+void nl_ip6_xmit4(nl_node *n, int ifx, const nl_ip6 *nh, nl_pkt *p);   /* an IPv4 frame to an IPv6 next hop */
 /* stack.c: application dissectors shared with the IPv6 dissector */
 void nl_dissect_udp_payload(nl_dissect *o, uint16_t sport, uint16_t dport, const uint8_t *d, int len, int off);
 int  nl_dissect_ipproto(nl_dissect *o, uint8_t proto, const uint8_t *d, int len, int off);

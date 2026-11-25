@@ -83,7 +83,7 @@ const char *nl_route_proto_name(int proto)
     }
 }
 
-void nl_route_set(nl_node *n, nl_ip dst, int plen, nl_ip gw, int ifx, int metric, int proto)
+static void route_put(nl_node *n, nl_ip dst, int plen, nl_ip gw, const nl_ip6 *gw6, int ifx, int metric, int proto)
 {
     nl_route *r = NULL;
     int i;
@@ -92,13 +92,15 @@ void nl_route_set(nl_node *n, nl_ip dst, int plen, nl_ip gw, int ifx, int metric
     for (i = 0; i < n->nrt; i++)
         if (n->rt[i].dst == dst && n->rt[i].plen == plen && n->rt[i].proto == proto)
             r = &n->rt[i];
-    if (r && r->gw == gw && r->ifx == ifx && r->metric == metric)
+    if (r && r->gw == gw && r->ifx == ifx && r->metric == metric && r->via6 == (gw6 != NULL) &&
+        (!gw6 || nl_ip6_eq(&r->gw6, gw6)))
         return;
     if (!r) {
         if (n->nrt >= NL_MAX_ROUTES)
             return;
         r = &n->rt[n->nrt++];
     }
+    memset(r, 0, sizeof(*r));
     r->dst = dst;
     r->plen = plen;
     r->gw = gw;
@@ -106,11 +108,25 @@ void nl_route_set(nl_node *n, nl_ip dst, int plen, nl_ip gw, int ifx, int metric
     r->metric = metric;
     r->proto = proto;
     r->since = W.now;
+    if (gw6) {
+        r->via6 = 1;
+        r->gw6 = *gw6;
+    }
     if (proto != NL_RT_CONNECTED)
         nl_log(n, NL_L_NET, proto == NL_RT_STATIC ? 3 : 2, 0,
                T_INFO "route" T_RESET " %s/%d via %s dev %s metric %d " T_DIM "[%s]",
-               nl_ip_str(dst), plen, gw ? nl_ip_str(gw) : "direct",
+               nl_ip_str(dst), plen, gw6 ? nl_ip6_str(gw6) : gw ? nl_ip_str(gw) : "direct",
                ifx >= 0 && ifx < n->nif ? n->ifc[ifx].name : "?", metric, nl_route_proto_name(proto));
+}
+
+void nl_route_set(nl_node *n, nl_ip dst, int plen, nl_ip gw, int ifx, int metric, int proto)
+{
+    route_put(n, dst, plen, gw, NULL, ifx, metric, proto);
+}
+
+void nl_route_set_via6(nl_node *n, nl_ip dst, int plen, const nl_ip6 *gw6, int ifx, int metric, int proto)
+{
+    route_put(n, dst, plen, 0, gw6, ifx, metric, proto);
 }
 
 void nl_route_del(nl_node *n, nl_ip dst, int plen, int proto)
@@ -635,8 +651,8 @@ static void ip_hdr_write(uint8_t *h, int total, uint16_t id, int flags_off, uint
 /* Emit an IP packet (header fields in h20, payload separately) out of ifx
  * towards next hop nh, fragmenting when it exceeds the MTU. foff/mf are the
  * fragment offset (bytes) and more-fragments flag the packet already has. */
-static int ip_emit(nl_node *n, int ifx, nl_ip nh, const uint8_t *h20, const uint8_t *pl, int len,
-                   uint32_t pkt_id, int hops, int in_if)
+static int ip_emit(nl_node *n, int ifx, nl_ip nh, const nl_ip6 *nh6, const uint8_t *h20, const uint8_t *pl,
+                   int len, uint32_t pkt_id, int hops, int in_if)
 {
     int mtu = n->ifc[ifx].link ? n->ifc[ifx].link->cfg.mtu : NL_DEFAULT_MTU;
     int fo = nl_get16(h20 + 6), df = fo & 0x4000, mf = fo & 0x2000, base = (fo & 0x1fff) * 8;
@@ -663,6 +679,8 @@ static int ip_emit(nl_node *n, int ifx, nl_ip nh, const uint8_t *h20, const uint
         p->len = (uint16_t)(NL_ETH_HLEN + NL_IP_HLEN + part);
         if (run_hooks(n, NL_HOOK_POST, p, in_if, ifx) == NL_HOOK_DROP)
             nl_pkt_free(p);
+        else if (nh6)                   /* next hop known by its IPv6 address: Neighbor Discovery */
+            nl_ip6_xmit4(n, ifx, nh6, p);
         else
             arp_resolve_tx(n, ifx, nh, p);
         off += part;
@@ -690,6 +708,7 @@ uint32_t nl_ip_send(nl_node *n, const nl_iptx *tx, const void *l4, int len)
     const nl_route *r = NULL;
     uint8_t h[NL_IP_HLEN];
     nl_ip src = tx->src, nh = tx->dst;
+    const nl_ip6 *nh6 = NULL;
     uint32_t id = tx->pkt_id ? tx->pkt_id : nl_pkt_newid();
     int ifx = tx->ifx;
 
@@ -726,14 +745,23 @@ uint32_t nl_ip_send(nl_node *n, const nl_iptx *tx, const void *l4, int len)
         ifx = r->ifx;
         if (r->gw)
             nh = r->gw;
+        if (r->via6)
+            nh6 = &r->gw6;
     } else if (ifx < 0 || ifx >= n->nif) {
         return 0;
     }
     if (!src)
         src = n->ifc[ifx].ip;
+    if (!src && !tx->use_if) {
+        src = nl_node_ip(n);            /* an unnumbered interface: borrow another address of the node */
+        if (!src) {                     /* a node with no IPv4 address at all can forward, not speak */
+            nl_count(n, "ip.no_source", 1);
+            return 0;
+        }
+    }
     ip_hdr_write(h, NL_IP_HLEN + len, s->ip_id++, tx->df ? 0x4000 : 0, tx->ttl ? tx->ttl : 64,
                  tx->proto, tx->tos, src, tx->dst);
-    if (ip_emit(n, ifx, nh, h, l4, len, id, 0, -1) < 0) {
+    if (ip_emit(n, ifx, nh, nh6, h, l4, len, id, 0, -1) < 0) {
         nl_log(n, NL_L_NET, 2, id, T_ERR "IP" T_RESET " %s (%d B, MTU %d)",
                _("packet too big and DF set: not sent"), NL_IP_HLEN + len,
                n->ifc[ifx].link ? n->ifc[ifx].link->cfg.mtu : 0);
@@ -935,7 +963,7 @@ uint32_t nl_udp_send_ex(nl_node *n, const nl_iptx *tx0, uint16_t sport, uint16_t
         } else {
             const nl_route *r = nl_route_lookup(n, tx.dst);
             if (r)
-                src = n->ifc[r->ifx].ip;
+                src = n->ifc[r->ifx].ip ? n->ifc[r->ifx].ip : nl_node_ip(n);
         }
         tx.src = src;
     }
@@ -1145,13 +1173,15 @@ static void ip_input(nl_node *n, int in_if, nl_pkt *p)
     nl_put16(ip + 10, 0);
     nl_put16(ip + 10, nl_cksum(ip, ihl, 0));
     nl_log(n, NL_L_NET, 3, p->id, T_INFO "IP" T_RESET " forward %s → %s via %s dev %s ttl %d",
-           nl_ip_str(nl_get32(ip + 12)), nl_ip_str(dst), r->gw ? nl_ip_str(r->gw) : "direct",
+           nl_ip_str(nl_get32(ip + 12)), nl_ip_str(dst),
+           r->via6 ? nl_ip6_str(&r->gw6) : r->gw ? nl_ip_str(r->gw) : "direct",
            n->ifc[r->ifx].name, ip[8]);
     nl_count(n, "ip.forwarded", 1);
     {
         uint8_t h[NL_IP_HLEN];
         memcpy(h, ip, NL_IP_HLEN);
-        if (ip_emit(n, r->ifx, r->gw ? r->gw : dst, h, ip + ihl, total - ihl, p->id, p->hops, in_if) < 0) {
+        if (ip_emit(n, r->ifx, r->gw ? r->gw : dst, r->via6 ? &r->gw6 : NULL, h, ip + ihl, total - ihl, p->id,
+                    p->hops, in_if) < 0) {
             int mtu = n->ifc[r->ifx].link->cfg.mtu;
             nl_log(n, NL_L_NET, 2, p->id, T_WARN "IP" T_RESET " %s (MTU %d)",
                    _("too big and DF set: dropped, ICMP sent"), mtu);

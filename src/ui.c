@@ -512,7 +512,8 @@ static int tab_routes(const nl_node *n, int x, int y, int w, int h)
         else
             snprintf(dst, sizeof(dst), "%s/%d", nl_ip_str(r->dst), r->plen);
         tui_print(x, y + row++, w, ST(usable ? C_TEXT : C_FAINT), "%s%-18s" T_RESET " %-15s %-5s %3d %s%s",
-                  fresh ? T_OK : "", dst, r->gw ? nl_ip_str(r->gw) : _("direct"), n->ifc[r->ifx].name, r->metric,
+                  fresh ? T_OK : "", dst, r->via6 ? nl_ip6_str(&r->gw6) : r->gw ? nl_ip_str(r->gw) : _("direct"),
+                  n->ifc[r->ifx].name, r->metric,
                   r->proto == NL_RT_CONNECTED ? T_DIM : r->proto == NL_RT_STATIC ? T_INFO : T_ACK,
                   nl_route_proto_name(r->proto));
     }

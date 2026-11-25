@@ -482,6 +482,7 @@ void            nl_route_set(nl_node *n, nl_ip dst, int plen, nl_ip gw, int ifx,
 void            nl_route_del(nl_node *n, nl_ip dst, int plen, int proto);
 void            nl_route_flush(nl_node *n, int proto);
 const nl_route *nl_route_lookup(const nl_node *n, nl_ip dst);
+void            nl_route_set_via6(nl_node *n, nl_ip dst, int plen, const nl_ip6 *gw6, int ifx, int metric, int proto);
 ```
 
 A route is identified by `(dst, plen, proto)`: setting it again replaces it.
@@ -489,7 +490,11 @@ A route is identified by `(dst, plen, proto)`: setting it again replaces it.
 `NL_RT_CONNECTED` 0, `NL_RT_STATIC` 1, `NL_RT_DHCP` 5, `NL_RT_BGP` 20,
 `NL_RT_OSPF` 110, `NL_RT_RIP` 120. Lookup prefers the longest prefix, then
 the lowest distance, then the lowest metric, and skips routes through
-unusable interfaces. `gw` 0 means directly connected.
+unusable interfaces. `gw` 0 means directly connected. `nl_route_set_via6`
+installs an IPv4 route whose next hop is an IPv6 neighbour (`via6` is 1 and
+`gw6` holds the address in the `nl_route`): the stack then resolves the
+link-layer address with Neighbor Discovery, so the link needs no IPv4
+addresses (this is how `bgp` installs routes learned with RFC 8950).
 
 A routing protocol installs its results with its own `proto`, removes them
 with `nl_route_del`, and calls `nl_route_flush(n, proto)` in `stop` and
