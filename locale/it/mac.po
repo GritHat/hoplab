@@ -1,0 +1,128 @@
+# Italian translation of netlab: medium access laboratory
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: it\n"
+
+msgid "pure ALOHA"
+msgstr "ALOHA puro"
+
+msgid "slotted ALOHA"
+msgstr "slotted ALOHA"
+
+msgid "non-persistent CSMA"
+msgstr "CSMA non persistente"
+
+msgid "1-persistent CSMA"
+msgstr "CSMA 1-persistente"
+
+msgid "p-persistent CSMA"
+msgstr "CSMA p-persistente"
+
+msgid "CSMA/CD (Ethernet)"
+msgstr "CSMA/CD (Ethernet)"
+
+msgid "CSMA/CA (Wi-Fi)"
+msgstr "CSMA/CA (Wi-Fi)"
+
+msgid "theory"
+msgstr "teoria"
+
+msgid "frames delivered"
+msgstr "frame consegnati"
+
+msgid "collided transmissions"
+msgstr "trasmissioni in collisione"
+
+msgid "mean delay"
+msgstr "ritardo medio"
+
+msgid "frame times"
+msgstr "tempi di frame"
+
+msgid "collision"
+msgstr "collisione"
+
+msgid "last"
+msgstr "ultimi"
+
+msgid "so far"
+msgstr "finora"
+
+msgid "stations"
+msgstr "stazioni"
+
+msgid "load"
+msgstr "carico"
+
+msgid "best throughput"
+msgstr "throughput massimo"
+
+msgid "unknown protocol"
+msgstr "protocollo sconosciuto"
+
+msgid "offered load"
+msgstr "carico offerto"
+
+msgid "frame time"
+msgstr "tempo di frame"
+
+msgid ", two groups that cannot hear each other"
+msgstr ", due gruppi che non si sentono fra loro"
+
+msgid "delivered"
+msgstr "consegnati"
+
+msgid "waiting"
+msgstr "in attesa"
+
+msgid "collisions"
+msgstr "collisioni"
+
+msgid "dropped"
+msgstr "scartati"
+
+msgid "delay"
+msgstr "ritardo"
+
+msgid "run NODE mac proto=aloha stations=10 load=0.5"
+msgstr "run NODO mac proto=aloha stations=10 load=0.5"
+
+msgid "medium access lab — ALOHA, CSMA, CSMA/CD, CSMA/CA on a shared channel"
+msgstr "laboratorio di accesso al mezzo — ALOHA, CSMA, CSMA/CD, CSMA/CA su un canale condiviso"
+
+msgid ""
+"run NODE mac proto=aloha|slotted|csma|csma1|csmap|csmacd|csmaca [stations=10] [load=0.5]\n"
+"             [frame=1ms] [prop=frame/100] [p=0.1] [hidden=1] [rts=1] [duration=TIME]\n"
+"  load is the new traffic of all stations together, in frames per frame time;\n"
+"  prop is the propagation delay (a = prop/frame); hidden and rts apply to csmaca.\n"
+"run NODE mac sweep proto=NAME [stations=10] [prop=..]   throughput S against load\n"
+"run NODE mac stop"
+msgstr ""
+"run NODO mac proto=aloha|slotted|csma|csma1|csmap|csmacd|csmaca [stations=10] [load=0.5]\n"
+"             [frame=1ms] [prop=frame/100] [p=0.1] [hidden=1] [rts=1] [duration=TEMPO]\n"
+"  load è il nuovo traffico di tutte le stazioni insieme, in frame per tempo di frame;\n"
+"  prop è il ritardo di propagazione (a = prop/frame); hidden e rts valgono per csmaca.\n"
+"run NODO mac sweep proto=NOME [stations=10] [prop=..]   throughput S in funzione del carico\n"
+"run NODO mac stop"
+
+msgid ""
+"When many stations share one channel, two transmissions that overlap destroy each other: a collision. A medium access protocol decides who may talk and when, without a central arbiter.\n"
+"\n"
+"ALOHA does not even try: transmit when you have a frame, and if no acknowledgement comes, wait a random time and repeat. A frame survives only if nobody else starts during the frame time before it or during the frame itself, a vulnerable period of two frame times, which gives a throughput S = G·e^(-2G) and a peak of only 18% at G = 0.5 (G is the attempt rate in frames per frame time). Slotted ALOHA lets stations start only at slot boundaries, halving the vulnerable period: S = G·e^(-G), peak 37% at G = 1.\n"
+"\n"
+"Carrier sensing (CSMA) listens before talking. It cannot be perfect, because a signal takes time to arrive: two stations that start within one propagation delay of each other both hear silence. The smaller a = propagation delay / frame time, the better CSMA works. Variants differ in what they do when the channel is busy: 1-persistent waits and transmits the instant it is free (and collides with everyone else who waited), non-persistent goes away for a random time, p-persistent transmits with probability p in each small slot.\n"
+"\n"
+"CSMA/CD (classic Ethernet) also listens while transmitting: on a collision it stops at once, sends a short jam, and retries after a random number of slots drawn from a window that doubles at every collision (binary exponential backoff), so the cost of a collision is a few propagation delays instead of a whole frame. Radios cannot listen while they transmit, so Wi-Fi uses CSMA/CA: wait for the channel to stay idle (DIFS), then count down a random backoff that freezes whenever someone else talks, and rely on an acknowledgement to learn about collisions. Two stations that cannot hear each other (hidden terminals) defeat carrier sensing altogether; a short RTS answered by a CTS from the access point reserves the channel so that only the cheap RTS can collide.\n"
+"\n"
+"Model and simplifications: time advances in ticks of one propagation delay and every station is one tick away from every other; frames have a fixed length; arrivals are Poisson and each station queues up to 16 frames. The theoretical curves assume infinitely many stations and are shown against the measured attempt rate, so expect agreement in shape, not in the last digit. CSMA/CA slots, DIFS, RTS/CTS and ACK durations are in ticks, not 802.11 timings."
+msgstr ""
+"Quando molte stazioni condividono un canale, due trasmissioni che si sovrappongono si distruggono a vicenda: una collisione. Un protocollo di accesso al mezzo decide chi può parlare e quando, senza un arbitro centrale.\n"
+"\n"
+"ALOHA non ci prova nemmeno: trasmetti quando hai un frame e, se non arriva il riscontro, aspetta un tempo casuale e ripeti. Un frame sopravvive solo se nessun altro comincia durante il tempo di frame che lo precede o durante il frame stesso, un periodo vulnerabile di due tempi di frame, che dà un throughput S = G·e^(-2G) e un massimo di appena il 18% a G = 0,5 (G è il tasso di tentativi in frame per tempo di frame). Slotted ALOHA lascia partire le stazioni solo ai confini degli slot, dimezzando il periodo vulnerabile: S = G·e^(-G), massimo 37% a G = 1.\n"
+"\n"
+"Il carrier sensing (CSMA) ascolta prima di parlare. Non può essere perfetto, perché un segnale impiega tempo ad arrivare: due stazioni che partono a meno di un ritardo di propagazione l'una dall'altra sentono entrambe silenzio. Più è piccolo a = ritardo di propagazione / tempo di frame, meglio funziona CSMA. Le varianti differiscono in ciò che fanno quando il canale è occupato: l'1-persistente aspetta e trasmette nell'istante in cui si libera (e collide con tutti gli altri che aspettavano), il non persistente se ne va per un tempo casuale, il p-persistente trasmette con probabilità p in ogni piccolo slot.\n"
+"\n"
+"CSMA/CD (l'Ethernet classica) ascolta anche mentre trasmette: a una collisione si ferma subito, invia un breve jam e riprova dopo un numero casuale di slot estratto da una finestra che raddoppia a ogni collisione (backoff esponenziale binario), così una collisione costa qualche ritardo di propagazione invece di un frame intero. Le radio non possono ascoltare mentre trasmettono, quindi il Wi-Fi usa CSMA/CA: aspetta che il canale resti libero (DIFS), poi conta alla rovescia un backoff casuale che si ferma ogni volta che parla qualcun altro, e si affida a un riscontro per scoprire le collisioni. Due stazioni che non si sentono (terminali nascosti) rendono inutile il carrier sensing; un breve RTS a cui l'access point risponde con un CTS prenota il canale, così può collidere solo l'RTS, che costa poco.\n"
+"\n"
+"Modello e semplificazioni: il tempo avanza a passi di un ritardo di propagazione e ogni stazione dista un passo da tutte le altre; i frame hanno lunghezza fissa; gli arrivi sono di Poisson e ogni stazione accoda fino a 16 frame. Le curve teoriche assumono infinite stazioni e sono mostrate rispetto al tasso di tentativi misurato: aspettati accordo nella forma, non nell'ultima cifra. Slot, DIFS, RTS/CTS e ACK di CSMA/CA durano un numero di passi, non i tempi di 802.11."

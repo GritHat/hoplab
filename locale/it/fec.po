@@ -1,0 +1,194 @@
+# Italian translation of netlab: link codes and coding bench
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: it\n"
+
+msgid "one even-parity bit per frame: detects an odd number of flipped bits"
+msgstr "un bit di parità pari per frame: rileva un numero dispari di bit invertiti"
+
+msgid "16-bit Internet checksum trailer: detection, weak against some patterns"
+msgstr "checksum di Internet a 16 bit in coda: rilevazione, debole contro alcune combinazioni"
+
+msgid "CRC-8 trailer: detects every burst up to 8 bits"
+msgstr "CRC-8 in coda: rileva ogni burst fino a 8 bit"
+
+msgid "CRC-16 (CCITT) trailer: detects every burst up to 16 bits"
+msgstr "CRC-16 (CCITT) in coda: rileva ogni burst fino a 16 bit"
+
+msgid "CRC-32 (IEEE 802.3, as in Ethernet) trailer: detection"
+msgstr "CRC-32 (IEEE 802.3, come in Ethernet) in coda: rilevazione"
+
+msgid "three copies and a majority vote: corrects, at three times the airtime"
+msgstr "tre copie e voto a maggioranza: corregge, al triplo del tempo di trasmissione"
+
+msgid "Hamming(7,4): corrects one flipped bit in every 7"
+msgstr "Hamming(7,4): corregge un bit invertito ogni 7"
+
+msgid "Hamming(8,4) SECDED: corrects one bit per byte, detects two"
+msgstr "Hamming(8,4) SECDED: corregge un bit per byte, ne rileva due"
+
+msgid "Hamming(7,4) with a block interleaver: also survives bursts"
+msgstr "Hamming(7,4) con interleaver a blocchi: resiste anche ai burst"
+
+msgid "Reed-Solomon (255,223) over GF(256): corrects 16 bytes per block, bursts included"
+msgstr "Reed-Solomon (255,223) su GF(256): corregge 16 byte per blocco, burst compresi"
+
+msgid "arrived intact"
+msgstr "arrivato intatto"
+
+msgid "errors corrected: the data is right"
+msgstr "errori corretti: i dati sono giusti"
+
+msgid "errors detected: frame discarded"
+msgstr "errori rilevati: frame scartato"
+
+msgid "errors NOT detected: wrong data delivered"
+msgstr "errori NON rilevati: consegnati dati sbagliati"
+
+msgid "block"
+msgstr "blocco"
+
+msgid "bit(s) flipped"
+msgstr "bit invertiti"
+
+msgid "syndrome"
+msgstr "sindrome"
+
+msgid "that bit is flipped back"
+msgstr "quel bit viene reinvertito"
+
+msgid "the wrong bit is \"corrected\""
+msgstr "viene \"corretto\" il bit sbagliato"
+
+msgid "overall parity"
+msgstr "parità globale"
+
+msgid "wrong"
+msgstr "errata"
+
+msgid "right"
+msgstr "giusta"
+
+msgid "double error: give up"
+msgstr "errore doppio: si rinuncia"
+
+msgid "single error: corrected"
+msgstr "errore singolo: corretto"
+
+msgid "bit position(s) where the three copies disagree: the majority wins"
+msgstr "posizioni di bit in cui le tre copie non concordano: vince la maggioranza"
+
+msgid "byte(s) located and repaired from the 32 parity bytes (up to 16 per block)"
+msgstr "byte individuati e riparati con i 32 byte di parità (fino a 16 per blocco)"
+
+msgid "the check recomputed by the receiver does not match the trailer"
+msgstr "il controllo ricalcolato dal receiver non coincide con quello in coda"
+
+msgid "the damaged frame still passes the check: this code cannot see this pattern"
+msgstr "il frame danneggiato supera comunque il controllo: questo codice non vede questa combinazione"
+
+msgid "unknown code"
+msgstr "codice sconosciuto"
+
+msgid "bit(s) flipped on the channel"
+msgstr "bit invertiti dal canale"
+
+msgid " in one burst"
+msgstr " in un solo burst"
+
+msgid "the receiver believes the text was"
+msgstr "il receiver crede che il testo fosse"
+
+msgid "frames per point"
+msgstr "frame per punto"
+
+msgid ", errors in bursts"
+msgstr ", errori a burst"
+
+msgid "delivered"
+msgstr "consegnati"
+
+msgid "repaired"
+msgstr "riparati"
+
+msgid "discarded"
+msgstr "scartati"
+
+msgid "silently wrong"
+msgstr "sbagliati in silenzio"
+
+msgid "cost"
+msgstr "costo"
+
+msgid "bits sent per data bit"
+msgstr "bit inviati per bit di dati"
+
+msgid "recv"
+msgstr "ricev"
+
+msgid "sent"
+msgstr "inv"
+
+msgid "data"
+msgstr "dati"
+
+msgid "redundancy"
+msgstr "ridondanza"
+
+msgid "flipped"
+msgstr "invertito"
+
+msgid "decoded text"
+msgstr "testo decodificato"
+
+msgid "sweep"
+msgstr "scansione"
+
+msgid "airtime"
+msgstr "tempo di trasmissione"
+
+msgid ", bursts"
+msgstr ", burst"
+
+msgid "intact"
+msgstr "intatti"
+
+msgid "dropped"
+msgstr "scartati"
+
+msgid "run NODE coding show text=HELLO code=hamming74 flips=1"
+msgstr "run NODO coding show text=HELLO code=hamming74 flips=1"
+
+msgid "coding bench — error detecting and correcting codes, bit by bit"
+msgstr "banco dei codici — rilevazione e correzione degli errori, bit per bit"
+
+msgid ""
+"run NODE coding show [text=HELLO] [code=hamming74] [flips=1] [burst=1] [pos=3,17]\n"
+"  encode the text, flip bits (random, one burst, or the listed positions), decode.\n"
+"run NODE coding sweep [code=hamming74] [frames=2000] [size=100] [burst=N] [ber=X]\n"
+"  frames delivered / discarded / silently wrong over a range of bit error rates.\n"
+"run NODE coding list\n"
+"  Codes: parity checksum crc8 crc16 crc32 rep3 hamming74 hamming84 hamming74i rs.\n"
+"  The same names work on links: link A B ber=1e-4 codec=hamming74"
+msgstr ""
+"run NODO coding show [text=HELLO] [code=hamming74] [flips=1] [burst=1] [pos=3,17]\n"
+"  codifica il testo, inverte dei bit (a caso, in un burst o nelle posizioni indicate), decodifica.\n"
+"run NODO coding sweep [code=hamming74] [frames=2000] [size=100] [burst=N] [ber=X]\n"
+"  frame consegnati / scartati / sbagliati in silenzio su vari tassi di errore sul bit.\n"
+"run NODO coding list\n"
+"  Codici: parity checksum crc8 crc16 crc32 rep3 hamming74 hamming84 hamming74i rs.\n"
+"  Gli stessi nomi valgono sui collegamenti: link A B ber=1e-4 codec=hamming74"
+
+msgid ""
+"A channel flips bits. The sender can only fight back by sending more bits than the data: redundancy computed from the data, which the receiver recomputes and compares. Detection codes add little: a parity bit catches any odd number of flips and misses every even one; the Internet checksum adds 16 bits but is blind to errors that cancel in the sum; a CRC treats the frame as a polynomial and sends the remainder of a division, which catches every burst shorter than the CRC and all but one in 2^n of the others. A frame found damaged is discarded, and someone above must send it again.\n"
+"\n"
+"Correction codes add enough redundancy to find WHERE the error is. Repetition sends three copies and votes. Hamming(7,4) protects 4 data bits with 3 parity bits placed so that the pattern of failed checks (the syndrome) spells the position of the flipped bit; with two flips it confidently repairs the wrong bit, which is why the (8,4) variant adds an overall parity bit to tell one error from two (SECDED). Reed-Solomon works on bytes instead of bits: 32 parity bytes per block of 255 let it repair any 16 damaged bytes, however many bits are wrong inside them, so it shrugs off bursts. An interleaver spreads a burst over many codewords, turning it into isolated errors a weak code can fix.\n"
+"\n"
+"The trade-off is rate against residual errors: every redundant bit costs airtime, and which code wins depends on the error rate and on whether errors come alone or in bursts. Simplifications here: frames are coded whole, the interleaver spans one frame, and Reed-Solomon uses fixed (255,223) blocks, the last one shortened."
+msgstr ""
+"Un canale inverte dei bit. Il sender può difendersi solo inviando più bit dei dati: ridondanza calcolata dai dati, che il receiver ricalcola e confronta. I codici di rilevazione aggiungono poco: un bit di parità scopre ogni numero dispari di inversioni e nessun numero pari; il checksum di Internet aggiunge 16 bit ma è cieco agli errori che si compensano nella somma; un CRC tratta il frame come un polinomio e invia il resto di una divisione, il che scopre ogni burst più corto del CRC e tutti gli altri tranne uno su 2^n. Un frame trovato danneggiato viene scartato, e qualcuno più in alto deve rimandarlo.\n"
+"\n"
+"I codici di correzione aggiungono abbastanza ridondanza da trovare DOVE si trova l'errore. La ripetizione invia tre copie e vota. Hamming(7,4) protegge 4 bit di dati con 3 bit di parità disposti in modo che l'insieme dei controlli falliti (la sindrome) scriva la posizione del bit invertito; con due inversioni ripara con sicurezza il bit sbagliato, ed è per questo che la variante (8,4) aggiunge un bit di parità globale per distinguere un errore da due (SECDED). Reed-Solomon lavora sui byte invece che sui bit: 32 byte di parità per blocco di 255 gli permettono di riparare 16 byte danneggiati qualsiasi, comunque siano sbagliati i bit al loro interno, quindi i burst non lo preoccupano. Un interleaver distribuisce un burst su molte parole di codice, trasformandolo in errori isolati che anche un codice debole sa correggere.\n"
+"\n"
+"Il compromesso è fra rate ed errori residui: ogni bit ridondante costa tempo di trasmissione, e quale codice convenga dipende dal tasso di errore e dal fatto che gli errori arrivino isolati o a burst. Semplificazioni: i frame sono codificati per intero, l'interleaver copre un solo frame, e Reed-Solomon usa blocchi fissi (255,223), con l'ultimo accorciato."
