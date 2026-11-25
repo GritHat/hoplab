@@ -4,8 +4,10 @@ level 1
 layer 2
 topic link
 about      The smallest network there is. h1 wants to send an IP packet to h2, but a cable carries frames addressed by MAC address, and h1 only knows the IP address. Watch ARP ask "who has 10.0.0.2?" in broadcast, the answer come back, and only then the ping go out. The second ping finds the answer in the ARP cache and leaves at once.
+about
 about      Things to try: open the Packets view (p) and press Enter on a frame to see every header field and the bytes that carry it. Open the ARP tab of h1. Type  :link h1 h2 down  and ping again.
 about[it]  La rete più piccola che esista. h1 vuole inviare un pacchetto IP a h2, ma un cavo trasporta frame indirizzati con l'indirizzo MAC, e h1 conosce solo l'indirizzo IP. Osserva ARP chiedere in broadcast "chi ha 10.0.0.2?", la risposta tornare indietro, e solo allora partire il ping. Il secondo ping trova la risposta nella cache ARP e parte subito.
+about[it]
 about[it]  Da provare: apri la vista Pacchetti (p) e premi Invio su un frame per vedere ogni campo delle intestazioni e i byte che lo trasportano. Apri la scheda ARP di h1. Scrivi  :link h1 h2 down  e riprova il ping.
 param      delay 20ms Propagation delay of the cable
 param[it]  delay Ritardo di propagazione del cavo

@@ -4,8 +4,10 @@ level 2
 layer 3
 topic ip
 about      The middle link of this path only carries 600-byte packets. A 1400-byte ping is cut into fragments by r1; each fragment travels as an independent packet and only the destination puts them back together, so losing one fragment loses the whole datagram. With the "don't fragment" flag the router refuses, drops the packet and reports the MTU of the next hop in an ICMP "fragmentation needed" message: this is how a sender discovers the path MTU and shrinks its packets.
+about
 about      Things to try: in the Packets view open a fragment and read the identification, MF flag and offset fields; add loss on the middle link and compare how often a fragmented ping fails with a small one.
 about[it]  Il collegamento centrale di questo percorso trasporta solo pacchetti da 600 byte. Un ping da 1400 byte viene tagliato in frammenti da r1; ogni frammento viaggia come un pacchetto indipendente e solo la destinazione li rimette insieme, quindi perdere un frammento significa perdere l'intero datagramma. Con il flag "don't fragment" il router si rifiuta, scarta il pacchetto e riferisce la MTU del salto successivo in un messaggio ICMP "fragmentation needed": è così che un mittente scopre la MTU del percorso e riduce i suoi pacchetti.
+about[it]
 about[it]  Da provare: nella vista Pacchetti apri un frammento e leggi i campi identification, flag MF e offset; aggiungi perdita sul collegamento centrale e confronta quanto spesso fallisce un ping frammentato rispetto a uno piccolo.
 param      mtu 600 MTU of the middle link
 param[it]  mtu MTU del collegamento centrale

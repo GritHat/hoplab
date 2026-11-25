@@ -4,8 +4,10 @@ level 1
 layer 3
 topic ip
 about      h1 and h2 live on different networks, joined by the router r1. Every packet from h1 to h2 is sent to the default gateway, which forwards it and decrements its TTL. Three experiments follow each other: a ping, a traceroute that discovers the router by sending packets with a small TTL, and a 3000-byte UDP datagram that does not fit in one 1500-byte frame and is fragmented.
+about
 about      Things to try: select r1 (n) and read its routing table; watch the Sequence view (s); raise the loss parameter and see ping report the missing replies.
 about[it]  h1 e h2 stanno su reti diverse, unite dal router r1. Ogni pacchetto da h1 a h2 viene inviato al gateway predefinito, che lo inoltra e ne decrementa il TTL. Seguono tre esperimenti: un ping, un traceroute che scopre il router inviando pacchetti con TTL piccolo, e un datagramma UDP da 3000 byte che non entra in un frame da 1500 byte e viene frammentato.
+about[it]
 about[it]  Da provare: seleziona r1 (n) e leggi la sua tabella di instradamento; guarda la vista Sequenza (s); aumenta il parametro di perdita e osserva il ping segnalare le risposte mancanti.
 param      loss 0 Packet loss on the h1 link (0..1)
 param[it]  loss Perdita di pacchetti sul collegamento di h1 (0..1)

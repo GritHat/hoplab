@@ -4,8 +4,10 @@ level 1
 layer 1
 topic link
 about      A link is not a perfect pipe. Its propagation delay postpones every bit, its bandwidth limits how many bits per second get through (so a long frame takes longer to transmit than a short one), random loss removes frames, and when packets arrive faster than they can leave they wait in a queue, and are dropped when it is full. Here a 2 Mbit/s stream is pushed into a link slower than that: watch the queue number grow on the map next to h1, the delay measured by the sink climb, and then the drops begin.
+about
 about      Things to try: change bw, delay, loss and queue and predict the ping time (2 x delay + transmission times) and the loss seen by the sink (about 1 - bw/2M when the queue is full). Open the Links tab of h1 and the Graphs view (g) on h2.
 about[it]  Un collegamento non è un tubo perfetto. Il ritardo di propagazione posticipa ogni bit, la larghezza di banda limita quanti bit al secondo passano (quindi un frame lungo impiega più tempo di uno corto a essere trasmesso), la perdita casuale elimina frame, e quando i pacchetti arrivano più in fretta di quanto possano partire aspettano in una coda, e vengono scartati quando è piena. Qui un flusso da 2 Mbit/s viene spinto in un collegamento più lento: osserva il numero della coda crescere sulla mappa accanto a h1, il ritardo misurato dal sink salire, e poi iniziare gli scarti.
+about[it]
 about[it]  Da provare: cambia bw, delay, loss e queue e prevedi il tempo di ping (2 x ritardo + tempi di trasmissione) e la perdita vista dal sink (circa 1 - bw/2M a coda piena). Apri la scheda Collegamenti di h1 e la vista Grafici (g) su h2.
 param      bw 1M Bandwidth of the link
 param[it]  bw Larghezza di banda del collegamento

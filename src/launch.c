@@ -171,7 +171,8 @@ int nl_launch_windows(const char *scenario, int argc, char **argv, const char *m
         if (in_tmux)
             return 0;
         snprintf(line, sizeof(line), "tmux set-option -t %s mouse on >/dev/null 2>&1; "
-                 "tmux select-pane -t %s.0; tmux attach -t %s", sess, sess, sess);
+                 "tmux set-option -t %s status off >/dev/null 2>&1; "
+                 "tmux select-pane -t %s.0; tmux attach -t %s", sess, sess, sess, sess);
         if (isatty(STDIN_FILENO) && isatty(STDOUT_FILENO))
             return system(line) == 0 ? 0 : 2;
         printf("%s  tmux attach -t %s\n", _("tmux session started; attach with:"), sess);

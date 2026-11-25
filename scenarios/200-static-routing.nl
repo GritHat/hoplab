@@ -4,8 +4,10 @@ level 2
 layer 3
 topic routing
 about      Three routers in a row, configured by hand. A router forwards a packet by looking up the destination in its table and choosing the longest matching prefix; it knows nothing of the rest of the path. At the start r2 has no route to h2's network: h1's ping gets as far as r2, which answers "network unreachable". At 6 s the missing route is added and the ping goes through. But replies need routes too: every router on the way back must know h1's network.
+about
 about      Things to try: read the Routes tab of each router; remove a return route with  :route r3 del 10.0.1.0/24  and see requests arrive but replies die; add a more specific route and see it win over a shorter prefix.
 about[it]  Tre router in fila, configurati a mano. Un router inoltra un pacchetto cercando la destinazione nella sua tabella e scegliendo il prefisso più lungo che corrisponde; non sa nulla del resto del percorso. All'inizio r2 non ha una rotta verso la rete di h2: il ping di h1 arriva fino a r2, che risponde "network unreachable". A 6 s la rotta mancante viene aggiunta e il ping passa. Ma anche le risposte hanno bisogno di rotte: ogni router sulla via del ritorno deve conoscere la rete di h1.
+about[it]
 about[it]  Da provare: leggi la scheda Rotte di ogni router; togli una rotta di ritorno con  :route r3 del 10.0.1.0/24  e osserva le richieste arrivare ma le risposte morire; aggiungi una rotta più specifica e guardala vincere su un prefisso più corto.
 
 node h1 host

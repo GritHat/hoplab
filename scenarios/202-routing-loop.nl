@@ -4,8 +4,10 @@ level 2
 layer 3
 topic routing
 about      Two routers each believe the other one leads to network 10.9.0.0/16: a packet for it bounces between them. Nothing in forwarding itself would ever stop it; the time-to-live field does. Every hop decrements it, the router that brings it to zero discards the packet and tells the sender with an ICMP "time exceeded". Watch one ping turn into dozens of transmissions on the r1-r2 link, then the error come back; traceroute shows the two routers alternating.
+about
 about      Things to try: send the ping with ttl=8 and count the bounces; fix the loop with  :route r2 del 10.9.0.0/16  and see "network unreachable" instead: a clean failure is better than a loop.
 about[it]  Due router credono ciascuno che l'altro porti alla rete 10.9.0.0/16: un pacchetto destinato a essa rimbalza fra i due. Nulla nell'inoltro lo fermerebbe mai; ci pensa il campo time-to-live. Ogni salto lo decrementa, il router che lo porta a zero scarta il pacchetto e avvisa il mittente con un ICMP "time exceeded". Osserva un solo ping trasformarsi in decine di trasmissioni sul collegamento r1-r2, poi l'errore tornare indietro; traceroute mostra i due router che si alternano.
+about[it]
 about[it]  Da provare: invia il ping con ttl=8 e conta i rimbalzi; ripara il ciclo con  :route r2 del 10.9.0.0/16  e osserva "network unreachable" al suo posto: un fallimento pulito è meglio di un ciclo.
 param      ttl 16 Initial TTL of the ping
 param[it]  ttl TTL iniziale del ping

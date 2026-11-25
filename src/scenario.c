@@ -477,10 +477,15 @@ static int meta_directive(const char *key, int loc, const nl_args *a, const char
         if (!loc && m->loc_about)
             return 1;
         m->loc_about |= loc;
-        /* every `about` line is a paragraph */
+        /* consecutive `about` lines continue the paragraph; an empty one ends it */
         len = strlen(m->about);
-        if (*text)
-            snprintf(m->about + len, sizeof(m->about) - len, "%s%s", len ? "\n\n" : "", text);
+        if (!*text) {
+            if (len && m->about[len - 1] != '\n')
+                snprintf(m->about + len, sizeof(m->about) - len, "\n\n");
+        } else {
+            snprintf(m->about + len, sizeof(m->about) - len, "%s%s",
+                     len && m->about[len - 1] != '\n' ? " " : "", text);
+        }
     } else if (strcmp(key, "level") == 0) {
         m->level = atoi(text);
     } else if (strcmp(key, "layer") == 0) {

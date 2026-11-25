@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="t d">
+  <title id="t">netlab</title>
+  <desc id="d">Three network nodes inside a terminal window. The direct link between two of them is dashed and loses a packet; an arc above it delivers one all the same: reliable transfer over an unreliable channel.</desc>
+  <defs>
+    <linearGradient id="arc" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5fafff"/>
+      <stop offset="1" stop-color="#87d787"/>
+    </linearGradient>
+  </defs>
+  <!-- the terminal -->
+  <rect x="24" y="24" width="464" height="464" rx="72" fill="#101116" stroke="#2c3240" stroke-width="6"/>
+  <circle cx="92" cy="88" r="11" fill="#ff5f5f"/>
+  <circle cx="128" cy="88" r="11" fill="#ffd75f"/>
+  <circle cx="164" cy="88" r="11" fill="#87d787"/>
+  <!-- reliable links -->
+  <g stroke="#5c6475" stroke-width="10" stroke-linecap="round">
+    <line x1="140" y1="236" x2="256" y2="396"/>
+    <line x1="372" y1="236" x2="256" y2="396"/>
+  </g>
+  <!-- the unreliable channel, and the packet it lost -->
+  <line x1="140" y1="236" x2="372" y2="236" stroke="#5c6475" stroke-width="10" stroke-linecap="round" stroke-dasharray="4 26"/>
+  <g stroke="#ff5f5f" stroke-width="12" stroke-linecap="round">
+    <line x1="240" y1="220" x2="272" y2="252"/>
+    <line x1="272" y1="220" x2="240" y2="252"/>
+  </g>
+  <!-- the retransmission that arrives -->
+  <path d="M 140 236 C 176 112, 326 98, 362 164" fill="none" stroke="url(#arc)" stroke-width="14" stroke-linecap="round"/>
+  <path d="M 342 172 L 374 196 L 384 152 Z" fill="#87d787"/>
+  <circle cx="252" cy="131" r="17" fill="#ff87d7" stroke="#101116" stroke-width="6"/>
+  <!-- host, router, switch -->
+  <circle cx="140" cy="236" r="40" fill="#5fafff" stroke="#101116" stroke-width="8"/>
+  <rect x="338" y="202" width="68" height="68" rx="10" transform="rotate(45 372 236)" fill="#87d787" stroke="#101116" stroke-width="8"/>
+  <rect x="218" y="358" width="76" height="76" rx="16" fill="#ffd75f" stroke="#101116" stroke-width="8"/>
+</svg>
