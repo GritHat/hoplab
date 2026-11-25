@@ -7,12 +7,34 @@ PROGS   = stop_and_wait_send stop_and_wait_recv \
           go_back_n_send go_back_n_recv \
           selective_repeat_send selective_repeat_recv
 
-.PHONY: all clean
-all: $(PROGS)
+# netlab: every .c file in src/ is part of the program (modules register
+# themselves, so adding a protocol means adding a file)
+NL_SRC  = $(wildcard src/*.c)
+NL_OBJ  = $(patsubst src/%.c,build/%.o,$(NL_SRC)) $(patsubst %.c,build/common-%.o,$(COMMON))
+NL_HDR  = $(wildcard src/*.h) $(HEADERS)
 
-# each program is one .c file plus the common modules
+.PHONY: all clean test
+all: $(PROGS) netlab
+
+# each demo program is one .c file plus the common modules
 %: %.c $(COMMON) $(HEADERS)
 	$(CC) $(CFLAGS) $< $(COMMON) -o $@
 
+netlab: $(NL_OBJ)
+	$(CC) $(CFLAGS) $(NL_OBJ) -lm -o $@
+
+build/%.o: src/%.c $(NL_HDR) | build
+	$(CC) $(CFLAGS) -I. -Isrc -c $< -o $@
+
+build/common-%.o: %.c $(HEADERS) | build
+	$(CC) $(CFLAGS) -c $< -o $@
+
+build:
+	mkdir -p build
+
+# headless run of every scenario in the catalog, checking its `expect` lines
+test: netlab
+	./netlab check
+
 clean:
-	rm -f $(PROGS)
+	rm -rf $(PROGS) netlab build
