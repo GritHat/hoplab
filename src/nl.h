@@ -569,6 +569,18 @@ int         nl_resolve6(const char *s, nl_ip6 *out);
 /* Add an address to an interface: installs the connected route and starts
  * duplicate address detection. Returns 0, or -1 when the interface is full. */
 int   nl_if_add_addr6(nl_node *n, int ifx, const nl_ip6 *ip, int plen);
+/* Remove an address (not the link-local one) and its connected route: for
+ * addresses with a lifetime, such as DHCPv6 leases */
+void  nl_if_del_addr6(nl_node *n, int ifx, const nl_ip6 *ip);
+/* Receive packets sent to a multicast group (ff02::1:2 for DHCPv6 servers, ...) */
+void  nl_ip6_join(nl_node *n, const nl_ip6 *group);
+void  nl_ip6_leave(nl_node *n, const nl_ip6 *group);
+/* Called on a host for every Router Advertisement accepted on an interface,
+ * with its M (managed: addresses from DHCPv6) and O (other configuration
+ * from DHCPv6) flags */
+typedef void (*nl_ra_fn)(nl_node *n, void *ctx, int ifx, const nl_ip6 *router, int managed, int other);
+void  nl_ra_watch(nl_node *n, nl_ra_fn fn, void *ctx);
+void  nl_ra_unwatch(nl_node *n, nl_ra_fn fn, void *ctx);
 int   nl_ip6_is_local(const nl_node *n, const nl_ip6 *ip);
 nl_node *nl_node_by_ip6(const nl_ip6 *ip);
 /* Source address the node would use towards dst (RFC 6724 in miniature:

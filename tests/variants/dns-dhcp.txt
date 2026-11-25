@@ -38,3 +38,17 @@ PASS  440-dns-poisoning  randomize=1 guesses=2000
 PASS  440-dns-poisoning  randomize=1 rounds=1
 PASS  440-dns-poisoning  rounds=1
 PASS  440-dns-poisoning  rounds=200
+PASS  242-dns-aaaa
+PASS  242-dns-aaaa  v6=0
+PASS  242-dns-aaaa  delay=1ms
+PASS  242-dns-aaaa  delay=30ms
+PASS  242-dns-aaaa  v6=0 delay=30ms
+PASS  243-dhcpv6
+PASS  243-dhcpv6  mode=slaac
+PASS  243-dhcpv6  mode=stateless
+PASS  243-dhcpv6  mode=stateful rapid=1
+PASS  243-dhcpv6  mode=stateless rapid=1
+PASS  243-dhcpv6  lease=4s
+PASS  243-dhcpv6  lease=6s
+PASS  243-dhcpv6  lease=30s
+PASS  243-dhcpv6  mode=slaac lease=6s

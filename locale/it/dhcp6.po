@@ -1,0 +1,139 @@
+# Italian catalog for src/dhcp6.c
+msgid ""
+msgstr "Project-Id-Version: hoplab\nPO-Revision-Date: 2026-11-25 00:00+0000\nLast-Translator: \nLanguage-Team: Italian\nLanguage: it\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\n"
+
+msgid "from"
+msgstr "da"
+
+msgid "state"
+msgstr "stato"
+
+msgid "for"
+msgstr "per"
+
+msgid "pool"
+msgstr "pool"
+
+msgid "lease renewed:"
+msgstr "prestito rinnovato:"
+
+msgid "address"
+msgstr "indirizzo"
+
+msgid "server"
+msgstr "server"
+
+msgid "router"
+msgstr "router"
+
+msgid "waiting for a router advertisement"
+msgstr "in attesa di un router advertisement"
+
+msgid "configured (stateless)"
+msgstr "configurato (stateless)"
+
+msgid "released"
+msgstr "rilasciato"
+
+msgid "pool exhausted: no address to offer"
+msgstr "pool esaurito: nessun indirizzo da offrire"
+
+msgid "no pool configured: no address to offer"
+msgstr "nessun pool configurato: nessun indirizzo da offrire"
+
+msgid "valid"
+msgstr "valido"
+
+msgid "released: back in the pool"
+msgstr "rilasciato: torna nel pool"
+
+msgid "expired: the address is removed, starting again"
+msgstr "scaduto: l'indirizzo viene rimosso, si ricomincia"
+
+msgid "T2: the server did not answer, REBIND with any server"
+msgstr "T2: il server non ha risposto, REBIND verso qualsiasi server"
+
+msgid "T1: time to RENEW the lease"
+msgstr "T1: è ora di rinnovare il prestito (RENEW)"
+
+msgid ", again"
+msgstr ", di nuovo"
+
+msgid "no addresses available"
+msgstr "nessun indirizzo disponibile"
+
+msgid "stateless configuration:"
+msgstr "configurazione stateless:"
+
+msgid "DNS server"
+msgstr "server DNS"
+
+msgid "the server no longer knows this lease: starting again"
+msgstr "il server non conosce più questo prestito: si ricomincia"
+
+msgid "from server"
+msgstr "dal server"
+
+msgid "M flag set, asking a DHCPv6 server for an address"
+msgstr "flag M impostato, chiedo un indirizzo a un server DHCPv6"
+
+msgid "O flag set, asking a DHCPv6 server for the other settings only"
+msgstr "flag O impostato, chiedo a un server DHCPv6 solo le altre impostazioni"
+
+msgid "M and O flags clear, DHCPv6 is not used on this link (SLAAC only)"
+msgstr "flag M e O azzerati, su questo collegamento DHCPv6 non si usa (solo SLAAC)"
+
+msgid "this lab does not use IPv6 (see `ipv6 on`)"
+msgstr "questo laboratorio non usa IPv6 (vedi `ipv6 on`)"
+
+msgid "usage: dhcp6 server|client|release [if=IFACE] ..."
+msgstr "uso: dhcp6 server|client|release [if=INTERFACCIA] ..."
+
+msgid "bad pool (FIRST-LAST, IPv6 addresses)"
+msgstr "pool non valido (PRIMO-ULTIMO, indirizzi IPv6)"
+
+msgid "unknown DNS server"
+msgstr "server DNS sconosciuto"
+
+msgid "server ready, pool from"
+msgstr "server pronto, pool da"
+
+msgid "addresses"
+msgstr "indirizzi"
+
+msgid "preferred lifetime"
+msgstr "durata preferita"
+
+msgid "server ready, stateless: settings only, no addresses"
+msgstr "server pronto, stateless: solo impostazioni, nessun indirizzo"
+
+msgid "client waiting for a router advertisement to learn whether DHCPv6 is used here"
+msgstr "client in attesa di un router advertisement per sapere se qui si usa DHCPv6"
+
+msgid "none: stateless server"
+msgstr "nessuno: server stateless"
+
+msgid "DNS server handed out"
+msgstr "server DNS comunicato"
+
+msgid "advertise / reply / information"
+msgstr "advertise / reply / information"
+
+msgid "router flags"
+msgstr "flag del router"
+
+msgid "none (SLAAC only)"
+msgstr "nessuno (solo SLAAC)"
+
+msgid "renew / rebind / expire in"
+msgstr "rinnovo / rebind / scadenza fra"
+
+msgid "DHCPv6 server and client: addresses and settings for IPv6 hosts"
+msgstr "Server e client DHCPv6: indirizzi e impostazioni per gli host IPv6"
+
+msgid "run NODE dhcp6 server [pool=FIRST-LAST] [lease=60s] [dns=ADDR] [rapid=1] [if=eth0]\n  pool: IPv6 addresses to lease (at most 64); without it the server is stateless\n  and only hands out settings. lease is the preferred lifetime (valid = 1.5 x).\nrun NODE dhcp6 client [mode=auto|stateful|stateless] [rapid=1] [if=eth0]\n  auto follows the router advertisements: M flag = ask for an address, O flag =\n  ask for the settings only, neither = do nothing (the address comes from SLAAC).\nrun NODE dhcp6 release\n  Pair it with `run ROUTER ra managed=1` or `other=1`; the default route always\n  comes from the router advertisement."
+msgstr "run NODO dhcp6 server [pool=PRIMO-ULTIMO] [lease=60s] [dns=IND] [rapid=1] [if=eth0]\n  pool: indirizzi IPv6 da dare in prestito (al massimo 64); senza, il server è stateless\n  e distribuisce solo impostazioni. lease è la durata preferita (valida = 1,5 volte).\nrun NODO dhcp6 client [mode=auto|stateful|stateless] [rapid=1] [if=eth0]\n  auto segue i router advertisement: flag M = chiede un indirizzo, flag O =\n  chiede solo le impostazioni, nessuno dei due = non fa nulla (l'indirizzo viene da SLAAC).\nrun NODO dhcp6 release\n  Va abbinato a `run ROUTER ra managed=1` oppure `other=1`; la rotta predefinita\n  viene sempre dal router advertisement."
+
+msgid "IPv6 hosts can configure themselves from router advertisements alone (SLAAC), so DHCPv6 has a narrower job than DHCP for IPv4, and the router decides whether it is used: the M flag of the advertisement says \"addresses are managed, ask a DHCPv6 server\", the O flag says \"take your address from SLAAC but ask a server for the other settings\", typically the DNS servers. In both cases the default route still comes from the advertisement: DHCPv6 has no router option, and no prefix length either, so which neighbours are on-link is again the router's word.\n\nA client has no broadcast to shout on. It sends from its link-local address to the multicast group ff02::1:2, where servers and relays listen. Stateful exchange: SOLICIT, then ADVERTISE from every willing server, REQUEST to the chosen one, REPLY with the address (with the Rapid Commit option the middle two are skipped). The address lives inside an identity association (IA_NA) identified by an IAID, and carries a preferred and a valid lifetime; the association has two timers, T1 when the client sends RENEW to its server and T2 when it sends REBIND to any server, and when the valid lifetime ends the address must go. RELEASE returns it early. Stateless exchange: INFORMATION-REQUEST and REPLY, no lease at all.\n\nClients and servers are named by a DUID, an identifier that stays the same on every interface and survives a change of network card better than a MAC address; here it is the simplest kind, built from the link-layer address. Left out: relay agents (the server must be on the client's link), prefix delegation, temporary addresses, CONFIRM and DECLINE, and server preference."
+msgstr "Gli host IPv6 possono configurarsi con i soli router advertisement (SLAAC), quindi DHCPv6 ha un compito più ristretto di DHCP per IPv4, ed è il router a decidere se viene usato: il flag M dell'annuncio dice \"gli indirizzi sono gestiti, chiedi a un server DHCPv6\", il flag O dice \"prendi l'indirizzo da SLAAC ma chiedi a un server le altre impostazioni\", tipicamente i server DNS. In entrambi i casi la rotta predefinita viene comunque dall'annuncio: DHCPv6 non ha un'opzione per il router, e nemmeno una lunghezza di prefisso, quindi anche quali vicini siano on-link lo dice il router.\n\nUn client non ha un broadcast su cui gridare. Trasmette dal suo indirizzo link-local al gruppo multicast ff02::1:2, dove ascoltano server e relay. Scambio stateful: SOLICIT, poi ADVERTISE da ogni server disponibile, REQUEST a quello scelto, REPLY con l'indirizzo (con l'opzione Rapid Commit i due messaggi centrali si saltano). L'indirizzo vive dentro una identity association (IA_NA) identificata da un IAID, e porta una durata preferita e una valida; l'associazione ha due timer, T1 quando il client invia RENEW al suo server e T2 quando invia REBIND a qualsiasi server, e quando la durata valida finisce l'indirizzo va abbandonato. RELEASE lo restituisce in anticipo. Scambio stateless: INFORMATION-REQUEST e REPLY, senza alcun prestito.\n\nClient e server sono identificati da un DUID, un identificatore che resta lo stesso su ogni interfaccia e sopravvive al cambio di scheda di rete meglio di un indirizzo MAC; qui è del tipo più semplice, costruito dall'indirizzo di livello collegamento. Tralasciati: i relay agent (il server deve stare sul collegamento del client), la delega di prefissi, gli indirizzi temporanei, CONFIRM e DECLINE, e la preferenza fra server."
+

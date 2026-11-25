@@ -8,7 +8,7 @@
  *         `ra` module for routers, and the dissectors.
  *
  * Left out, on purpose: MLD (multicast listeners are not announced; the
- * bridges flood multicast anyway), DHCPv6, extension headers other than
+ * bridges flood multicast anyway), extension headers other than
  * Fragment (they are skipped, not acted upon), redirects, privacy
  * addresses, and the DELAY state of neighbor unreachability detection
  * (folded into PROBE).
@@ -55,6 +55,10 @@ typedef struct {
     int      rs_left[NL_MAX_IF];
     nl_time  rs_next[NL_MAX_IF];
     int      started;
+    nl_ip6   group[6];                  /* multicast groups joined by modules (nl_ip6_join) */
+    int      ngroup;
+    struct { nl_ra_fn fn; void *ctx; } raw[2];
+    int      nraw;
 } stack6;
 
 static const nl_ip6 ZERO6;
@@ -938,6 +942,14 @@ static void slaac(nl_node *n, int ifx, const nl_ip6 *router, const uint8_t *b, i
         }
     }
     while (olen >= 8 && opt[1] && opt[1] * 8 <= olen) {
+        if (opt[0] == 3 && opt[1] == 4 && opt[2] == 64 && (opt[3] & 0xc0) == 0x80) {
+            /* on-link but not autonomous: neighbours are reached directly, the
+             * address comes from elsewhere (DHCPv6) */
+            nl_ip6 pfx;
+
+            memcpy(pfx.b, opt + 16, 16);
+            nl_route6_set(n, &pfx, 64, NULL, ifx, 0, NL_RT_RA);
+        }
         if (opt[0] == 3 && opt[1] == 4 && opt[2] == 64 && (opt[3] & 0x40) && n->ifc[ifx].nip6) {
             nl_ip6 a;
 
@@ -954,6 +966,8 @@ static void slaac(nl_node *n, int ifx, const nl_ip6 *router, const uint8_t *b, i
         olen -= opt[1] * 8;
         opt += opt[1] * 8;
     }
+    for (i = 0; i < s->nraw; i++)
+        s->raw[i].fn(n, s->raw[i].ctx, ifx, router, (b[5] & 0x80) != 0, (b[5] & 0x40) != 0);
 }
 
 static void nd_input(nl_node *n, const nl_ip6meta *m)
@@ -1363,8 +1377,67 @@ static int for_me(const nl_node *n, int ifx, const nl_ip6 *dst)
             if (nl_ip6_eq(dst, &g))
                 return 1;
         }
+    if (S6(n))
+        for (i = 0; i < S6(n)->ngroup; i++)
+            if (nl_ip6_eq(dst, &S6(n)->group[i]))
+                return 1;
     (void)ifx;
     return 0;
+}
+
+void nl_ip6_join(nl_node *n, const nl_ip6 *group)
+{
+    stack6 *s = S6(n);
+    int i;
+
+    if (!s)
+        return;
+    for (i = 0; i < s->ngroup; i++)
+        if (nl_ip6_eq(&s->group[i], group))
+            return;
+    if (s->ngroup < (int)(sizeof(s->group) / sizeof(s->group[0])))
+        s->group[s->ngroup++] = *group;
+}
+
+void nl_ip6_leave(nl_node *n, const nl_ip6 *group)
+{
+    stack6 *s = S6(n);
+    int i;
+
+    for (i = 0; s && i < s->ngroup; i++)
+        if (nl_ip6_eq(&s->group[i], group)) {
+            s->group[i] = s->group[--s->ngroup];
+            return;
+        }
+}
+
+void nl_ra_watch(nl_node *n, nl_ra_fn fn, void *ctx)
+{
+    stack6 *s = S6(n);
+    int i;
+
+    if (!s)
+        return;
+    for (i = 0; i < s->nraw; i++)
+        if (s->raw[i].fn == fn && s->raw[i].ctx == ctx)
+            return;
+    if (s->nraw < (int)(sizeof(s->raw) / sizeof(s->raw[0]))) {
+        s->raw[s->nraw].fn = fn;
+        s->raw[s->nraw].ctx = ctx;
+        s->nraw++;
+    }
+}
+
+void nl_ra_unwatch(nl_node *n, nl_ra_fn fn, void *ctx)
+{
+    stack6 *s = S6(n);
+    int i;
+
+    for (i = 0; s && i < s->nraw; i++)
+        if (s->raw[i].fn == fn && s->raw[i].ctx == ctx) {
+            s->raw[i] = s->raw[--s->nraw];
+            return;
+        }
 }
 
 void nl_ip6_input(nl_node *n, int in_if, nl_pkt *p)
@@ -1465,6 +1538,23 @@ int nl_if_add_addr6(nl_node *n, int ifx, const nl_ip6 *ip, int plen)
     if (s && s->started && n->local && n->up)
         dad_begin(n, ifx, k);
     return 0;
+}
+
+void nl_if_del_addr6(nl_node *n, int ifx, const nl_ip6 *ip)
+{
+    nl_iface *f = &n->ifc[ifx];
+    stack6 *s = S6(n);
+    int k = addr_index(n, ifx, ip);
+
+    if (k <= 0)                         /* not there, or the link-local address */
+        return;
+    if (f->ip6[k].plen < 128)
+        nl_route6_del(n, &f->ip6[k].a, f->ip6[k].plen, NL_RT_CONNECTED);
+    memmove(&f->ip6[k], &f->ip6[k + 1], (size_t)(f->nip6 - k - 1) * sizeof(f->ip6[0]));
+    if (s)
+        memmove(&s->dad_until[ifx][k], &s->dad_until[ifx][k + 1],
+                (size_t)(f->nip6 - k - 1) * sizeof(s->dad_until[0][0]));
+    f->nip6--;
 }
 
 static void send_rs(nl_node *n, int ifx)
@@ -1674,6 +1764,7 @@ typedef struct {
     nl_node *n;
     nl_time  interval;
     int      lifetime;                  /* seconds */
+    int      managed, other, autonomous;        /* the M and O flags, and the A flag of the prefixes */
     unsigned sent;
     nl_ev    timer;
 } ra_state;
@@ -1692,6 +1783,7 @@ static void ra_send(nl_node *n, int ifx)
     memset(b, 0, sizeof(b));
     b[0] = 134;
     b[4] = 64;                          /* hop limit suggested to the hosts */
+    b[5] = (uint8_t)((st->managed ? 0x80 : 0) | (st->other ? 0x40 : 0));
     nl_put16(b + 6, (uint16_t)st->lifetime);
     b[len] = 1;                         /* source link-layer address */
     b[len + 1] = 1;
@@ -1710,7 +1802,7 @@ static void ra_send(nl_node *n, int ifx)
         b[len] = 3;                     /* prefix information */
         b[len + 1] = 4;
         b[len + 2] = 64;
-        b[len + 3] = 0xc0;              /* on-link, autonomous address configuration */
+        b[len + 3] = (uint8_t)(0x80 | (st->autonomous ? 0x40 : 0));     /* on-link; autonomous configuration */
         nl_put32(b + len + 4, (uint32_t)st->lifetime * 10);
         nl_put32(b + len + 8, (uint32_t)st->lifetime * 5);
         memcpy(b + len + 16, pfx.b, 16);
@@ -1721,8 +1813,9 @@ static void ra_send(nl_node *n, int ifx)
         return;
     st->sent++;
     nl_count(n, "ra.sent", 1);
-    nl_log(n, NL_L_NET, 2, 0, T_WARN "NDP" T_RESET " %s %s: %d %s, %s %d s", _("router advertisement on"), f->name,
-           prefixes, _("prefix(es)"), _("router lifetime"), st->lifetime);
+    nl_log(n, NL_L_NET, 2, 0, T_WARN "NDP" T_RESET " %s %s: %d %s, %s %d s%s%s%s", _("router advertisement on"),
+           f->name, prefixes, _("prefix(es)"), _("router lifetime"), st->lifetime, st->managed ? ", M" : "",
+           st->other ? ", O" : "", st->autonomous ? "" : ", A=0");
     nd_send(n, ifx, &f->ip6[0].a, &ALL_NODES, b, len);
 }
 
@@ -1761,6 +1854,23 @@ static int ra_run(nl_node *n, const nl_args *a)
     st->lifetime = (int)(nl_arg_time(a, "lifetime", NL_SEC(1800)) / NL_SEC(1));
     if (st->lifetime > 9000)
         st->lifetime = 9000;
+    st->managed = (int)nl_arg_int(a, "managed", 0);
+    st->other = (int)nl_arg_int(a, "other", 0);
+    st->autonomous = (int)nl_arg_int(a, "autonomous", 1);
+    {   /* the three usual combinations by name */
+        const char *mode = nl_arg_str(a, "mode", "");
+
+        if (!strcmp(mode, "stateful")) {
+            st->managed = st->other = 1;
+            st->autonomous = 0;
+        } else if (!strcmp(mode, "stateless")) {
+            st->managed = 0;
+            st->other = st->autonomous = 1;
+        } else if (!strcmp(mode, "slaac")) {
+            st->managed = st->other = 0;
+            st->autonomous = 1;
+        }
+    }
     /* the first one after our own addresses have passed DAD */
     st->timer = nl_after(n, DAD_TIME + NL_MS(200), ra_tick, st);
     return 0;
@@ -1800,8 +1910,9 @@ static int ra_panel(nl_node *n, int x, int y, int w, int h, int detail)
             if (n->ifc[i].ip6[k].plen != 64)
                 continue;
             mask6(&pfx, 64);
-            tui_print(x, y + row++, w, TS(C_TEXT, C_DEFAULT, 0), T_BOLD "%-5s" T_RESET " %s/64  " T_DIM "%s",
-                      n->ifc[i].name, nl_ip6_str(&pfx), _("on-link, autonomous"));
+            tui_print(x, y + row++, w, TS(C_TEXT, C_DEFAULT, 0), T_BOLD "%-5s" T_RESET " %s/64  " T_DIM "%s%s%s",
+                      n->ifc[i].name, nl_ip6_str(&pfx), st->autonomous ? _("on-link, autonomous") : _("on-link"),
+                      st->managed ? "  M" : "", st->other ? "  O" : "");
         }
     return row;
 }
@@ -1809,7 +1920,12 @@ static int ra_panel(nl_node *n, int x, int y, int w, int h, int detail)
 static const nl_module ra_mod = {
     .name = "ra", .title = N_("Router advertisements: IPv6 hosts configure themselves (SLAAC)"),
     .layer = NL_L_NET,
-    .usage = N_("run ROUTER ra [interval=10s] [lifetime=1800s]\n"
+    .usage = N_("run ROUTER ra [interval=10s] [lifetime=1800s] [managed=0] [other=0] [autonomous=1]\n"
+                "  managed=1 sets the M flag (addresses come from DHCPv6), other=1 the O flag (other\n"
+                "  settings, such as DNS servers, come from DHCPv6); autonomous=0 clears the A flag of\n"
+                "  the prefixes, so hosts do not form addresses by themselves.\n"
+                "  mode=slaac|stateless|stateful sets the three at once (stateless: O; stateful: M, O\n"
+                "  and no autonomous addresses).\n"
                 "  Advertises, on every interface, the /64 prefixes configured there, and answers\n"
                 "  router solicitations. Hosts of a lab that uses IPv6 listen without any command."),
     .theory = N_("An IPv6 host needs no server to get an address. Every interface first gives itself a "
@@ -1821,8 +1937,11 @@ static const nl_module ra_mod = {
                  "and uses the router's link-local address as default gateway for as long as the "
                  "advertised router lifetime. Routers also repeat the advertisement periodically. This is "
                  "stateless address autoconfiguration (RFC 4862) on top of Neighbor Discovery (RFC 4861). "
-                 "Simplified here: preferred and valid lifetimes are advertised but addresses do not "
-                 "expire, there are no privacy addresses and no DHCPv6, and the M and O flags are always 0."),
+                 "Two flags of the advertisement point to DHCPv6: M (managed) says addresses are "
+                 "handed out by a DHCPv6 server, O (other) says only the remaining settings, such as "
+                 "DNS servers, are. The default route always comes from the advertisement. "
+                 "Simplified here: preferred and valid lifetimes are advertised but autoconfigured "
+                 "addresses do not expire, and there are no privacy addresses."),
     .run = ra_run, .stop = ra_stop, .recover = ra_recover, .panel = ra_panel,
 };
 NL_MODULE(ra_mod)
