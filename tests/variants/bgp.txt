@@ -1,5 +1,5 @@
 # BGP labs: every parameter value a student would naturally try.
-# One run per line:  PASS|FAIL  scenario  key=value ...
+# One run per line:  PASS  scenario  key=value ...
 # PASS/FAIL is the outcome of the lab's `expect` lines, guaranteed for seeds 1..5.
 # A FAIL line is an experiment whose point is that the default outcome no
 # longer holds; the comment says what happens instead.

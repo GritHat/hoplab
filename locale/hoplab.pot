@@ -254,7 +254,7 @@ msgstr ""
 msgid "remote"
 msgstr ""
 
-#: tui.c:1208 src/apps.c:925 src/core.c:451 src/ui.c:613
+#: tui.c:1208 src/apps.c:925 src/core.c:451 src/ui.c:617
 msgid "lost"
 msgstr ""
 
@@ -272,7 +272,7 @@ msgstr ""
 msgid "acknowledgements"
 msgstr ""
 
-#: tui.c:1313 src/mac.c:582 src/scenario.c:171 src/ui.c:602
+#: tui.c:1313 src/mac.c:595 src/scenario.c:171 src/ui.c:602
 msgid "delay"
 msgstr ""
 
@@ -691,7 +691,7 @@ msgstr ""
 msgid "go-back · retransmitting %d %s, seq %d…%d"
 msgstr ""
 
-#: go_back_n_send.c:181 src/qdisc.c:695
+#: go_back_n_send.c:181 src/qdisc.c:717
 msgid "packets"
 msgstr ""
 
@@ -1232,8 +1232,8 @@ msgstr ""
 msgid "Selective repeat: interrupted after %d segments (%zu bytes) delivered\n"
 msgstr ""
 
-#: src/apps.c:60 src/fec.c:841 src/qdisc.c:705 src/qdisc.c:708 src/qdisc.c:820
-#: src/qdisc.c:992 src/qdisc.c:1019
+#: src/apps.c:60 src/fec.c:841 src/qdisc.c:727 src/qdisc.c:730 src/qdisc.c:862
+#: src/qdisc.c:1036 src/qdisc.c:1063
 msgid "sent"
 msgstr ""
 
@@ -2017,7 +2017,7 @@ msgstr ""
 msgid "causally after the latest event of"
 msgstr ""
 
-#: src/clock.c:199 src/core.c:457 src/fec.c:790 src/mac.c:554 src/mac.c:581
+#: src/clock.c:199 src/core.c:457 src/fec.c:790 src/mac.c:567 src/mac.c:594
 msgid "delivered"
 msgstr ""
 
@@ -2077,7 +2077,7 @@ msgstr ""
 msgid "a message it depends on has not arrived yet"
 msgstr ""
 
-#: src/clock.c:377 src/qdisc.c:704 src/qdisc.c:708
+#: src/clock.c:377 src/qdisc.c:726 src/qdisc.c:730
 msgid "queued"
 msgstr ""
 
@@ -2125,8 +2125,8 @@ msgstr ""
 msgid "broadcast"
 msgstr ""
 
-#: src/clock.c:510 src/http.c:491 src/main.c:410 src/qdisc.c:977 src/stp.c:843
-#: src/tcp.c:2449 src/twopc.c:674
+#: src/clock.c:510 src/http.c:491 src/main.c:410 src/qdisc.c:1021
+#: src/stp.c:843 src/tcp.c:2449 src/twopc.c:674
 msgid "unknown command"
 msgstr ""
 
@@ -3204,8 +3204,8 @@ msgstr ""
 msgid "intact"
 msgstr ""
 
-#: src/fec.c:887 src/mac.c:582 src/qdisc.c:705 src/qdisc.c:821 src/qdisc.c:992
-#: src/qdisc.c:1020
+#: src/fec.c:887 src/mac.c:595 src/qdisc.c:727 src/qdisc.c:863
+#: src/qdisc.c:1036 src/qdisc.c:1064
 msgid "dropped"
 msgstr ""
 
@@ -3951,39 +3951,39 @@ msgstr ""
 msgid "bad value in '%s'"
 msgstr ""
 
-#: src/link.c:167
+#: src/link.c:172
 msgid "link up:"
 msgstr ""
 
-#: src/link.c:167
+#: src/link.c:172
 msgid "link down:"
 msgstr ""
 
-#: src/link.c:233
+#: src/link.c:250
 msgid "queue full"
 msgstr ""
 
-#: src/link.c:337 src/link.c:349
+#: src/link.c:354 src/link.c:366
 msgid "cannot listen on UDP port"
 msgstr ""
 
-#: src/link.c:535
+#: src/link.c:552
 msgid "lost on the link"
 msgstr ""
 
-#: src/link.c:541 src/link.c:548 src/link.c:555
+#: src/link.c:558 src/link.c:565 src/link.c:572
 msgid "bit errors"
 msgstr ""
 
-#: src/link.c:542
+#: src/link.c:559
 msgid "detected, frame discarded"
 msgstr ""
 
-#: src/link.c:549
+#: src/link.c:566
 msgid "corrected by the link code"
 msgstr ""
 
-#: src/link.c:556
+#: src/link.c:573
 msgid "NOT detected by the link: delivered damaged"
 msgstr ""
 
@@ -4015,87 +4015,87 @@ msgstr ""
 msgid "CSMA/CA (Wi-Fi)"
 msgstr ""
 
-#: src/mac.c:352 src/mac.c:413 src/mac.c:574
+#: src/mac.c:365 src/mac.c:426 src/mac.c:587
 msgid "theory"
 msgstr ""
 
-#: src/mac.c:354
+#: src/mac.c:367
 msgid "frames delivered"
 msgstr ""
 
-#: src/mac.c:355
+#: src/mac.c:368
 msgid "collided transmissions"
 msgstr ""
 
-#: src/mac.c:355
+#: src/mac.c:368
 msgid "mean delay"
 msgstr ""
 
-#: src/mac.c:356 src/mac.c:374
+#: src/mac.c:369 src/mac.c:387
 msgid "frame times"
 msgstr ""
 
-#: src/mac.c:370 src/mac.c:555
+#: src/mac.c:383 src/mac.c:568
 msgid "collision"
 msgstr ""
 
-#: src/mac.c:374 src/ospf.c:731
+#: src/mac.c:387 src/ospf.c:731
 msgid "last"
 msgstr ""
 
-#: src/mac.c:375
+#: src/mac.c:388
 msgid "so far"
 msgstr ""
 
-#: src/mac.c:414
+#: src/mac.c:427
 msgid "load"
 msgstr ""
 
-#: src/mac.c:424
+#: src/mac.c:437
 msgid "best throughput"
 msgstr ""
 
-#: src/mac.c:435 src/mac.c:501 src/mac.c:554
+#: src/mac.c:448 src/mac.c:514 src/mac.c:567
 msgid "stations"
 msgstr ""
 
-#: src/mac.c:475
+#: src/mac.c:488
 msgid "unknown protocol"
 msgstr ""
 
-#: src/mac.c:480
+#: src/mac.c:493
 msgid "too many stations: using the maximum,"
 msgstr ""
 
-#: src/mac.c:501
+#: src/mac.c:514
 msgid "offered load"
 msgstr ""
 
-#: src/mac.c:501
+#: src/mac.c:514
 msgid "frame time"
 msgstr ""
 
-#: src/mac.c:502
+#: src/mac.c:515
 msgid ", two groups that cannot hear each other"
 msgstr ""
 
-#: src/mac.c:555
+#: src/mac.c:568
 msgid "waiting"
 msgstr ""
 
-#: src/mac.c:582
+#: src/mac.c:595
 msgid "collisions"
 msgstr ""
 
-#: src/mac.c:605
+#: src/mac.c:618
 msgid "run NODE mac proto=aloha stations=10 load=0.5"
 msgstr ""
 
-#: src/mac.c:610
+#: src/mac.c:623
 msgid "medium access lab — ALOHA, CSMA, CSMA/CD, CSMA/CA on a shared channel"
 msgstr ""
 
-#: src/mac.c:612
+#: src/mac.c:625
 msgid ""
 "run NODE mac proto=aloha|slotted|csma|csma1|csmap|csmacd|csmaca [stations=10] [load=0.5]\n"
 "             [frame=1ms] [prop=frame/100] [p=0.1] [hidden=1] [rts=1] [duration=TIME]\n"
@@ -4105,7 +4105,7 @@ msgid ""
 "run NODE mac stop"
 msgstr ""
 
-#: src/mac.c:618
+#: src/mac.c:631
 #, c-format
 msgid ""
 "When many stations share one channel, two transmissions that overlap destroy each other: a collision. A medium access protocol decides who may talk and when, without a central arbiter.\n"
@@ -4162,7 +4162,7 @@ msgstr ""
 msgid "bad time"
 msgstr ""
 
-#: src/main.c:181 src/ui.c:1447
+#: src/main.c:181 src/ui.c:1451
 msgid "expectations"
 msgstr ""
 
@@ -4194,7 +4194,7 @@ msgstr ""
 msgid "Queue disciplines (link ... qdisc=NAME):"
 msgstr ""
 
-#: src/main.c:338 src/qdisc.c:971
+#: src/main.c:338 src/qdisc.c:1015
 msgid "drop arrivals when the queue is full (default)"
 msgstr ""
 
@@ -4979,7 +4979,7 @@ msgid ""
 msgstr ""
 
 #: src/qdisc.c:182 src/qdisc.c:297 src/qdisc.c:434 src/qdisc.c:533
-#: src/qdisc.c:899 src/qdisc.c:991 src/qdisc.c:1027 src/ui.c:607
+#: src/qdisc.c:941 src/qdisc.c:1035 src/qdisc.c:1071 src/ui.c:607
 msgid "queue"
 msgstr ""
 
@@ -5027,75 +5027,75 @@ msgstr ""
 msgid "estimated delay"
 msgstr ""
 
-#: src/qdisc.c:694
+#: src/qdisc.c:716
 msgid "backlog"
 msgstr ""
 
-#: src/qdisc.c:695
+#: src/qdisc.c:717
 msgid "drops"
 msgstr ""
 
-#: src/qdisc.c:707
+#: src/qdisc.c:729
 msgid "non-IP frames"
 msgstr ""
 
-#: src/qdisc.c:809
+#: src/qdisc.c:851
 msgid "expedited"
 msgstr ""
 
-#: src/qdisc.c:809
+#: src/qdisc.c:851
 msgid "assured"
 msgstr ""
 
-#: src/qdisc.c:809
+#: src/qdisc.c:851
 msgid "best effort"
 msgstr ""
 
-#: src/qdisc.c:896
+#: src/qdisc.c:938
 msgid "tokens"
 msgstr ""
 
-#: src/qdisc.c:902
+#: src/qdisc.c:944
 msgid "rate / bucket"
 msgstr ""
 
-#: src/qdisc.c:918
+#: src/qdisc.c:960
 msgid "drop-tail FIFO that also records queue length and waiting time"
 msgstr ""
 
-#: src/qdisc.c:922
+#: src/qdisc.c:964
 msgid "RED: random early drops (or ECN marks) as the average queue grows"
 msgstr ""
 
-#: src/qdisc.c:926
+#: src/qdisc.c:968
 msgid "CoDel: keeps the time packets wait in the queue near a target"
 msgstr ""
 
-#: src/qdisc.c:930
+#: src/qdisc.c:972
 msgid "PIE: drop probability steered by a controller on the queueing delay"
 msgstr ""
 
-#: src/qdisc.c:934
+#: src/qdisc.c:976
 msgid "fair queueing: one queue per flow, served by deficit round robin"
 msgstr ""
 
-#: src/qdisc.c:938
+#: src/qdisc.c:981
 msgid "strict priority: three bands chosen by the DSCP of the packet"
 msgstr ""
 
-#: src/qdisc.c:942
+#: src/qdisc.c:986
 msgid "token bucket shaper: a long-term rate with a bounded burst"
 msgstr ""
 
-#: src/qdisc.c:993
+#: src/qdisc.c:1037
 msgid "ECN marked"
 msgstr ""
 
-#: src/qdisc.c:1033
+#: src/qdisc.c:1077
 msgid "Queue disciplines: what a router does when packets arrive faster than they leave"
 msgstr ""
 
-#: src/qdisc.c:1035
+#: src/qdisc.c:1079
 msgid ""
 "link A B qdisc=NAME [queue=N] [parameters]   choose the discipline of a link (both directions)\n"
 "run NODE qdisc            show the queues of NODE in its panel\n"
@@ -5113,7 +5113,7 @@ msgid ""
 "  pie.marks fq.drops prio.drops, on the node that transmits."
 msgstr ""
 
-#: src/qdisc.c:1049
+#: src/qdisc.c:1093
 msgid ""
 "Every output interface of a router has a queue: when packets arrive faster than the link can carry them they wait, and when the buffer is full some must be dropped. The queue discipline decides which packet leaves next (scheduling) and which packets are dropped or marked, and when (queue management). The default, a drop-tail FIFO, is the simplest answer and has two well-known problems. First, with a large buffer a persistent overload keeps the queue full: every packet then waits behind hundreds of others and latency explodes while throughput gains nothing (bufferbloat). Second, it signals congestion only when the buffer overflows, so many flows lose packets at the same moment and back off together (global synchronisation).\n"
 "\n"
@@ -6398,7 +6398,7 @@ msgstr ""
 msgid "(remote)"
 msgstr ""
 
-#: src/ui.c:425 src/ui.c:630
+#: src/ui.c:425 src/ui.c:634
 msgid "Node"
 msgstr ""
 
@@ -6502,202 +6502,202 @@ msgstr ""
 msgid "code"
 msgstr ""
 
-#: src/ui.c:613
+#: src/ui.c:617
 msgid "damaged"
 msgstr ""
 
-#: src/ui.c:614
+#: src/ui.c:618
 msgid "queue drops"
 msgstr ""
 
-#: src/ui.c:657
+#: src/ui.c:661
 msgid "(this node runs in another process)"
 msgstr ""
 
-#: src/ui.c:699
+#: src/ui.c:703
 msgid "(End: newest)"
 msgstr ""
 
-#: src/ui.c:770 src/ui.c:811
+#: src/ui.c:774 src/ui.c:815
 msgid "(no frame transmitted yet)"
 msgstr ""
 
-#: src/ui.c:779
+#: src/ui.c:783
 msgid "link"
 msgstr ""
 
-#: src/ui.c:779
+#: src/ui.c:783
 msgid "summary"
 msgstr ""
 
-#: src/ui.c:832
+#: src/ui.c:836
 msgid "(too many nodes for this width: widen the window or zoom with z)"
 msgstr ""
 
-#: src/ui.c:873
+#: src/ui.c:877
 msgid "(the selected node records no time series; pick another node with n)"
 msgstr ""
 
-#: src/ui.c:1015
+#: src/ui.c:1019
 msgid "What happens"
 msgstr ""
 
-#: src/ui.c:1025
+#: src/ui.c:1029
 msgid "Try it"
 msgstr ""
 
-#: src/ui.c:1026
+#: src/ui.c:1030
 msgid "Press : and type a command, for example:  h1 ping h2   ·   link r1 r2 down   ·   link h1 r1 loss=0.3   ·   node r2 down   ·   help"
 msgstr ""
 
-#: src/ui.c:1033
+#: src/ui.c:1037
 msgid "Log"
 msgstr ""
 
-#: src/ui.c:1033
+#: src/ui.c:1037
 msgid "Packets"
 msgstr ""
 
-#: src/ui.c:1033
+#: src/ui.c:1037
 msgid "Sequence"
 msgstr ""
 
-#: src/ui.c:1033
+#: src/ui.c:1037
 msgid "Graphs"
 msgstr ""
 
-#: src/ui.c:1033
+#: src/ui.c:1037
 msgid "Guide"
 msgstr ""
 
-#: src/ui.c:1041
+#: src/ui.c:1045
 msgid "only"
 msgstr ""
 
-#: src/ui.c:1060
+#: src/ui.c:1064
 msgid "pause / resume"
 msgstr ""
 
-#: src/ui.c:1061
+#: src/ui.c:1065
 msgid "when paused: advance to the next event"
 msgstr ""
 
-#: src/ui.c:1062
+#: src/ui.c:1066
 msgid "faster / slower"
 msgstr ""
 
-#: src/ui.c:1063
+#: src/ui.c:1067
 msgid "skip idle time automatically (on/off)"
 msgstr ""
 
-#: src/ui.c:1064
+#: src/ui.c:1068
 msgid "detail: overview, protocol messages, every frame"
 msgstr ""
 
-#: src/ui.c:1065
+#: src/ui.c:1069
 msgid "move the focus: network, node, bottom panel"
 msgstr ""
 
-#: src/ui.c:1066
+#: src/ui.c:1070
 msgid "focused panel: select node / change tab / scroll"
 msgstr ""
 
-#: src/ui.c:1067
+#: src/ui.c:1071
 msgid "next / previous node"
 msgstr ""
 
-#: src/ui.c:1068
+#: src/ui.c:1072
 msgid "bottom panel: log, packets, sequence, graphs, guide"
 msgstr ""
 
-#: src/ui.c:1069
+#: src/ui.c:1073
 msgid "packets: open or close the dissection of the selected frame"
 msgstr ""
 
-#: src/ui.c:1070
+#: src/ui.c:1074
 msgid "packet dissection: previous / next field (highlights its bytes)"
 msgstr ""
 
-#: src/ui.c:1071
+#: src/ui.c:1075
 msgid "log: show only the selected node (on/off)"
 msgstr ""
 
-#: src/ui.c:1072
+#: src/ui.c:1076
 msgid "zoom the focused panel to the whole window"
 msgstr ""
 
-#: src/ui.c:1073
+#: src/ui.c:1077
 msgid "crash / recover the selected node"
 msgstr ""
 
-#: src/ui.c:1074
+#: src/ui.c:1078
 msgid "command line (h1 ping h2 · link a b down · help)"
 msgstr ""
 
-#: src/ui.c:1075
+#: src/ui.c:1079
 msgid "this help"
 msgstr ""
 
-#: src/ui.c:1076 src/ui.c:1167
+#: src/ui.c:1080 src/ui.c:1171
 msgid "quit"
 msgstr ""
 
-#: src/ui.c:1084
+#: src/ui.c:1088
 msgid "Keys"
 msgstr ""
 
-#: src/ui.c:1120
+#: src/ui.c:1124
 msgid "  [node]"
 msgstr ""
 
-#: src/ui.c:1120
+#: src/ui.c:1124
 msgid "  [monitor]"
 msgstr ""
 
-#: src/ui.c:1123 src/ui.c:1165
+#: src/ui.c:1127 src/ui.c:1169
 msgid "speed"
 msgstr ""
 
-#: src/ui.c:1124 src/ui.c:1165
+#: src/ui.c:1128 src/ui.c:1169
 msgid "detail"
 msgstr ""
 
-#: src/ui.c:1165
+#: src/ui.c:1169
 msgid "pause"
 msgstr ""
 
-#: src/ui.c:1165
+#: src/ui.c:1169
 msgid "step"
 msgstr ""
 
-#: src/ui.c:1166
+#: src/ui.c:1170
 msgid "focus"
 msgstr ""
 
-#: src/ui.c:1166
+#: src/ui.c:1170
 msgid "node"
 msgstr ""
 
-#: src/ui.c:1166
+#: src/ui.c:1170
 msgid "views"
 msgstr ""
 
-#: src/ui.c:1166
+#: src/ui.c:1170
 msgid "command"
 msgstr ""
 
-#: src/ui.c:1167
+#: src/ui.c:1171
 msgid "help"
 msgstr ""
 
-#: src/ui.c:1331
+#: src/ui.c:1335
 msgid "idle time is skipped"
 msgstr ""
 
-#: src/ui.c:1331
+#: src/ui.c:1335
 msgid "real pace: idle time is not skipped"
 msgstr ""
 
-#: src/ui.c:1427
+#: src/ui.c:1431
 msgid "press ? for the keys, u for the guide"
 msgstr ""
