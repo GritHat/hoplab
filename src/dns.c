@@ -20,7 +20,7 @@
 #define DNS_COLOR  141
 #define NAME_MAX_  72
 
-enum { T_A = 1, T_NS = 2, T_CNAME = 5, T_SOA = 6, T_MX = 15, T_TXT = 16 };
+enum { T_A = 1, T_NS = 2, T_CNAME = 5, T_SOA = 6, T_MX = 15, T_TXT = 16, T_AAAA = 28 };
 enum { RC_OK = 0, RC_SERVFAIL = 2, RC_NXDOMAIN = 3, RC_REFUSED = 5 };
 enum { F_QR = 0x8000, F_AA = 0x0400, F_RD = 0x0100, F_RA = 0x0080 };
 enum { SEC_AN = 0, SEC_NS = 1, SEC_AR = 2 };
@@ -30,6 +30,7 @@ typedef struct {
     uint16_t type;
     uint32_t ttl;
     nl_ip    ip;                        /* A: address; SOA: minimum (negative TTL) */
+    nl_ip6   ip6;                       /* AAAA: address */
     uint16_t pref;                      /* MX */
     char     text[NAME_MAX_];           /* NS/CNAME/MX target, TXT text, SOA mname */
     nl_time  expire;                    /* cache: absolute expiry (0 = free slot) */
@@ -49,6 +50,151 @@ typedef struct {
 } dns_msg;
 
 /* ------------------------------------------------------------------ */
+/* Either address family                                              */
+/* ------------------------------------------------------------------ */
+
+/* DNS is the same protocol over IPv4 and IPv6: servers listen on both, and
+ * a client or resolver uses whichever family reaches the server. */
+typedef struct { int v6; nl_ip v4; nl_ip6 a6; } daddr;
+
+typedef struct {                        /* a datagram received over either family */
+    daddr    src;
+    uint16_t sport, dport;
+    const uint8_t *data;
+    int      len;
+    uint32_t pkt_id;
+} dns_in;
+typedef void (*dns_in_fn)(nl_node *n, void *ctx, const dns_in *m);
+
+static int da_set(const daddr *a) { return a->v6 ? !nl_ip6_zero(&a->a6) : a->v4 != 0; }
+
+static int da_eq(const daddr *a, const daddr *b)
+{
+    return a->v6 == b->v6 && (a->v6 ? nl_ip6_eq(&a->a6, &b->a6) : a->v4 == b->v4);
+}
+
+static const char *da_str(const daddr *a) { return a->v6 ? nl_ip6_str(&a->a6) : nl_ip_str(a->v4); }
+
+/* Can this node send to the address at all? */
+static int da_usable(const nl_node *n, const daddr *a)
+{
+    nl_ip6 src;
+
+    if (a->v6)
+        return nl_ip6_enabled() && nl_ip6_src(n, &a->a6, &src);
+    return nl_ip_is_local(n, a->v4) || nl_route_lookup(n, a->v4) != NULL;
+}
+
+/* A literal of either family, or a node name (its IPv6 address when want6) */
+static int da_resolve(const char *s, int want6, daddr *out)
+{
+    memset(out, 0, sizeof(*out));
+    if (nl_parse_ip(s, &out->v4))
+        return 1;
+    if (nl_parse_ip6(s, &out->a6)) {
+        out->v6 = 1;
+        return 1;
+    }
+    if (want6 && nl_ip6_enabled() && nl_resolve6(s, &out->a6)) {
+        out->v6 = 1;
+        return 1;
+    }
+    if (nl_resolve(s, &out->v4))
+        return 1;
+    if (nl_ip6_enabled() && nl_resolve6(s, &out->a6)) {
+        out->v6 = 1;
+        return 1;
+    }
+    return 0;
+}
+
+static void da_send(nl_node *n, uint16_t sport, const daddr *dst, uint16_t dport, const void *data, int len)
+{
+    if (dst->v6)
+        nl_udp6_send(n, sport, &dst->a6, dport, data, len);
+    else
+        nl_udp_send(n, sport, dst->v4, dport, data, len);
+}
+
+/* Listen on a port in both families; every datagram reaches fn as a dns_in.
+ * One table maps (node, port) to the handler. */
+#define DA_BINDS 96
+static struct { nl_node *n; uint16_t port; dns_in_fn fn; void *ctx; } g_bind[DA_BINDS];
+
+static void da_rx4(nl_node *n, void *ctx, const nl_udpmsg *m)
+{
+    dns_in in;
+    int i = (int)(intptr_t)ctx;
+
+    memset(&in, 0, sizeof(in));
+    in.src.v4 = m->src;
+    in.sport = m->sport;
+    in.dport = m->dport;
+    in.data = m->data;
+    in.len = m->len;
+    in.pkt_id = m->pkt_id;
+    if (g_bind[i].n == n && g_bind[i].fn)
+        g_bind[i].fn(n, g_bind[i].ctx, &in);
+}
+
+static void da_rx6(nl_node *n, void *ctx, const nl_udp6msg *m)
+{
+    dns_in in;
+    int i = (int)(intptr_t)ctx;
+
+    memset(&in, 0, sizeof(in));
+    in.src.v6 = 1;
+    in.src.a6 = m->src;
+    in.sport = m->sport;
+    in.dport = m->dport;
+    in.data = m->data;
+    in.len = m->len;
+    in.pkt_id = m->pkt_id;
+    if (g_bind[i].n == n && g_bind[i].fn)
+        g_bind[i].fn(n, g_bind[i].ctx, &in);
+}
+
+/* port 0 = ephemeral; returns the port, 0 on failure */
+static uint16_t da_bind(nl_node *n, uint16_t port, dns_in_fn fn, void *ctx)
+{
+    int i, slot = -1;
+
+    for (i = 0; i < DA_BINDS; i++) {
+        if (g_bind[i].n == n && port && g_bind[i].port == port) {
+            slot = i;
+            break;
+        }
+        if (!g_bind[i].n && slot < 0)
+            slot = i;
+    }
+    if (slot < 0)
+        return 0;
+    port = (uint16_t)nl_udp_bind(n, port, da_rx4, (void *)(intptr_t)slot);
+    if (!port)
+        return 0;
+    if (nl_ip6_enabled())
+        nl_udp6_bind(n, port, da_rx6, (void *)(intptr_t)slot);
+    g_bind[slot].n = n;
+    g_bind[slot].port = port;
+    g_bind[slot].fn = fn;
+    g_bind[slot].ctx = ctx;
+    return port;
+}
+
+static void da_unbind(nl_node *n, uint16_t port)
+{
+    int i;
+
+    for (i = 0; i < DA_BINDS; i++)
+        if (g_bind[i].n == n && g_bind[i].port == port) {
+            nl_udp_unbind(n, port);
+            if (nl_ip6_enabled())
+                nl_udp6_unbind(n, port);
+            memset(&g_bind[i], 0, sizeof(g_bind[i]));
+        }
+}
+
+/* ------------------------------------------------------------------ */
 /* Names and types                                                    */
 /* ------------------------------------------------------------------ */
 
@@ -61,13 +207,14 @@ static const char *type_name(int t)
     case T_SOA: return "SOA";
     case T_MX: return "MX";
     case T_TXT: return "TXT";
+    case T_AAAA: return "AAAA";
     default: return "?";
     }
 }
 
 static int type_parse(const char *s)
 {
-    static const int types[] = { T_A, T_NS, T_CNAME, T_SOA, T_MX, T_TXT };
+    static const int types[] = { T_A, T_NS, T_CNAME, T_SOA, T_MX, T_TXT, T_AAAA };
     size_t i;
 
     for (i = 0; i < sizeof(types) / sizeof(types[0]); i++)
@@ -131,6 +278,7 @@ static const char *rr_str(const dns_rr *r)
 
     switch (r->type) {
     case T_A:     snprintf(b, 160, "A %s", nl_ip_str(r->ip)); break;
+    case T_AAAA:  snprintf(b, 160, "AAAA %s", nl_ip6_str(&r->ip6)); break;
     case T_MX:    snprintf(b, 160, "MX %u %s", r->pref, r->text); break;
     case T_TXT:   snprintf(b, 160, "TXT \"%s\"", r->text); break;
     case T_SOA:   snprintf(b, 160, "SOA %s", r->text); break;
@@ -229,6 +377,11 @@ static int msg_parse(const uint8_t *m, int len, dns_msg *o)
             if (rdlen != 4)
                 return 0;
             r.ip = nl_get32(m + rd);
+            break;
+        case T_AAAA:
+            if (rdlen != 16)
+                return 0;
+            memcpy(r.ip6.b, m + rd, 16);
             break;
         case T_NS: case T_CNAME:
             if (!get_name(m, len, &p2, r.text))
@@ -338,6 +491,10 @@ static void put_rr(dns_buf *o, int sec, const dns_rr *r, uint32_t ttl)
         nl_put32(o->b + o->len, r->ip);
         o->len += 4;
         break;
+    case T_AAAA:
+        memcpy(o->b + o->len, r->ip6.b, 16);
+        o->len += 16;
+        break;
     case T_NS: case T_CNAME:
         put_name(o, r->text);
         break;
@@ -400,7 +557,7 @@ typedef struct {
     int      used;
     char     qname[NAME_MAX_], cur[NAME_MAX_], zone[NAME_MAX_];
     uint16_t qtype, client_id, client_flags, qid;
-    nl_ip    client, server;
+    daddr    client, server;
     uint16_t client_port, sport;
     int      tries, steps, upstream;
     dns_rr   ans[10];
@@ -416,9 +573,9 @@ typedef struct dns_state {
     nl_node  *n;
     dns_zone *zone[4];
     int       nzone;
-    int       resolver, randomize;
+    int       resolver, randomize, prefer4;
     int       idbits, portbits;         /* how many random bits in the id and in the source port */
-    nl_ip     root;
+    daddr     root;
     uint16_t  next_id;
     nl_time   timeout;
     dns_rr    cache[CACHE_MAX];
@@ -428,9 +585,9 @@ typedef struct dns_state {
 
 static const nl_module dns_mod;
 
-static void dns_reply(dns_state *st, const dns_buf *o, nl_ip dst, uint16_t dport)
+static void dns_reply(dns_state *st, const dns_buf *o, const daddr *dst, uint16_t dport)
 {
-    nl_udp_send(st->n, DNS_PORT, dst, dport, o->b, o->len);
+    da_send(st->n, DNS_PORT, dst, dport, o->b, o->len);
 }
 
 /* ---- authoritative ---- */
@@ -481,7 +638,7 @@ static void add_glue(dns_state *st, dns_buf *o, const char *target)
     for (k = 0; k < st->nzone; k++) {
         z = st->zone[k];
         for (i = 0; i < z->nrr; i++)
-            if (z->rr[i].type == T_A && strcmp(z->rr[i].name, target) == 0)
+            if ((z->rr[i].type == T_A || z->rr[i].type == T_AAAA) && strcmp(z->rr[i].name, target) == 0)
                 put_rr(o, SEC_AR, &z->rr[i], z->rr[i].ttl);
     }
 }
@@ -599,7 +756,7 @@ static void cache_put(dns_state *st, const dns_rr *r, uint32_t ttl, int neg)
         if (c->expire && c->expire <= now)
             c->expire = 0;
         if (c->expire && c->type == r->type && c->neg == neg && strcmp(c->name, r->name) == 0 &&
-            (neg || (c->ip == r->ip && strcmp(c->text, r->text) == 0))) {
+            (neg || (c->ip == r->ip && nl_ip6_eq(&c->ip6, &r->ip6) && strcmp(c->text, r->text) == 0))) {
             slot = c;
             break;
         }
@@ -649,7 +806,7 @@ static void port_release(dns_job *j)
     for (k = 0; k < JOB_MAX; k++)
         if (&st->job[k] != j && st->job[k].used && st->job[k].sport == j->sport)
             return;
-    nl_udp_unbind(st->n, j->sport);
+    da_unbind(st->n, j->sport);
 }
 
 static void job_free(dns_job *j)
@@ -687,7 +844,7 @@ static void job_finish(dns_job *j, int rcode)
                _("upstream queries"), j->upstream ? "" : ", ", j->upstream ? "" : _("from the cache"));
     if (rcode == RC_SERVFAIL)
         nl_count(st->n, "dns.servfail", 1);
-    dns_reply(st, &o, j->client, j->client_port);
+    dns_reply(st, &o, &j->client, j->client_port);
     job_free(j);
 }
 
@@ -708,16 +865,16 @@ static void job_timeout(void *ctx)
     j->timer = 0;
     if (++j->tries >= 3) {
         nl_log(j->st->n, NL_L_APP, 2, 0, T_FIN "DNS" T_RESET " " T_ERR "%s %s", _("no answer from"),
-               nl_ip_str(j->server));
+               da_str(&j->server));
         job_finish(j, RC_SERVFAIL);
         return;
     }
     nl_log(j->st->n, NL_L_APP, 2, 0, T_FIN "DNS" T_RESET " %s %s, %s", _("timeout waiting for"),
-           nl_ip_str(j->server), _("asking again"));
+           da_str(&j->server), _("asking again"));
     job_send(j);
 }
 
-static void resolver_rx(nl_node *n, void *ctx, const nl_udpmsg *m);
+static void resolver_rx(nl_node *n, void *ctx, const dns_in *m);
 
 static void job_send(dns_job *j)
 {
@@ -738,7 +895,7 @@ static void job_send(dns_job *j)
                 if (&st->job[k] != j && st->job[k].used && st->job[k].sport == j->sport)
                     break;
         } while (k < JOB_MAX && ++tries < 32);
-        nl_udp_bind(st->n, j->sport, resolver_rx, st);
+        da_bind(st->n, j->sport, resolver_rx, st);
         j->qid = (uint16_t)nl_rand(1u << st->idbits);
     } else {
         j->sport = DNS_PORT;
@@ -748,10 +905,12 @@ static void job_send(dns_job *j)
     j->upstream++;
     st->upstream++;
     nl_count(st->n, "dns.upstream_queries", 1);
+    if (j->server.v6)
+        nl_count(st->n, "dns.upstream_v6", 1);
     nl_log(st->n, NL_L_APP, 2, 0, T_FIN "DNS" T_RESET " %s %s %s? → %s " T_DIM "(%s %s, id %u, port %u)", _("ask"),
-           type_name(j->qtype), name_show(j->cur), nl_ip_str(j->server), _("server for"), name_show(j->zone),
+           type_name(j->qtype), name_show(j->cur), da_str(&j->server), _("server for"), name_show(j->zone),
            j->qid, j->sport);
-    nl_udp_send(st->n, j->sport, j->server, DNS_PORT, o.b, o.len);
+    da_send(st->n, j->sport, &j->server, DNS_PORT, o.b, o.len);
     nl_cancel(&j->timer);
     j->timer = nl_after(st->n, st->timeout, job_timeout, j);
 }
@@ -789,23 +948,37 @@ static void job_step(dns_job *j)
             continue;
         }
         /* closest enclosing zone whose server address we know */
-        j->server = 0;
-        for (z = j->cur; !j->server; z = name_parent(z)) {
+        memset(&j->server, 0, sizeof(j->server));
+        for (z = j->cur; !da_set(&j->server); z = name_parent(z)) {
             int it2 = 0;
             dns_rr *ns;
 
-            while (!j->server && (ns = cache_next(st, z, T_NS, &it2)) != NULL) {
-                int it3 = 0;
-                dns_rr *a = ns->neg ? NULL : cache_next(st, ns->text, T_A, &it3);
-                if (a && !a->neg) {
-                    j->server = a->ip;
-                    strcpy(j->zone, z);
+            while (!da_set(&j->server) && (ns = cache_next(st, z, T_NS, &it2)) != NULL) {
+                int it3, pass;
+                dns_rr *a;
+
+                /* an address of that name server which we can reach: IPv6 first */
+                for (pass = 0; pass < 2 && !ns->neg && !da_set(&j->server); pass++) {
+                    daddr cand;
+
+                    it3 = 0;
+                    a = cache_next(st, ns->text, pass != st->prefer4 ? T_A : T_AAAA, &it3);
+                    if (!a || a->neg)
+                        continue;
+                    memset(&cand, 0, sizeof(cand));
+                    cand.v6 = pass == st->prefer4;
+                    cand.v4 = a->ip;
+                    cand.a6 = a->ip6;
+                    if (da_usable(st->n, &cand)) {
+                        j->server = cand;
+                        strcpy(j->zone, z);
+                    }
                 }
             }
             if (!*z)
                 break;
         }
-        if (!j->server) {
+        if (!da_set(&j->server)) {
             j->server = st->root;
             j->zone[0] = '\0';
         }
@@ -834,7 +1007,8 @@ static void job_response(dns_job *j, const dns_msg *r)
                    name_show(x->name), _("server for"), name_show(j->zone));
             continue;
         }
-        if (x->type == T_A || x->type == T_NS || x->type == T_CNAME || x->type == T_MX || x->type == T_TXT)
+        if (x->type == T_A || x->type == T_AAAA || x->type == T_NS || x->type == T_CNAME || x->type == T_MX ||
+            x->type == T_TXT)
             cache_put(st, x, x->ttl, 0);
         if (x->sec == SEC_NS && x->type == T_NS && strlen(x->name) > strlen(j->zone) && name_in(j->cur, x->name))
             referral = 1;
@@ -845,7 +1019,7 @@ static void job_response(dns_job *j, const dns_msg *r)
         strcpy(neg.name, j->cur);
         neg.type = j->qtype;
         cache_put(st, &neg, negttl, 2);
-        nl_log(st->n, NL_L_APP, 2, 0, T_FIN "DNS" T_RESET " %s: %s NXDOMAIN " T_DIM "(%s %u s)", nl_ip_str(j->server),
+        nl_log(st->n, NL_L_APP, 2, 0, T_FIN "DNS" T_RESET " %s: %s NXDOMAIN " T_DIM "(%s %u s)", da_str(&j->server),
                name_show(j->cur), _("negative answer cached for"), negttl);
         job_finish(j, j->nans ? RC_OK : RC_NXDOMAIN);
         return;
@@ -864,7 +1038,7 @@ static void job_response(dns_job *j, const dns_msg *r)
                 got = 1;
             }
         if (got) {
-            nl_log(st->n, NL_L_APP, 2, 0, T_FIN "DNS" T_RESET " %s: %s %s", nl_ip_str(j->server), _("answer"),
+            nl_log(st->n, NL_L_APP, 2, 0, T_FIN "DNS" T_RESET " %s: %s %s", da_str(&j->server), _("answer"),
                    rr_str(&j->ans[j->nans - 1]));
             job_finish(j, RC_OK);
             return;
@@ -872,7 +1046,7 @@ static void job_response(dns_job *j, const dns_msg *r)
         for (i = 0; i < r->nrr && !moved; i++)
             if (r->rr[i].sec == SEC_AN && r->rr[i].type == T_CNAME && strcmp(r->rr[i].name, j->cur) == 0) {
                 job_append(j, &r->rr[i], r->rr[i].ttl);
-                nl_log(st->n, NL_L_APP, 2, 0, T_FIN "DNS" T_RESET " %s: %s %s → %s", nl_ip_str(j->server),
+                nl_log(st->n, NL_L_APP, 2, 0, T_FIN "DNS" T_RESET " %s: %s %s → %s", da_str(&j->server),
                        _("alias (CNAME)"), name_show(j->cur), r->rr[i].text);
                 strcpy(j->cur, r->rr[i].text);
                 moved = 1;
@@ -884,7 +1058,7 @@ static void job_response(dns_job *j, const dns_msg *r)
     if (referral == 1) {
         for (i = 0; i < r->nrr; i++)
             if (r->rr[i].sec == SEC_NS && r->rr[i].type == T_NS) {
-                nl_log(st->n, NL_L_APP, 2, 0, T_FIN "DNS" T_RESET " %s: %s %s → %s", nl_ip_str(j->server),
+                nl_log(st->n, NL_L_APP, 2, 0, T_FIN "DNS" T_RESET " %s: %s %s → %s", da_str(&j->server),
                        _("referral:"), name_show(r->rr[i].name), r->rr[i].text);
                 break;
             }
@@ -904,7 +1078,7 @@ static void job_response(dns_job *j, const dns_msg *r)
     }
 }
 
-static void resolver_rx(nl_node *n, void *ctx, const nl_udpmsg *m)
+static void resolver_rx(nl_node *n, void *ctx, const dns_in *m)
 {
     dns_state *st = ctx;
     dns_msg *r = malloc(sizeof(*r));
@@ -915,7 +1089,7 @@ static void resolver_rx(nl_node *n, void *ctx, const nl_udpmsg *m)
     if (msg_parse(m->data, m->len, r) && (r->flags & F_QR)) {
         for (i = 0; i < JOB_MAX; i++) {
             dns_job *j = &st->job[i];
-            if (j->used && j->timer && j->sport == m->dport && j->qid == r->id && j->server == m->src &&
+            if (j->used && j->timer && j->sport == m->dport && j->qid == r->id && da_eq(&j->server, &m->src) &&
                 m->sport == DNS_PORT && strcmp(r->qname, j->cur) == 0 && r->qtype == j->qtype) {
                 job_response(j, r);
                 free(r);
@@ -925,12 +1099,12 @@ static void resolver_rx(nl_node *n, void *ctx, const nl_udpmsg *m)
         st->mismatched++;
         nl_count(n, "dns.mismatched", 1);
         nl_log(n, NL_L_APP, 3, m->pkt_id, T_FIN "DNS" T_RESET " %s %s (id %u, port %u)",
-               _("response matching no pending query, dropped: from"), nl_ip_str(m->src), r->id, m->dport);
+               _("response matching no pending query, dropped: from"), da_str(&m->src), r->id, m->dport);
     }
     free(r);
 }
 
-static void resolver_query(dns_state *st, const dns_msg *q, const nl_udpmsg *m)
+static void resolver_query(dns_state *st, const dns_msg *q, const dns_in *m)
 {
     dns_job *j = NULL;
     int i;
@@ -942,7 +1116,7 @@ static void resolver_query(dns_state *st, const dns_msg *q, const nl_udpmsg *m)
         dns_buf o;
         buf_start(&o, q->id, (uint16_t)(F_QR | F_RA | (q->flags & F_RD)), q->qname, q->qtype);
         buf_rcode(&o, RC_SERVFAIL, 0, 0);
-        dns_reply(st, &o, m->src, m->sport);
+        dns_reply(st, &o, &m->src, m->sport);
         return;
     }
     memset(j, 0, sizeof(*j));
@@ -957,11 +1131,11 @@ static void resolver_query(dns_state *st, const dns_msg *q, const nl_udpmsg *m)
     j->client_flags = q->flags;
     j->t0 = nl_now();
     nl_log(st->n, NL_L_APP, 2, m->pkt_id, T_FIN "DNS" T_RESET " %s %s %s? %s %s", _("recursive query"),
-           type_name(q->qtype), name_show(q->qname), _("from"), nl_ip_str(m->src));
+           type_name(q->qtype), name_show(q->qname), _("from"), da_str(&m->src));
     job_step(j);
 }
 
-static void dns_rx(nl_node *n, void *ctx, const nl_udpmsg *m)
+static void dns_rx(nl_node *n, void *ctx, const dns_in *m)
 {
     dns_state *st = ctx;
     dns_msg *q;
@@ -987,8 +1161,8 @@ static void dns_rx(nl_node *n, void *ctx, const nl_udpmsg *m)
     } else {
         what = auth_answer(st, q, &o);
         nl_log(n, NL_L_APP, 2, m->pkt_id, T_FIN "DNS" T_RESET " %s %s? %s %s → %s", type_name(q->qtype),
-               name_show(q->qname), _("from"), nl_ip_str(m->src), what);
-        dns_reply(st, &o, m->src, m->sport);
+               name_show(q->qname), _("from"), da_str(&m->src), what);
+        dns_reply(st, &o, &m->src, m->sport);
     }
     free(q);
 }
@@ -1038,6 +1212,12 @@ static int zone_add(dns_state *st, dns_zone *z, const char *key, const char *val
             nl_log(st->n, NL_L_APP, 1, 0, T_ERR "dns: %s '%s'", _("unknown address"), colon);
             return -1;
         }
+    } else if (!strcmp(key, "aaaa") || !strcmp(key, "glue6")) {
+        r->type = T_AAAA;
+        if (!nl_parse_ip6(colon, &r->ip6) && !(nl_ip6_enabled() && nl_resolve6(colon, &r->ip6))) {
+            nl_log(st->n, NL_L_APP, 1, 0, T_ERR "dns: %s '%s'", _("unknown address"), colon);
+            return -1;
+        }
     } else if (!strcmp(key, "ns")) {
         r->type = T_NS;
         name_fq(colon, z->origin, r->text);
@@ -1081,7 +1261,7 @@ static int dns_run(nl_node *n, const nl_args *a)
         st->portbits = 14;
         st->timeout = NL_MS(800);
         nl_mod_set(n, &dns_mod, st);
-        nl_udp_bind(n, DNS_PORT, dns_rx, st);
+        da_bind(n, DNS_PORT, dns_rx, st);
     }
     if (role && strcmp(role, "flush") == 0) {
         memset(st->cache, 0, sizeof(st->cache));
@@ -1092,10 +1272,11 @@ static int dns_run(nl_node *n, const nl_args *a)
         const char *root = nl_arg_str(a, "root", NULL);
 
         st->resolver = 1;
-        if (!root || !nl_resolve(root, &st->root)) {
+        if (!root || !da_resolve(root, (int)nl_arg_int(a, "v6", 0), &st->root)) {
             nl_log(n, NL_L_APP, 1, 0, T_ERR "dns: %s", _("resolver needs root=ADDRESS (a root name server)"));
             return -1;
         }
+        st->prefer4 = nl_arg_has(a, "v6") && !nl_arg_int(a, "v6", 0);
         st->randomize = (int)nl_arg_int(a, "randomize", st->randomize);
         st->timeout = nl_arg_time(a, "timeout", st->timeout);
         if (nl_arg_has(a, "entropy")) {
@@ -1107,7 +1288,7 @@ static int dns_run(nl_node *n, const nl_args *a)
             st->portbits = bits - st->idbits;
         }
         nl_log(n, NL_L_APP, 2, 0, T_FIN "DNS" T_RESET " %s %s%s", _("recursive resolver ready, root server"),
-               nl_ip_str(st->root), st->randomize ? "" : _(" — fixed source port, sequential ids"));
+               da_str(&st->root), st->randomize ? "" : _(" — fixed source port, sequential ids"));
     }
     if (nl_arg_has(a, "ttl"))
         ttl = parse_secs(nl_arg_str(a, "ttl", "60"));
@@ -1131,7 +1312,7 @@ static int dns_run(nl_node *n, const nl_args *a)
             if (nl_arg_has(a, "negttl"))
                 z->negttl = parse_secs(nl_arg_str(a, "negttl", "30"));
         } else if (!strcmp(key, "a") || !strcmp(key, "glue") || !strcmp(key, "ns") || !strcmp(key, "cname") ||
-                   !strcmp(key, "mx") || !strcmp(key, "txt")) {
+                   !strcmp(key, "mx") || !strcmp(key, "txt") || !strcmp(key, "aaaa") || !strcmp(key, "glue6")) {
             if (!z && st->nzone)
                 z = st->zone[st->nzone - 1];
             if (!z || zone_add(st, z, key, eq + 1, ttl ? ttl : z->ttl) != 0) {
@@ -1159,7 +1340,7 @@ static void dns_stop(nl_node *n)
             job_free(&st->job[i]);
     for (i = 0; i < st->nzone; i++)
         free(st->zone[i]);
-    nl_udp_unbind(n, DNS_PORT);
+    da_unbind(n, DNS_PORT);
     nl_mod_set(n, &dns_mod, NULL);
     free(st);
 }
@@ -1184,7 +1365,7 @@ static int dns_panel(nl_node *n, int x, int y, int w, int h, int detail)
 
     row += nl_ui_kv(x, y + row, w, _("queries received"), "%u", st->queries);
     if (st->resolver) {
-        row += nl_ui_kv(x, y + row, w, _("root server"), "%s", nl_ip_str(st->root));
+        row += nl_ui_kv(x, y + row, w, _("root server"), "%s", da_str(&st->root));
         row += nl_ui_kv(x, y + row, w, _("answered from cache"), "%u", st->hits);
         row += nl_ui_kv(x, y + row, w, _("upstream queries"), "%u", st->upstream);
         row += nl_ui_kv(x, y + row, w, _("source port / id"), "%s",
@@ -1223,15 +1404,19 @@ static const nl_module dns_mod = {
     .usage = N_("run NODE dns zone=NAME [ttl=60] [negttl=30] RECORD...   authoritative server\n"
                 "  records, as key=owner:value (owner @ = the zone itself, names are relative\n"
                 "  to the zone unless they end with a dot, addresses may be node names):\n"
-                "    a=www:10.0.3.10  cname=web:www  mx=@:mail[:10]  txt=@:hello\n"
-                "    ns=@:ns1  ns=sub:ns.sub  glue=ns.sub:10.0.4.2   (ns below the apex = delegation)\n"
+                "    a=www:10.0.3.10  aaaa=www:2001:db8::10  cname=web:www  mx=@:mail[:10]  txt=@:hello\n"
+                "    ns=@:ns1  ns=sub:ns.sub  glue=ns.sub:10.0.4.2  glue6=ns.sub:2001:db8:4::2\n"
+                "    (ns below the apex = delegation; aaaa and glue6 take an IPv6 address or a node name)\n"
                 "  the root zone is zone=. ; repeat the command to add records or zones.\n"
-                "run NODE dns resolver root=ADDR [randomize=1] [entropy=30] [timeout=800ms]   recursive resolver\n"
+                "run NODE dns resolver root=ADDR [v6=1] [randomize=1] [entropy=30] [timeout=800ms]   recursive resolver\n"
+                "  root may be an IPv4 or IPv6 address or a node name (v6=1: its IPv6 address); every\n"
+                "  server answers over both families, and the resolver prefers IPv6 when it can use it\n"
+                "  (v6=0: it prefers IPv4)\n"
                 "  randomize=0: fixed source port 53 and sequential ids (for the poisoning lab)\n"
                 "  entropy=B: random bits in id (up to 16) and source port (the rest, up to 14)\n"
                 "run NODE dns flush     empty the resolver cache"),
     .theory = N_("The Domain Name System is a distributed database that maps names to records "
-                 "(A: an IPv4 address, NS: the name servers of a zone, CNAME: an alias, MX: the mail "
+                 "(A: an IPv4 address, AAAA: an IPv6 address, NS: the name servers of a zone, CNAME: an alias, MX: the mail "
                  "exchanger, TXT: free text). The name space is a tree cut into zones; each zone is "
                  "served by authoritative servers, and a zone delegates a subtree by publishing NS "
                  "records for it, plus the addresses of those servers (glue). Nobody knows "
@@ -1252,8 +1437,10 @@ static const nl_module dns_mod = {
                  "DNS normally runs on UDP, so a resolver accepts a response when it comes from the "
                  "address it asked, to the port it used, with the identifier and question it sent: "
                  "an attacker who can guess those values can forge an answer and poison the cache, "
-                 "which is why resolvers randomize both the identifier and the source port. Here: "
-                 "class IN only, no TCP fallback, EDNS or DNSSEC, and delegations need glue."),
+                 "which is why resolvers randomize both the identifier and the source port. The "
+                 "records a name has and the transport used to ask are independent: an AAAA record "
+                 "can be fetched over IPv4 and an A record over IPv6, and a dual-stack host asks for "
+                 "both. Here: class IN only, no TCP fallback, EDNS or DNSSEC, and delegations need glue."),
     .run = dns_run, .stop = dns_stop, .crash = dns_crash, .panel = dns_panel,
 };
 NL_MODULE(dns_mod)
@@ -1262,13 +1449,22 @@ NL_MODULE(dns_mod)
 /* dig: the client                                                    */
 /* ------------------------------------------------------------------ */
 
-static nl_ip g_default_server[NL_MAX_NODES];
+static daddr g_default_server[NL_MAX_NODES];
 
-/* Used by DHCP (option 6) to configure the resolver of a host */
+/* Used by DHCP (option 6) and DHCPv6 (option 23) to configure the resolver of a host */
 void nl_dns_set_default(nl_node *n, nl_ip server);
+void nl_dns_set_default6(nl_node *n, const nl_ip6 *server);
 void nl_dns_set_default(nl_node *n, nl_ip server)
 {
-    g_default_server[n->idx] = server;
+    memset(&g_default_server[n->idx], 0, sizeof(daddr));
+    g_default_server[n->idx].v4 = server;
+}
+
+void nl_dns_set_default6(nl_node *n, const nl_ip6 *server)
+{
+    memset(&g_default_server[n->idx], 0, sizeof(daddr));
+    g_default_server[n->idx].v6 = 1;
+    g_default_server[n->idx].a6 = *server;
 }
 
 struct dig_state;
@@ -1278,7 +1474,8 @@ typedef struct {
     int      used, trace, tries, hops;
     char     name[NAME_MAX_], cur[NAME_MAX_];
     uint16_t qtype, id, sport;
-    nl_ip    server, root;
+    daddr    server, root;
+    char     then[100];                 /* command to run with the address found */
     nl_time  t0;
     nl_ev    timer;
 } dig_q;
@@ -1311,7 +1508,7 @@ static void dig_note(dig_state *st, const char *fmt, ...)
 static void dig_end(dig_q *q)
 {
     nl_cancel(&q->timer);
-    nl_udp_unbind(q->st->n, q->sport);
+    da_unbind(q->st->n, q->sport);
     q->used = 0;
 }
 
@@ -1324,7 +1521,7 @@ static void dig_timeout(void *ctx)
     q->timer = 0;
     if (++q->tries >= 3) {
         nl_log(q->st->n, NL_L_APP, 1, 0, T_ERR "dig %s: %s %s", name_show(q->name), _("no answer from server"),
-               nl_ip_str(q->server));
+               da_str(&q->server));
         nl_count(q->st->n, "dig.timeout", 1);
         dig_note(q->st, "%s %s: %s", type_name(q->qtype), name_show(q->name), _("timeout"));
         dig_end(q);
@@ -1338,12 +1535,30 @@ static void dig_send(dig_q *q)
     dns_buf o;
 
     buf_start(&o, q->id, q->trace ? 0 : F_RD, q->cur, q->qtype);
-    nl_udp_send(q->st->n, q->sport, q->server, DNS_PORT, o.b, o.len);
+    da_send(q->st->n, q->sport, &q->server, DNS_PORT, o.b, o.len);
     nl_cancel(&q->timer);
     q->timer = nl_after(q->st->n, NL_SEC(3), dig_timeout, q);
 }
 
-static void dig_rx(nl_node *n, void *ctx, const nl_udpmsg *m)
+/* Run `then` with the address just resolved: "ping count=2" becomes
+ * "NODE ping ADDRESS count=2"; a % in the command marks where it goes */
+static void dig_then(nl_node *n, const char *then, const char *addr)
+{
+    char cmd[260];
+    const char *pct = strchr(then, '%'), *sp = strchr(then, ' ');
+
+    if (pct)
+        snprintf(cmd, sizeof(cmd), "%s %.*s%s%s", n->name, (int)(pct - then), then, addr, pct + 1);
+    else if (sp)
+        snprintf(cmd, sizeof(cmd), "%s %.*s %s%s", n->name, (int)(sp - then), then, addr, sp);
+    else
+        snprintf(cmd, sizeof(cmd), "%s %s %s", n->name, then, addr);
+    nl_log(n, NL_L_APP, 1, 0, T_INFO "dig" T_RESET " → %s", cmd);
+    if (nl_exec(cmd) != 0)
+        nl_log(n, NL_L_APP, 1, 0, T_ERR "dig: %s '%s'", _("could not run"), cmd);
+}
+
+static void dig_rx(nl_node *n, void *ctx, const dns_in *m)
 {
     dig_state *st = ctx;
     dns_msg *r = malloc(sizeof(*r));
@@ -1373,30 +1588,40 @@ static void dig_rx(nl_node *n, void *ctx, const nl_udpmsg *m)
         }
     if (q->trace && !final && rcode == RC_OK) {
         const dns_rr *ns = NULL, *cname = NULL;
-        nl_ip next = 0;
-        int k;
+        daddr next;
+        int k, pass;
 
+        memset(&next, 0, sizeof(next));
         for (i = 0; i < r->nrr; i++) {
             if (r->rr[i].sec == SEC_AN && r->rr[i].type == T_CNAME && strcmp(r->rr[i].name, q->cur) == 0)
                 cname = &r->rr[i];
-            if (r->rr[i].sec == SEC_NS && r->rr[i].type == T_NS && !next) {
-                for (k = 0; k < r->nrr; k++)
-                    if (r->rr[k].sec == SEC_AR && r->rr[k].type == T_A && strcmp(r->rr[k].name, r->rr[i].text) == 0) {
-                        ns = &r->rr[i];
-                        next = r->rr[k].ip;
+            /* glue of a name server we were referred to: an address we can reach, IPv6 first */
+            for (pass = 0; pass < 2 && r->rr[i].sec == SEC_NS && r->rr[i].type == T_NS && !da_set(&next); pass++)
+                for (k = 0; k < r->nrr && !da_set(&next); k++)
+                    if (r->rr[k].sec == SEC_AR && r->rr[k].type == (pass ? T_A : T_AAAA) &&
+                        strcmp(r->rr[k].name, r->rr[i].text) == 0) {
+                        daddr cand;
+
+                        memset(&cand, 0, sizeof(cand));
+                        cand.v6 = !pass;
+                        cand.v4 = r->rr[k].ip;
+                        cand.a6 = r->rr[k].ip6;
+                        if (da_usable(n, &cand)) {
+                            ns = &r->rr[i];
+                            next = cand;
+                        }
                     }
-            }
         }
-        if ((cname || next) && ++q->hops < 12) {
+        if ((cname || da_set(&next)) && ++q->hops < 12) {
             if (cname) {
                 strcpy(q->cur, cname->text);
                 next = q->root;
                 nl_log(n, NL_L_APP, 1, m->pkt_id, "dig %s: " T_INFO "%s" T_RESET " %s %s", name_show(q->name),
-                       nl_ip_str(m->src), _("says it is an alias: start again from the root for"), q->cur);
+                       da_str(&m->src), _("says it is an alias: start again from the root for"), q->cur);
             } else {
                 nl_log(n, NL_L_APP, 1, m->pkt_id, "dig %s: " T_INFO "%s" T_RESET " %s %s → %s (%s)",
-                       name_show(q->name), nl_ip_str(m->src), _("refers to the servers of"), name_show(ns->name),
-                       ns->text, nl_ip_str(next));
+                       name_show(q->name), da_str(&m->src), _("refers to the servers of"), name_show(ns->name),
+                       ns->text, da_str(&next));
             }
             q->server = next;
             q->id = ++st->next_id;
@@ -1412,9 +1637,21 @@ static void dig_rx(nl_node *n, void *ctx, const nl_udpmsg *m)
             nl_count_set(n, "dig.last_a", (double)final->ip);
         nl_sample(n, "dig time (ms)", ms);
         nl_log(n, NL_L_APP, 1, m->pkt_id, T_OK "dig %s: %s" T_RESET "  " T_DIM "(TTL %u s, %s %s, %.1f ms%s)",
-               name_show(q->name), rr_str(final), final->ttl, _("server"), nl_ip_str(m->src), ms,
+               name_show(q->name), rr_str(final), final->ttl, _("server"), da_str(&m->src), ms,
                (r->flags & F_AA) ? _(", authoritative") : "");
         dig_note(st, "%s %s → %s (%.1f ms)", type_name(q->qtype), name_show(q->name), rr_str(final), ms);
+        if (final->type == T_AAAA)
+            nl_count(n, "dig.aaaa", 1);
+        if (q->then[0] && (final->type == T_A || final->type == T_AAAA)) {
+            char then[100], addr[64];
+
+            snprintf(then, sizeof(then), "%s", q->then);
+            snprintf(addr, sizeof(addr), "%s", final->type == T_A ? nl_ip_str(final->ip) : nl_ip6_str(&final->ip6));
+            dig_end(q);
+            free(r);
+            dig_then(n, then, addr);
+            return;
+        }
     } else if (rcode == RC_NXDOMAIN) {
         nl_count(n, "dig.nxdomain", 1);
         nl_log(n, NL_L_APP, 1, m->pkt_id, T_WARN "dig %s: NXDOMAIN" T_RESET " — %s " T_DIM "(%.1f ms)",
@@ -1435,13 +1672,44 @@ static void dig_rx(nl_node *n, void *ctx, const nl_udpmsg *m)
     free(r);
 }
 
+/* Start one query; returns the slot or NULL */
+static dig_q *dig_start(dig_state *st, const char *name, int type, const daddr *server, int trace)
+{
+    nl_node *n = st->n;
+    dig_q *q = NULL;
+    int i;
+
+    for (i = 0; i < 6 && !q; i++)
+        if (!st->q[i].used)
+            q = &st->q[i];
+    if (!q)
+        return NULL;
+    memset(q, 0, sizeof(*q));
+    q->st = st;
+    q->used = 1;
+    q->trace = trace;
+    name_norm(name, q->name);
+    strcpy(q->cur, q->name);
+    q->qtype = (uint16_t)type;
+    q->id = ++st->next_id;
+    q->server = q->root = *server;
+    q->t0 = nl_now();
+    q->sport = da_bind(n, 0, dig_rx, st);
+    nl_count(n, "dig.queries", 1);
+    nl_log(n, NL_L_APP, 1, 0, T_INFO "dig %s" T_RESET " %s → %s %s%s", name_show(q->name), type_name(type), _("asking"),
+           da_str(server), q->trace ? _(" and following the referrals myself") : "");
+    dig_send(q);
+    return q;
+}
+
 static int dig_run(nl_node *n, const nl_args *a)
 {
     dig_state *st = nl_mod_get(n, &dig_mod);
     const char *name = nl_arg_pos(a, 0), *srv = nl_arg_str(a, "server", NULL), *root = nl_arg_str(a, "root", NULL);
+    const char *tname = nl_arg_str(a, "type", NULL), *then = nl_arg_str(a, "then", "");
     dig_q *q = NULL;
-    nl_ip server = g_default_server[n->idx];
-    int i, type;
+    daddr server = g_default_server[n->idx];
+    int type, trace, want6 = (int)nl_arg_int(a, "v6", 0);
 
     if (!st) {
         st = calloc(1, sizeof(*st));
@@ -1452,7 +1720,7 @@ static int dig_run(nl_node *n, const nl_args *a)
         nl_mod_set(n, &dig_mod, st);
     }
     if (srv) {
-        if (!nl_resolve(srv, &server)) {
+        if (!da_resolve(srv, want6, &server)) {
             nl_log(n, NL_L_APP, 1, 0, T_ERR "dig: %s '%s'", _("unknown server"), srv);
             return -1;
         }
@@ -1460,39 +1728,29 @@ static int dig_run(nl_node *n, const nl_args *a)
     }
     if (!name)
         return srv ? 0 : -1;
-    type = type_parse(nl_arg_str(a, "type", "A"));
+    type = type_parse(tname ? tname : "A");
     if (!type) {
-        nl_log(n, NL_L_APP, 1, 0, T_ERR "dig: %s", _("unknown record type (A, NS, CNAME, MX, TXT, SOA)"));
+        nl_log(n, NL_L_APP, 1, 0, T_ERR "dig: %s", _("unknown record type (A, AAAA, NS, CNAME, MX, TXT, SOA)"));
         return -1;
     }
-    for (i = 0; i < 6 && !q; i++)
-        if (!st->q[i].used)
-            q = &st->q[i];
-    if (!q)
-        return -1;
-    memset(q, 0, sizeof(*q));
-    q->trace = (int)nl_arg_int(a, "trace", 0);
-    if (q->trace && root && !nl_resolve(root, &server)) {
+    trace = (int)nl_arg_int(a, "trace", 0);
+    if (trace && root && !da_resolve(root, want6, &server)) {
         nl_log(n, NL_L_APP, 1, 0, T_ERR "dig: %s '%s'", _("unknown server"), root);
         return -1;
     }
-    if (!server) {
+    if (!da_set(&server)) {
         nl_log(n, NL_L_APP, 1, 0, T_ERR "dig: %s", _("no name server configured (use server=ADDRESS, or DHCP)"));
         return -1;
     }
-    q->st = st;
-    q->used = 1;
-    name_norm(name, q->name);
-    strcpy(q->cur, q->name);
-    q->qtype = (uint16_t)type;
-    q->id = ++st->next_id;
-    q->server = q->root = server;
-    q->t0 = nl_now();
-    q->sport = (uint16_t)nl_udp_bind(n, 0, dig_rx, st);
-    nl_count(n, "dig.queries", 1);
-    nl_log(n, NL_L_APP, 1, 0, T_INFO "dig %s" T_RESET " %s → %s %s%s", name_show(q->name), type_name(type), _("asking"),
-           nl_ip_str(server), q->trace ? _(" and following the referrals myself") : "");
-    dig_send(q);
+    /* no type asked in a lab that uses IPv6: both families, as a dual-stack host does */
+    if (!tname && nl_ip6_enabled()) {
+        dig_start(st, name, T_A, &server, trace);
+        type = T_AAAA;
+    }
+    q = dig_start(st, name, type, &server, trace);
+    if (!q)
+        return -1;
+    snprintf(q->then, sizeof(q->then), "%s", then);
     return 0;
 }
 
@@ -1527,7 +1785,7 @@ static int dig_panel(nl_node *n, int x, int y, int w, int h, int detail)
 
     (void)detail;
     row += nl_ui_kv(x, y + row, w, _("name server"), "%s",
-                    g_default_server[n->idx] ? nl_ip_str(g_default_server[n->idx]) : "—");
+                    da_set(&g_default_server[n->idx]) ? da_str(&g_default_server[n->idx]) : "—");
     row += nl_ui_kv(x, y + row, w, _("answers / NXDOMAIN"), "%.0f / %.0f", nl_count_get(n, "dig.answers"),
                     nl_count_get(n, "dig.nxdomain"));
     for (i = st->nhist - 1; i >= 0 && row < h; i--)
@@ -1541,8 +1799,13 @@ static int dig_panel(nl_node *n, int x, int y, int w, int h, int detail)
 
 static const nl_module dig_mod = {
     .name = "dig", .title = N_("dig — ask the DNS for a name"), .layer = NL_L_APP,
-    .usage = N_("run NODE dig NAME [type=A|NS|CNAME|MX|TXT] [server=ADDR] [trace=1] [root=ADDR]\n"
-                "  server= is remembered as the node's name server (DHCP sets it too).\n"
+    .usage = N_("run NODE dig NAME [type=A|AAAA|NS|CNAME|MX|TXT] [server=ADDR] [trace=1] [root=ADDR]\n"
+                "             [v6=1] [then=\"COMMAND\"]\n"
+                "  server= is remembered as the node's name server (DHCP and DHCPv6 set it too);\n"
+                "  it may be an IPv4 or IPv6 address, or a node name (v6=1: its IPv6 address).\n"
+                "  Without type=, a lab that uses IPv6 asks for both A and AAAA.\n"
+                "  then=\"ping count=2\": run that command on this node with the address found\n"
+                "  (a % in the command marks where the address goes: then=\"http get [%]/\").\n"
                 "  trace=1: do not ask for recursion; start from the server (a root) and follow\n"
                 "  every referral, showing each step.\n"
                 "run NODE dig server=ADDR      only set the name server"),
