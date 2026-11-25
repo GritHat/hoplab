@@ -1,0 +1,108 @@
+# Italian translation of src/ospf6.c
+msgid ""
+msgstr ""
+"Project-Id-Version: hoplab\n"
+"PO-Revision-Date: 2026-11-25 00:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: Italian\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "routers in the shortest-path tree"
+msgstr "router nell'albero dei cammini minimi"
+
+msgid "routes"
+msgstr "rotte"
+
+msgid "originating"
+msgstr "origino"
+
+msgid "neighbor"
+msgstr "vicino"
+
+msgid "interface down"
+msgstr "interfaccia non attiva"
+
+msgid "dead interval expired: no Hello heard"
+msgstr "dead interval scaduto: nessun Hello ricevuto"
+
+msgid "no ack: retransmitting"
+msgstr "nessun ack: ritrasmetto"
+
+msgid "from"
+msgstr "da"
+
+msgid "hello/dead intervals differ from ours: ignored, no adjacency"
+msgstr "intervalli hello/dead diversi dai nostri: ignorato, nessuna adiacenza"
+
+msgid "new neighbor, state Init"
+msgstr "nuovo vicino, stato Init"
+
+msgid "two-way, adjacency Full: exchanging databases"
+msgstr "bidirezionale, adiacenza Full: scambio dei database"
+
+msgid "it no longer lists us: restarted"
+msgstr "non ci elenca più: si è riavviato"
+
+msgid "stored (link scope: not flooded further)"
+msgstr "memorizzato (ambito link: non viene diffuso oltre)"
+
+msgid "newer: stored and flooded on"
+msgstr "più recente: memorizzato e inoltrato agli altri"
+
+msgid "usage: ospf6 cost IFACE N"
+msgstr "uso: ospf6 cost INTERFACCIA N"
+
+msgid "cost of"
+msgstr "costo di"
+
+msgid "new LSAs tell everyone"
+msgstr "nuovi LSA lo comunicano a tutti"
+
+msgid "this lab does not use IPv6 (add `ipv6 on` or IPv6 addresses to the scenario)"
+msgstr "questo laboratorio non usa IPv6 (aggiungi `ipv6 on` o indirizzi IPv6 allo scenario)"
+
+msgid "started: router id"
+msgstr "avviato: router id"
+
+msgid "router id"
+msgstr "router id"
+
+msgid "SPF runs"
+msgstr "esecuzioni SPF"
+
+msgid "LSAs flooded"
+msgstr "LSA diffusi"
+
+msgid "retransmitted"
+msgstr "ritrasmessi"
+
+msgid "dev"
+msgstr "interf."
+
+msgid "state"
+msgstr "stato"
+
+msgid "link-local next hop"
+msgstr "next hop link-local"
+
+msgid "link-state database"
+msgstr "database link state"
+
+msgid "router"
+msgstr "router"
+
+msgid "content"
+msgstr "contenuto"
+
+msgid "OSPFv3 — link-state routing for IPv6 (RFC 5340)"
+msgstr "OSPFv3 — routing link state per IPv6 (RFC 5340)"
+
+msgid "run ROUTER ospf6 [hello=10s] [dead=4×hello] [cost=N] [cost.eth1=N] [id=A.B.C.D]\n                 [rxmt=TIME] [spf=200ms] [carrier=1]\nrun ROUTER ospf6 cost IFACE N     change a cost while running\n  hello and dead are whole seconds, as in the packet (minimum 1s).\n  carrier=0 ignores link-down signals: failures are found only by the dead interval.\n  The router id is a 32-bit number written like an IPv4 address: the highest\n  IPv4 address of the router, or 0.0.0.N when it has none, or id=.\n  The lab must use IPv6. ospf and ospf6 can run side by side."
+msgstr "run ROUTER ospf6 [hello=10s] [dead=4×hello] [cost=N] [cost.eth1=N] [id=A.B.C.D]\n                 [rxmt=TEMPO] [spf=200ms] [carrier=1]\nrun ROUTER ospf6 cost INTERFACCIA N     cambia un costo durante l'esecuzione\n  hello e dead sono secondi interi, come nel pacchetto (minimo 1s).\n  carrier=0 ignora i segnali di collegamento caduto: i guasti si scoprono solo con il dead interval.\n  Il router id è un numero a 32 bit scritto come un indirizzo IPv4: l'indirizzo\n  IPv4 più alto del router, oppure 0.0.0.N se non ne ha, oppure id=.\n  Il laboratorio deve usare IPv6. ospf e ospf6 possono funzionare insieme."
+
+msgid "OSPFv3 is the link-state protocol of OSPFv2 rebuilt around IPv6, and the rebuild is instructive because it separates what the old protocol mixed. Topology and addressing are now different things. A Router-LSA says only \"I am router R and I have a link of cost c to router S\", identifying the two ends by interface numbers: it contains no address at all. The IPv6 prefixes travel in a separate Intra-Area-Prefix-LSA that says \"these prefixes are attached to router R\". Renumbering a network therefore changes one small LSA and does not disturb the shortest-path tree.\n\nThe protocol runs per link, not per subnet, and uses link-local addresses for everything that stays on a link: Hellos go to ff02::5 from fe80::, and the next hop placed in the routing table is the neighbor's link-local address, which each router announces to its neighbors in a Link-LSA whose flooding scope is that link only. LSAs thus have three scopes (link, area, AS) encoded in their type. Router ids, area ids and link-state ids remain 32-bit numbers, conventionally written like IPv4 addresses even on a network with no IPv4. Authentication is delegated to IPsec.\n\nThe algorithm is unchanged: discover neighbors with Hello, flood LSAs reliably until every router holds the same database, run Dijkstra, install routes.\n\nHere: real packet and LSA headers and bodies (checksums included), single area. As in the IPv4 module there is no designated router (several routers on a LAN form a mesh of adjacencies and there are no Network-LSAs), a new adjacency sends its whole database instead of the Database Description exchange, and LSAs do not age out."
+msgstr "OSPFv3 è il protocollo link state di OSPFv2 ricostruito attorno a IPv6, e la ricostruzione è istruttiva perché separa ciò che il vecchio protocollo mescolava. Topologia e indirizzamento sono ora cose distinte. Un Router-LSA dice soltanto \"sono il router R e ho un collegamento di costo c verso il router S\", identificando i due estremi con numeri di interfaccia: non contiene alcun indirizzo. I prefissi IPv6 viaggiano in un Intra-Area-Prefix-LSA separato che dice \"questi prefissi sono collegati al router R\". Rinumerare una rete cambia quindi un piccolo LSA e non tocca l'albero dei cammini minimi.\n\nIl protocollo opera per collegamento, non per sottorete, e usa gli indirizzi link-local per tutto ciò che resta su un collegamento: gli Hello vanno a ff02::5 da fe80::, e il next hop messo nella tabella di instradamento è l'indirizzo link-local del vicino, che ogni router annuncia ai vicini in un Link-LSA il cui ambito di diffusione è quel solo collegamento. Gli LSA hanno così tre ambiti (link, area, AS) codificati nel tipo. Router id, area id e link-state id restano numeri a 32 bit, scritti per convenzione come indirizzi IPv4 anche in una rete senza IPv4. L'autenticazione è delegata a IPsec.\n\nL'algoritmo non cambia: scoprire i vicini con gli Hello, diffondere gli LSA in modo affidabile finché ogni router ha lo stesso database, eseguire Dijkstra, installare le rotte.\n\nQui: intestazioni e corpi reali di pacchetti e LSA (checksum compresi), area singola. Come nel modulo IPv4 non c'è designated router (più router su una LAN formano una maglia di adiacenze e non esistono Network-LSA), una nuova adiacenza invia l'intero database invece dello scambio Database Description, e gli LSA non scadono."
+

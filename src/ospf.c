@@ -797,12 +797,19 @@ static const nl_module ospf_mod = {
 };
 NL_MODULE(ospf_mod)
 
+/* Protocol 89 is shared: version 3 is OSPF for IPv6 (ospf6.c) */
+void nl_dissect_ospf6(nl_dissect *o, const uint8_t *d, int len, int off);
+
 static void dis_ospf(nl_dissect *o, const uint8_t *d, int len, int off)
 {
     int type, i, count, p;
 
     if (len < HDR)
         return;
+    if (d[0] == 3) {
+        nl_dissect_ospf6(o, d, len, off);
+        return;
+    }
     type = d[1];
     nl_dis_field(o, "OSPF", "Version / Type", off, 2, "%d / %d (%s)", d[0], type,
                  type == OP_HELLO ? "Hello" : type == OP_LSU ? "LS Update" : type == OP_ACK ? "LS Ack" : "?");

@@ -1,0 +1,19 @@
+# Parameter variants verified by tests/regress.sh: each line is run with
+# seeds 1..5 and must give this result every time.
+#   PASS  scenario  key=value ...
+PASS  233-ripng-convergence
+PASS  233-ripng-convergence  update=2s
+PASS  233-ripng-convergence  update=10s
+PASS  233-ripng-convergence  triggered=0
+PASS  233-ripng-convergence  poison=1
+PASS  233-ripng-convergence  update=10s triggered=0
+PASS  233-ripng-convergence  update=2s poison=1
+PASS  234-ospfv3
+PASS  234-ospfv3  hello=1s
+PASS  234-ospfv3  hello=3s
+PASS  234-ospfv3  hello=5s
+PASS  234-ospfv3  newcost=1
+PASS  234-ospfv3  newcost=5
+PASS  234-ospfv3  newcost=19
+PASS  234-ospfv3  newcost=20
+PASS  234-ospfv3  newcost=200

@@ -1,0 +1,90 @@
+# Italian translation of src/ripng.c
+msgid ""
+msgstr ""
+"Project-Id-Version: hoplab\n"
+"PO-Revision-Date: 2026-11-25 00:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: Italian\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "triggered update: only the routes that changed"
+msgstr "aggiornamento immediato: solo le rotte cambiate"
+
+msgid "periodic update: the whole table to every neighbor"
+msgstr "aggiornamento periodico: tutta la tabella a ogni vicino"
+
+msgid "is now unreachable: metric 16"
+msgstr "ora è irraggiungibile: metrica 16"
+
+msgid "interface down"
+msgstr "interfaccia non attiva"
+
+msgid "no update heard: timeout"
+msgstr "nessun aggiornamento ricevuto: timeout"
+
+msgid "the next hop says so"
+msgstr "lo dice il next hop"
+
+msgid "via"
+msgstr "via"
+
+msgid "reachable via"
+msgstr "raggiungibile tramite"
+
+msgid "hops"
+msgstr "salti"
+
+msgid "table requested by"
+msgstr "tabella richiesta da"
+
+msgid "from"
+msgstr "da"
+
+msgid "routes"
+msgstr "rotte"
+
+msgid "this lab does not use IPv6 (add `ipv6 on` or IPv6 addresses to the scenario)"
+msgstr "questo laboratorio non usa IPv6 (aggiungi `ipv6 on` o indirizzi IPv6 allo scenario)"
+
+msgid "started: update every"
+msgstr "avviato: aggiornamento ogni"
+
+msgid "update / timeout / gc"
+msgstr "aggiornamento / timeout / gc"
+
+msgid "protections"
+msgstr "protezioni"
+
+msgid "updates sent / heard"
+msgstr "aggiornamenti inviati / ricevuti"
+
+msgid "prefix"
+msgstr "prefisso"
+
+msgid "m"
+msgstr "m"
+
+msgid "dev"
+msgstr "interf."
+
+msgid "next hop"
+msgstr "next hop"
+
+msgid "attached"
+msgstr "collegata"
+
+msgid "unreachable"
+msgstr "irraggiungibile"
+
+msgid "RIPng — distance-vector routing for IPv6 (RFC 2080)"
+msgstr "RIPng — routing distance vector per IPv6 (RFC 2080)"
+
+msgid "run ROUTER ripng [update=30s] [timeout=6×update] [gc=4×update]\n                 [split=1] [poison=0] [triggered=1] [redistribute=0]\n                 [phase=TIME] [jitter=1]\n  The options are those of `rip`. The lab must use IPv6 (`ipv6 on`, IPv6\n  addresses or `auto addr6`). A router may run rip and ripng side by side:\n  the two protocols share nothing but the algorithm."
+msgstr "run ROUTER ripng [update=30s] [timeout=6×update] [gc=4×update]\n                 [split=1] [poison=0] [triggered=1] [redistribute=0]\n                 [phase=TEMPO] [jitter=1]\n  Le opzioni sono quelle di `rip`. Il laboratorio deve usare IPv6 (`ipv6 on`,\n  indirizzi IPv6 o `auto addr6`). Un router può eseguire rip e ripng insieme:\n  i due protocolli non condividono altro che l'algoritmo."
+
+msgid "RIPng is RIP for IPv6: the same distance-vector algorithm, the same 30-second updates, the same infinity of 16 hops, the same count-to-infinity problem and the same remedies (split horizon, poisoned reverse, triggered updates). What changes is what IPv6 changes. An entry carries a 128-bit prefix and its length instead of an address and a mask. Messages travel on UDP port 521 to the link-scope multicast group ff02::9, sent from the router's link-local address with hop limit 255, so that a receiver can tell they come from a neighbor on the same link and were not forwarded. The next hop installed in the routing table is that link-local address: routers on a link find each other without any global addressing plan, and the route survives renumbering.\n\nRIPng is a separate protocol instance, not an extension of RIPv2: a dual-stack router runs both, with two tables that may disagree while one of them is still converging.\n\nHere: the real message format (command, version 1, 20-byte entries, the next-hop entry with metric 0xFF is understood on input). Authentication is left to IPsec by the RFC and is not present; route tags are sent as zero."
+msgstr "RIPng è RIP per IPv6: lo stesso algoritmo distance vector, gli stessi aggiornamenti ogni 30 secondi, lo stesso infinito a 16 salti, lo stesso problema del conteggio all'infinito e gli stessi rimedi (split horizon, poisoned reverse, aggiornamenti immediati). Cambia ciò che cambia con IPv6. Una voce porta un prefisso a 128 bit e la sua lunghezza invece di un indirizzo e una maschera. I messaggi viaggiano sulla porta UDP 521 verso il gruppo multicast di ambito link ff02::9, inviati dall'indirizzo link-local del router con hop limit 255, così che chi riceve possa stabilire che provengono da un vicino sullo stesso collegamento e non sono stati inoltrati. Il next hop installato nella tabella di instradamento è quell'indirizzo link-local: i router di un collegamento si trovano senza alcun piano di indirizzamento globale, e la rotta sopravvive a una rinumerazione.\n\nRIPng è un'istanza di protocollo separata, non un'estensione di RIPv2: un router dual stack li esegue entrambi, con due tabelle che possono essere in disaccordo mentre una delle due sta ancora convergendo.\n\nQui: il formato reale dei messaggi (comando, versione 1, voci da 20 byte; la voce di next hop con metrica 0xFF è compresa in ingresso). L'autenticazione è affidata dalla RFC a IPsec e non è presente; i route tag sono inviati a zero."
+
