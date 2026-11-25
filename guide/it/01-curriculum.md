@@ -98,6 +98,7 @@ Un ordine consigliato per un corso: prima il livello di rete (200, 201, 202, poi
 - `330-ospf-vs-rip` Convergenza dopo un guasto: link state contro distance vector
 - `331-bgp-basics` BGP: sistemi autonomi, AS path e ritiri
 - `332-bgp-ipv6` BGP per due protocolli: prefissi IPv6 in una sessione multiprotocollo
+- `333-bgp-ipv4-over-ipv6` Isole IPv4 su una dorsale solo IPv6: BGP con next hop IPv6
 - `340-dns-ttl` Catene di CNAME, caching negativo e il compromesso del TTL
 - `350-nat-hole-punching` Comportamenti dei NAT e UDP hole punching
 - `351-lb-algorithms` Algoritmi di bilanciamento a confronto

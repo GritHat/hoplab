@@ -254,7 +254,7 @@ msgstr ""
 msgid "remote"
 msgstr ""
 
-#: tui.c:1208 src/apps.c:925 src/core.c:451 src/ui.c:617
+#: tui.c:1208 src/apps.c:925 src/core.c:451 src/ui.c:626
 msgid "lost"
 msgstr ""
 
@@ -272,7 +272,7 @@ msgstr ""
 msgid "acknowledgements"
 msgstr ""
 
-#: tui.c:1313 src/mac.c:595 src/scenario.c:171 src/ui.c:602
+#: tui.c:1313 src/mac.c:595 src/scenario.c:171 src/ui.c:611
 msgid "delay"
 msgstr ""
 
@@ -1162,7 +1162,7 @@ msgstr ""
 msgid "in the buffer (acknowledged)"
 msgstr ""
 
-#: selective_repeat_recv.c:299 src/bgp.c:947 src/tcp.c:1841
+#: selective_repeat_recv.c:299 src/bgp.c:975 src/tcp.c:1841
 msgid "expected"
 msgstr ""
 
@@ -1241,7 +1241,7 @@ msgstr ""
 msgid "received"
 msgstr ""
 
-#: src/apps.c:61 src/scenario.c:171 src/ui.c:603
+#: src/apps.c:61 src/scenario.c:171 src/ui.c:612
 msgid "loss"
 msgstr ""
 
@@ -1262,14 +1262,14 @@ msgid "reply"
 msgstr ""
 
 #: src/apps.c:118 src/apps.c:127 src/apps.c:163 src/apps.c:181 src/apps.c:505
-#: src/apps.c:518 src/apps.c:594 src/apps.c:606 src/bgp.c:946 src/chord.c:595
+#: src/apps.c:518 src/apps.c:594 src/apps.c:606 src/bgp.c:974 src/chord.c:595
 #: src/chord.c:674 src/clock.c:200 src/clock.c:311 src/clock.c:320
 #: src/clock.c:328 src/clock.c:352 src/dhcp.c:265 src/dhcp.c:273
 #: src/dhcp.c:286 src/dhcp.c:604 src/dhcp6.c:358 src/dhcp6.c:580
-#: src/dns.c:1134 src/dns.c:1164 src/gossip.c:612 src/gossip.c:614
-#: src/ip6.c:1124 src/ospf.c:487 src/ospf.c:504 src/ospf.c:581 src/ospf6.c:757
+#: src/dns.c:1144 src/dns.c:1174 src/gossip.c:612 src/gossip.c:614
+#: src/ip6.c:1130 src/ospf.c:487 src/ospf.c:504 src/ospf.c:581 src/ospf6.c:757
 #: src/ospf6.c:775 src/ospf6.c:873 src/rip.c:328 src/ripng.c:364
-#: src/stack.c:867 src/tcp.c:2355 src/twopc.c:295 src/twopc.c:599
+#: src/stack.c:895 src/tcp.c:2355 src/twopc.c:295 src/twopc.c:599
 msgid "from"
 msgstr ""
 
@@ -1310,7 +1310,7 @@ msgid "no route to destination"
 msgstr ""
 
 #: src/apps.c:198 src/apps.c:415 src/apps.c:647 src/apps.c:770 src/lb.c:912
-#: src/stack.c:608 src/tcp.c:2424
+#: src/stack.c:624 src/tcp.c:2424
 msgid "unknown destination"
 msgstr ""
 
@@ -1405,7 +1405,7 @@ msgstr ""
 msgid "The simplest possible service: every datagram received is sent back to its sender. UDP adds only ports and a checksum to IP: no connection, no retransmission, no order."
 msgstr ""
 
-#: src/apps.c:593 src/apps.c:605 src/dns.c:1041
+#: src/apps.c:593 src/apps.c:605 src/dns.c:1051
 msgid "answer"
 msgstr ""
 
@@ -1458,295 +1458,296 @@ msgstr ""
 msgid "run NODE sink [port=9000]"
 msgstr ""
 
-#: src/bgp.c:512
+#: src/bgp.c:530
 msgid "originated here"
 msgstr ""
 
-#: src/bgp.c:544
+#: src/bgp.c:562
 msgid "connected network"
 msgstr ""
 
-#: src/bgp.c:565
+#: src/bgp.c:583
 msgid "only path"
 msgstr ""
 
-#: src/bgp.c:566 src/bgp.c:571
+#: src/bgp.c:584 src/bgp.c:589
 msgid "higher local preference"
 msgstr ""
 
-#: src/bgp.c:567 src/bgp.c:572
+#: src/bgp.c:585 src/bgp.c:590
 msgid "shorter AS path"
 msgstr ""
 
-#: src/bgp.c:568 src/bgp.c:572
+#: src/bgp.c:586 src/bgp.c:590
 msgid "lowest router id"
 msgstr ""
 
-#: src/bgp.c:599
+#: src/bgp.c:617
 msgid "no path left, route withdrawn"
 msgstr ""
 
-#: src/bgp.c:618
+#: src/bgp.c:639
 msgid "best path via"
 msgstr ""
 
-#: src/bgp.c:661
+#: src/bgp.c:682
 msgid "not exported to"
 msgstr ""
 
-#: src/bgp.c:661
+#: src/bgp.c:682
 msgid "valley-free policy"
 msgstr ""
 
-#: src/bgp.c:703 src/bgp.c:1012
+#: src/bgp.c:724 src/bgp.c:1046
 msgid "session with"
 msgstr ""
 
-#: src/bgp.c:704
+#: src/bgp.c:725
 msgid "is down"
 msgstr ""
 
-#: src/bgp.c:728
+#: src/bgp.c:749
 msgid "connection with"
 msgstr ""
 
-#: src/bgp.c:791
+#: src/bgp.c:812
 msgid "our own AS is in the path: loop, rejected"
 msgstr ""
 
-#: src/bgp.c:800
+#: src/bgp.c:821
 msgid "originated by"
 msgstr ""
 
-#: src/bgp.c:801
+#: src/bgp.c:822
 msgid "origin validation says INVALID (wrong origin AS or too specific): rejected"
 msgstr ""
 
-#: src/bgp.c:917
+#: src/bgp.c:940
 msgid "OPEN received in the wrong state"
 msgstr ""
 
-#: src/bgp.c:921
+#: src/bgp.c:944
 msgid "malformed OPEN"
 msgstr ""
 
-#: src/bgp.c:925
+#: src/bgp.c:948
 msgid "unsupported BGP version"
 msgstr ""
 
-#: src/bgp.c:947
+#: src/bgp.c:975
 msgid "session refused"
 msgstr ""
 
-#: src/bgp.c:949
+#: src/bgp.c:977
 msgid "wrong AS number in the OPEN"
 msgstr ""
 
-#: src/bgp.c:954
+#: src/bgp.c:982
 msgid "unacceptable hold time"
 msgstr ""
 
-#: src/bgp.c:967
+#: src/bgp.c:1001
 msgid "no address family in common"
 msgstr ""
 
-#: src/bgp.c:977
+#: src/bgp.c:1011
 msgid "connection collision with"
 msgstr ""
 
-#: src/bgp.c:978
+#: src/bgp.c:1012
 msgid "keeping the connection opened by"
 msgstr ""
 
-#: src/bgp.c:1002
+#: src/bgp.c:1036
 msgid "malformed KEEPALIVE"
 msgstr ""
 
-#: src/bgp.c:1013
+#: src/bgp.c:1047
 msgid "Established: exchanging routes"
 msgstr ""
 
-#: src/bgp.c:1017
+#: src/bgp.c:1051
 msgid "KEEPALIVE received in the wrong state"
 msgstr ""
 
-#: src/bgp.c:1022
+#: src/bgp.c:1056
 msgid "UPDATE received before the session was established"
 msgstr ""
 
-#: src/bgp.c:1024
+#: src/bgp.c:1058
 msgid "malformed UPDATE"
 msgstr ""
 
-#: src/bgp.c:1032
+#: src/bgp.c:1066
 msgid "the neighbor closed it"
 msgstr ""
 
-#: src/bgp.c:1037
+#: src/bgp.c:1071
 msgid "unknown message type"
 msgstr ""
 
-#: src/bgp.c:1062
+#: src/bgp.c:1096
 msgid "on the connection the neighbor opened"
 msgstr ""
 
-#: src/bgp.c:1062
+#: src/bgp.c:1096
 msgid "on the connection we opened"
 msgstr ""
 
-#: src/bgp.c:1085
+#: src/bgp.c:1119
 msgid "connection from"
 msgstr ""
 
-#: src/bgp.c:1087
+#: src/bgp.c:1121
 msgid "not a configured neighbor, refused"
 msgstr ""
 
-#: src/bgp.c:1124
+#: src/bgp.c:1158
 msgid "the byte stream is not a sequence of BGP messages"
 msgstr ""
 
-#: src/bgp.c:1142
+#: src/bgp.c:1176
 msgid "the neighbor closed the TCP connection"
 msgstr ""
 
-#: src/bgp.c:1152
+#: src/bgp.c:1186
 msgid "TCP connection reset"
 msgstr ""
 
-#: src/bgp.c:1153
+#: src/bgp.c:1187
 msgid "TCP connection refused"
 msgstr ""
 
-#: src/bgp.c:1154
+#: src/bgp.c:1188
 msgid "TCP connection timed out"
 msgstr ""
 
-#: src/bgp.c:1154
+#: src/bgp.c:1188
 msgid "TCP connection closed"
 msgstr ""
 
-#: src/bgp.c:1178 src/ospf.c:433 src/ospf6.c:693 src/ospf6.c:712 src/rip.c:241
+#: src/bgp.c:1212 src/ospf.c:433 src/ospf6.c:693 src/ospf6.c:712 src/rip.c:241
 #: src/ripng.c:279
 msgid "interface down"
 msgstr ""
 
-#: src/bgp.c:1195
+#: src/bgp.c:1229
 msgid "no TCP connection yet: ConnectRetry timer expired, trying again"
 msgstr ""
 
-#: src/bgp.c:1200
+#: src/bgp.c:1234
 msgid "hold timer expired: nothing heard"
 msgstr ""
 
-#: src/bgp.c:1397
+#: src/bgp.c:1431
 msgid "usage: bgp announce|withdraw PREFIX/LEN"
 msgstr ""
 
-#: src/bgp.c:1401
+#: src/bgp.c:1435
 msgid "now originates"
 msgstr ""
 
-#: src/bgp.c:1401
+#: src/bgp.c:1435
 msgid "stops originating"
 msgstr ""
 
-#: src/bgp.c:1437
+#: src/bgp.c:1472
 msgid "as=NUMBER is required"
 msgstr ""
 
-#: src/bgp.c:1445
+#: src/bgp.c:1480
 msgid "bad neighbor"
 msgstr ""
 
-#: src/bgp.c:1446
+#: src/bgp.c:1481
 msgid "(NODE:AS[:customer|peer|provider], on a shared network, different AS)"
 msgstr ""
 
-#: src/bgp.c:1451
+#: src/bgp.c:1486
 msgid "bad network"
 msgstr ""
 
-#: src/bgp.c:1489
+#: src/bgp.c:1524
 msgid "cannot listen on TCP port 179"
 msgstr ""
 
-#: src/bgp.c:1495
+#: src/bgp.c:1530
 msgid "neighbors"
 msgstr ""
 
-#: src/bgp.c:1495
+#: src/bgp.c:1530
 msgid "networks originated"
 msgstr ""
 
-#: src/bgp.c:1561
+#: src/bgp.c:1596
 msgid "autonomous system"
 msgstr ""
 
-#: src/bgp.c:1562
+#: src/bgp.c:1597
 msgid "  policies off"
 msgstr ""
 
-#: src/bgp.c:1562
+#: src/bgp.c:1597
 msgid "  origin validation on"
 msgstr ""
 
-#: src/bgp.c:1564 src/ospf.c:398 src/ospf.c:511 src/ospf.c:736 src/ospf6.c:652
+#: src/bgp.c:1599 src/ospf.c:398 src/ospf.c:511 src/ospf.c:736 src/ospf6.c:652
 #: src/ospf6.c:782 src/ospf6.c:1059
 msgid "neighbor"
 msgstr ""
 
-#: src/bgp.c:1565
+#: src/bgp.c:1600
 msgid "relation"
 msgstr ""
 
-#: src/bgp.c:1565 src/dhcp.c:707 src/dhcp6.c:874 src/ospf.c:737
-#: src/ospf6.c:1060 src/qdisc.c:440 src/stp.c:916 src/ui.c:544
+#: src/bgp.c:1600 src/dhcp.c:707 src/dhcp6.c:874 src/ospf.c:737
+#: src/ospf6.c:1060 src/qdisc.c:440 src/stp.c:916 src/ui.c:553
 msgid "state"
 msgstr ""
 
-#: src/bgp.c:1565
+#: src/bgp.c:1600
 msgid "updates in/out"
 msgstr ""
 
-#: src/bgp.c:1574
-msgid "opened by the neighbor"
-msgstr ""
-
-#: src/bgp.c:1574
-msgid "opened by us"
-msgstr ""
-
-#: src/bgp.c:1574
+#: src/bgp.c:1609
 msgid "hold"
 msgstr ""
 
-#: src/bgp.c:1580 src/ripng.c:515
+#: src/bgp.c:1610
+msgid "IPv4 via IPv6 next hop"
+msgstr ""
+
+#: src/bgp.c:1614
+msgid "opened by the neighbor"
+msgstr ""
+
+#: src/bgp.c:1614
+msgid "opened by us"
+msgstr ""
+
+#: src/bgp.c:1618 src/ripng.c:515
 msgid "prefix"
 msgstr ""
 
-#: src/bgp.c:1580 src/rip.c:288 src/ripng.c:325 src/stp.c:907
+#: src/bgp.c:1618 src/rip.c:288 src/ripng.c:325 src/stp.c:907 src/ui.c:540
+#: src/ui.c:543
 msgid "via"
 msgstr ""
 
-#: src/bgp.c:1581
+#: src/bgp.c:1618
 msgid "AS path"
 msgstr ""
 
-#: src/bgp.c:1581
-msgid "why it is the best"
-msgstr ""
-
-#: src/bgp.c:1605
+#: src/bgp.c:1651
 msgid "BGP — path-vector routing between autonomous systems"
 msgstr ""
 
-#: src/bgp.c:1606
+#: src/bgp.c:1652
 msgid ""
 "run ROUTER bgp as=N [network=PREFIX/LEN ...] [neighbor=NODE:AS[:RELATION] ...]\n"
 "               [connected=1] [keepalive=30s] [hold=3×keepalive] [retry=keepalive]\n"
 "               [mrai=500ms] [prepend=N] [prepend.NEIGHBOR=N] [policy=1]\n"
-"               [rov=1 roa=PREFIX/LEN:AS[:MAXLEN] ...] [transport=6] [id=A.B.C.D]\n"
+"               [rov=1 roa=PREFIX/LEN:AS[:MAXLEN] ...] [transport=6] [enh=0] [id=A.B.C.D]\n"
 "run ROUTER bgp announce|withdraw PREFIX/LEN\n"
 "  network= and neighbor= can be repeated. RELATION says what the neighbor is for\n"
 "  this AS: customer, peer or provider (none: no policy on that session).\n"
@@ -1762,10 +1763,12 @@ msgid ""
 "  families of the networks the two routers share (multiprotocol BGP). It runs over\n"
 "  IPv4 when they share an IPv4 network, else over IPv6; transport=6 (or\n"
 "  transport.NEIGHBOR=6) prefers IPv6. A neighbor can also be [IPV6-ADDRESS]:AS.\n"
+"  Routers that share only IPv6 networks still exchange IPv4 prefixes, with an IPv6\n"
+"  next hop (extended next hop encoding, RFC 8950); enh=0 turns that off.\n"
 "  Counters: bgp.routes (IPv4) and bgp.routes6 (IPv6)."
 msgstr ""
 
-#: src/bgp.c:1626
+#: src/bgp.c:1674
 msgid ""
 "The Internet is a network of autonomous systems (AS): networks under one administration, each with its own interior routing. BGP is the protocol they use to tell each other which address blocks (prefixes) they can reach. It is a path-vector protocol: an announcement carries the whole list of ASes it has crossed (the AS path). When a router passes a route on, it prepends its own AS number; a router that finds its own number in a path discards it, which prevents loops without any count-to-infinity. When a route disappears an explicit withdrawal is sent.\n"
 "\n"
@@ -1776,6 +1779,8 @@ msgid ""
 "BGP trusts what it is told. An AS that announces a prefix it does not own attracts the traffic of everyone for whom its path looks better (prefix hijack), and announcing a more specific prefix attracts everyone, because forwarding always follows the longest match. Route origin validation (RPKI) lets routers reject announcements whose origin AS or prefix length does not match a signed authorization.\n"
 "\n"
 "BGP-4 was designed for IPv4: its UPDATE has fixed fields for IPv4 prefixes and one IPv4 next hop. The multiprotocol extensions (RFC 4760) add two optional attributes, MP_REACH_NLRI and MP_UNREACH_NLRI, that carry the prefixes of another address family together with their own next hop, and a capability in the OPEN with which the two routers agree on the families of the session. For IPv6 the next hop is the neighbor's global address and, when the two routers are on the same link, its link-local one, which is what goes in the forwarding table. Everything else is shared: one session, one AS path, the same decision process and policies for both families. The TCP connection itself may run over either protocol, independently of what it carries.\n"
+"\n"
+"The same attributes solve a problem of dual-stack backbones: links between routers that carry only IPv6 addresses. An IPv4 prefix cannot be announced over such a link in the classic way, because NEXT_HOP must be an IPv4 address. With the extended next hop encoding (RFC 8950), negotiated by a capability in the OPEN, IPv4 prefixes travel in MP_REACH_NLRI with an IPv6 next hop. The route is installed with that next hop, and the IPv4 packets are still sent as IPv4 frames: only the link-layer address is found with Neighbor Discovery instead of ARP. A router on such a path that has no IPv4 address at all forwards IPv4 perfectly well, but cannot be the source of an ICMP error: traceroute shows it as a silent hop.\n"
 "\n"
 "Not modelled here: iBGP (there is one router per AS and neighbors are directly connected), MED, communities, aggregation and route-flap damping; each UPDATE carries one prefix."
 msgstr ""
@@ -1903,7 +1908,7 @@ msgstr ""
 msgid "does not answer: removed from my tables"
 msgstr ""
 
-#: src/chord.c:480 src/dns.c:1664 src/http.c:396 src/main.c:310 src/tcp.c:2288
+#: src/chord.c:480 src/dns.c:1674 src/http.c:396 src/main.c:310 src/tcp.c:2288
 msgid "failed"
 msgstr ""
 
@@ -2446,7 +2451,7 @@ msgid "releasing"
 msgstr ""
 
 #: src/dhcp.c:708 src/dhcp6.c:402 src/dhcp6.c:643 src/dhcp6.c:881
-#: src/ip6.c:922 src/ospf.c:736
+#: src/ip6.c:928 src/ospf.c:736
 msgid "address"
 msgstr ""
 
@@ -2517,7 +2522,7 @@ msgstr ""
 msgid ", again"
 msgstr ""
 
-#: src/dhcp6.c:571 src/dns.c:1640 src/lb.c:444 src/lb.c:470
+#: src/dhcp6.c:571 src/dns.c:1650 src/lb.c:444 src/lb.c:470
 msgid "server"
 msgstr ""
 
@@ -2644,151 +2649,151 @@ msgid ""
 "Clients and servers are named by a DUID, an identifier that stays the same on every interface and survives a change of network card better than a MAC address; here it is the simplest kind, built from the link-layer address. Left out: relay agents (the server must be on the client's link), prefix delegation, temporary addresses, CONFIRM and DECLINE, and server preference."
 msgstr ""
 
-#: src/dns.c:659
+#: src/dns.c:669
 msgid "not my zone"
 msgstr ""
 
-#: src/dns.c:726 src/dns.c:1062
+#: src/dns.c:736 src/dns.c:1072
 msgid "referral:"
 msgstr ""
 
-#: src/dns.c:732
+#: src/dns.c:742
 msgid "no such name"
 msgstr ""
 
-#: src/dns.c:734
+#: src/dns.c:744
 msgid "the name exists, but not with this type"
 msgstr ""
 
-#: src/dns.c:839 src/dns.c:844 src/dns.c:1370
+#: src/dns.c:849 src/dns.c:854 src/dns.c:1380
 msgid "upstream queries"
 msgstr ""
 
-#: src/dns.c:839 src/dns.c:844
+#: src/dns.c:849 src/dns.c:854
 msgid "from the cache"
 msgstr ""
 
-#: src/dns.c:867
+#: src/dns.c:877
 msgid "no answer from"
 msgstr ""
 
-#: src/dns.c:872
+#: src/dns.c:882
 msgid "timeout waiting for"
 msgstr ""
 
-#: src/dns.c:873
+#: src/dns.c:883
 msgid "asking again"
 msgstr ""
 
-#: src/dns.c:910
+#: src/dns.c:920
 msgid "ask"
 msgstr ""
 
-#: src/dns.c:911 src/dns.c:1007
+#: src/dns.c:921 src/dns.c:1017
 msgid "server for"
 msgstr ""
 
-#: src/dns.c:1006
+#: src/dns.c:1016
 msgid "ignored out-of-bailiwick record"
 msgstr ""
 
-#: src/dns.c:1023
+#: src/dns.c:1033
 msgid "negative answer cached for"
 msgstr ""
 
-#: src/dns.c:1050
+#: src/dns.c:1060
 msgid "alias (CNAME)"
 msgstr ""
 
-#: src/dns.c:1102
+#: src/dns.c:1112
 msgid "response matching no pending query, dropped: from"
 msgstr ""
 
-#: src/dns.c:1133
+#: src/dns.c:1143
 msgid "recursive query"
 msgstr ""
 
-#: src/dns.c:1212 src/dns.c:1218
+#: src/dns.c:1222 src/dns.c:1228
 msgid "unknown address"
 msgstr ""
 
-#: src/dns.c:1268
+#: src/dns.c:1278
 msgid "cache emptied"
 msgstr ""
 
-#: src/dns.c:1276
+#: src/dns.c:1286
 msgid "resolver needs root=ADDRESS (a root name server)"
 msgstr ""
 
-#: src/dns.c:1290
+#: src/dns.c:1300
 msgid "recursive resolver ready, root server"
 msgstr ""
 
-#: src/dns.c:1291
+#: src/dns.c:1301
 msgid " — fixed source port, sequential ids"
 msgstr ""
 
-#: src/dns.c:1305
+#: src/dns.c:1315
 msgid "too many zones"
 msgstr ""
 
-#: src/dns.c:1319
+#: src/dns.c:1329
 msgid "bad record (give zone=NAME first, then key=owner:value)"
 msgstr ""
 
-#: src/dns.c:1326
+#: src/dns.c:1336
 msgid "authoritative for zone"
 msgstr ""
 
-#: src/dns.c:1327
+#: src/dns.c:1337
 msgid "records"
 msgstr ""
 
-#: src/dns.c:1366
+#: src/dns.c:1376
 msgid "queries received"
 msgstr ""
 
-#: src/dns.c:1368
+#: src/dns.c:1378
 msgid "root server"
 msgstr ""
 
-#: src/dns.c:1369
+#: src/dns.c:1379
 msgid "answered from cache"
 msgstr ""
 
-#: src/dns.c:1371
+#: src/dns.c:1381
 msgid "source port / id"
 msgstr ""
 
-#: src/dns.c:1372
+#: src/dns.c:1382
 msgid "random"
 msgstr ""
 
-#: src/dns.c:1372
+#: src/dns.c:1382
 msgid "fixed 53 / sequential"
 msgstr ""
 
-#: src/dns.c:1374
+#: src/dns.c:1384
 msgid "unmatched responses"
 msgstr ""
 
-#: src/dns.c:1376
+#: src/dns.c:1386
 msgid "cache (remaining TTL)"
 msgstr ""
 
-#: src/dns.c:1389
+#: src/dns.c:1399
 msgid "referrals / NXDOMAIN"
 msgstr ""
 
-#: src/dns.c:1394
+#: src/dns.c:1404
 msgid "zone"
 msgstr ""
 
-#: src/dns.c:1403
+#: src/dns.c:1413
 msgid "DNS server: authoritative zones and recursive resolver"
 msgstr ""
 
-#: src/dns.c:1404
+#: src/dns.c:1414
 msgid ""
 "run NODE dns zone=NAME [ttl=60] [negttl=30] RECORD...   authoritative server\n"
 "  records, as key=owner:value (owner @ = the zone itself, names are relative\n"
@@ -2806,7 +2811,7 @@ msgid ""
 "run NODE dns flush     empty the resolver cache"
 msgstr ""
 
-#: src/dns.c:1418
+#: src/dns.c:1428
 msgid ""
 "The Domain Name System is a distributed database that maps names to records (A: an IPv4 address, AAAA: an IPv6 address, NS: the name servers of a zone, CNAME: an alias, MX: the mail exchanger, TXT: free text). The name space is a tree cut into zones; each zone is served by authoritative servers, and a zone delegates a subtree by publishing NS records for it, plus the addresses of those servers (glue). Nobody knows everything: the root servers only know who serves com, org, it...; those know who serves example.com; and so on.\n"
 "\n"
@@ -2815,75 +2820,75 @@ msgid ""
 "Messages have a 12-byte header (identifier, flags, four counters) followed by the question and three record sections; repeated names are compressed with pointers. DNS normally runs on UDP, so a resolver accepts a response when it comes from the address it asked, to the port it used, with the identifier and question it sent: an attacker who can guess those values can forge an answer and poison the cache, which is why resolvers randomize both the identifier and the source port. The records a name has and the transport used to ask are independent: an AAAA record can be fetched over IPv4 and an A record over IPv6, and a dual-stack host asks for both. Here: class IN only, no TCP fallback, EDNS or DNSSEC, and delegations need glue."
 msgstr ""
 
-#: src/dns.c:1523
+#: src/dns.c:1533
 msgid "no answer from server"
 msgstr ""
 
-#: src/dns.c:1526 src/http.c:398 src/tcp.c:2290 src/twopc.c:751
+#: src/dns.c:1536 src/http.c:398 src/tcp.c:2290 src/twopc.c:751
 msgid "timeout"
 msgstr ""
 
-#: src/dns.c:1558
+#: src/dns.c:1568
 msgid "could not run"
 msgstr ""
 
-#: src/dns.c:1620
+#: src/dns.c:1630
 msgid "says it is an alias: start again from the root for"
 msgstr ""
 
-#: src/dns.c:1623
+#: src/dns.c:1633
 msgid "refers to the servers of"
 msgstr ""
 
-#: src/dns.c:1641
+#: src/dns.c:1651
 msgid ", authoritative"
 msgstr ""
 
-#: src/dns.c:1658
+#: src/dns.c:1668
 msgid "the name does not exist"
 msgstr ""
 
-#: src/dns.c:1663
+#: src/dns.c:1673
 msgid "the server could not answer"
 msgstr ""
 
-#: src/dns.c:1668
+#: src/dns.c:1678
 msgid "the name exists but has no record of type"
 msgstr ""
 
-#: src/dns.c:1699
+#: src/dns.c:1709
 msgid "asking"
 msgstr ""
 
-#: src/dns.c:1700
+#: src/dns.c:1710
 msgid " and following the referrals myself"
 msgstr ""
 
-#: src/dns.c:1724 src/dns.c:1738 src/lb.c:492 src/lb.c:544
+#: src/dns.c:1734 src/dns.c:1748 src/lb.c:492 src/lb.c:544
 msgid "unknown server"
 msgstr ""
 
-#: src/dns.c:1733
+#: src/dns.c:1743
 msgid "unknown record type (A, AAAA, NS, CNAME, MX, TXT, SOA)"
 msgstr ""
 
-#: src/dns.c:1742
+#: src/dns.c:1752
 msgid "no name server configured (use server=ADDRESS, or DHCP)"
 msgstr ""
 
-#: src/dns.c:1787
+#: src/dns.c:1797
 msgid "name server"
 msgstr ""
 
-#: src/dns.c:1789
+#: src/dns.c:1799
 msgid "answers / NXDOMAIN"
 msgstr ""
 
-#: src/dns.c:1801
+#: src/dns.c:1811
 msgid "dig — ask the DNS for a name"
 msgstr ""
 
-#: src/dns.c:1802
+#: src/dns.c:1812
 #, c-format
 msgid ""
 "run NODE dig NAME [type=A|AAAA|NS|CNAME|MX|TXT] [server=ADDR] [trace=1] [root=ADDR]\n"
@@ -2898,110 +2903,112 @@ msgid ""
 "run NODE dig server=ADDR      only set the name server"
 msgstr ""
 
-#: src/dns.c:1812
+#: src/dns.c:1822
 msgid "dig is the stub resolver of a host: it sends a single query to the configured name server with the Recursion Desired bit set and prints what comes back, with the TTL of each record. With trace=1 it plays the part of the recursive resolver instead: it asks a root server without recursion and follows the referrals one by one, so you can see the delegation chain root → top-level domain → authoritative server."
 msgstr ""
 
-#: src/dns.c:1885 src/dns.c:1888
+#: src/dns.c:1909 src/dns.c:1912
 msgid "races won"
 msgstr ""
 
-#: src/dns.c:1885
+#: src/dns.c:1909
 msgid "known port and predictable ids: nothing to guess"
 msgstr ""
 
-#: src/dns.c:1888
+#: src/dns.c:1912
 msgid "about"
 msgstr ""
 
-#: src/dns.c:1888
+#: src/dns.c:1912
 msgid "forged answers per race against"
 msgstr ""
 
-#: src/dns.c:1889
+#: src/dns.c:1913
 msgid "equally likely (id, port) pairs"
 msgstr ""
 
-#: src/dns.c:1889
+#: src/dns.c:1913
 msgid "expected odds per race"
 msgstr ""
 
-#: src/dns.c:1907
+#: src/dns.c:1931
 msgid "cache POISONED"
 msgstr ""
 
-#: src/dns.c:1908
+#: src/dns.c:1932
 msgid "the resolver now answers"
 msgstr ""
 
-#: src/dns.c:1908 src/dns.c:1913
+#: src/dns.c:1933 src/dns.c:1938
 msgid "forged responses sent"
 msgstr ""
 
-#: src/dns.c:1912
+#: src/dns.c:1937
 msgid "attack failed"
 msgstr ""
 
-#: src/dns.c:1913
+#: src/dns.c:1938
 msgid "the genuine answer won the race"
 msgstr ""
 
-#: src/dns.c:1989
-msgid "usage: dnsspoof resolver=ADDR as=ADDR name=NAME [fake=ADDR]"
+#: src/dns.c:2033
+msgid "usage: dnsspoof resolver=ADDR as=ADDR name=NAME [fake=ADDR] [family=4|6] (resolver and as in the same family)"
 msgstr ""
 
-#: src/dns.c:2018
+#: src/dns.c:2062
 msgid "attack on resolver"
 msgstr ""
 
-#: src/dns.c:2018
+#: src/dns.c:2062
 msgid "trigger a lookup of"
 msgstr ""
 
-#: src/dns.c:2018
+#: src/dns.c:2062
 msgid "then race"
 msgstr ""
 
-#: src/dns.c:2019
+#: src/dns.c:2063
 msgid "forged answers pretending to come from"
 msgstr ""
 
-#: src/dns.c:2020
+#: src/dns.c:2064
 msgid "(blind: random ports and ids)"
 msgstr ""
 
-#: src/dns.c:2045
+#: src/dns.c:2089
 msgid "target resolver"
 msgstr ""
 
-#: src/dns.c:2046
+#: src/dns.c:2090
 msgid "impersonated server"
 msgstr ""
 
-#: src/dns.c:2047
+#: src/dns.c:2091
 msgid "forged record"
 msgstr ""
 
-#: src/dns.c:2048
+#: src/dns.c:2093
 msgid "races run / won"
 msgstr ""
 
-#: src/dns.c:2050
+#: src/dns.c:2095
 msgid "pairs to guess from"
 msgstr ""
 
-#: src/dns.c:2051
+#: src/dns.c:2096
 msgid "forged responses"
 msgstr ""
 
-#: src/dns.c:2056
+#: src/dns.c:2101
 msgid "DNS cache poisoning: an off-path forger of answers"
 msgstr ""
 
-#: src/dns.c:2057
+#: src/dns.c:2102
 msgid ""
-"run NODE dnsspoof resolver=ADDR as=ADDR name=NAME [fake=6.6.6.6] [guesses=64]\n"
+"run NODE dnsspoof resolver=ADDR as=ADDR name=NAME [fake=ADDR] [family=4|6] [guesses=64]\n"
 "        [port=53] [firstid=1] [blind=0] [entropy=30] [rounds=1] [ttl=3600] [gap=200us]\n"
+"  family=6 (or IPv6 addresses): the race runs over IPv6. An IPv6 fake address forges an\n"
+"  AAAA record, an IPv4 one an A record (defaults: 6.6.6.6, or 2001:db8:bad::6 over IPv6).\n"
 "  Asks the resolver for NAME, then sends `guesses` forged answers with the source\n"
 "  address of the authoritative server `as`. port=N: the resolver's known source\n"
 "  port, ids firstid, firstid+1, ...; blind=1 (or port=0): port and id unknown, both\n"
@@ -3011,8 +3018,8 @@ msgid ""
 "  network. Counters: spoof.rounds spoof.success spoof.forged spoof.per_round"
 msgstr ""
 
-#: src/dns.c:2066
-msgid "A resolver trusts a UDP response if it comes from the address it asked, arrives on the port the query left from, and repeats the 16-bit identifier and the question. An attacker who is not on the path cannot see the query, but can send packets with a forged source address. If the resolver always uses the same source port and predictable identifiers, a handful of forged responses is enough: the first that matches wins, the genuine answer arriving later is discarded, and the false record stays in the cache for its whole TTL, served to every client. The attacker even chooses the moment, by asking the resolver for the name himself. Randomizing the identifier gives 16 bits of uncertainty; randomizing the source port as well (the fix deployed after Kaminsky's 2008 attack) gives about 30, which makes a blind race impractical: a forger who lands n answers before the genuine one wins with probability about n / 2^bits, and the lab lets you shrink the number of random bits to watch that law at work. DNSSEC, not modelled here, removes the problem by signing records."
+#: src/dns.c:2113
+msgid "A resolver trusts a UDP response if it comes from the address it asked, arrives on the port the query left from, and repeats the 16-bit identifier and the question. An attacker who is not on the path cannot see the query, but can send packets with a forged source address. If the resolver always uses the same source port and predictable identifiers, a handful of forged responses is enough: the first that matches wins, the genuine answer arriving later is discarded, and the false record stays in the cache for its whole TTL, served to every client. The attacker even chooses the moment, by asking the resolver for the name himself. Randomizing the identifier gives 16 bits of uncertainty; randomizing the source port as well (the fix deployed after Kaminsky's 2008 attack) gives about 30, which makes a blind race impractical: a forger who lands n answers before the genuine one wins with probability about n / 2^bits, and the lab lets you shrink the number of random bits to watch that law at work. Over IPv6 nothing changes: the question still carries a 16-bit identifier and leaves from a 16-bit port, and the size of the address space adds nothing to what the forger must guess. DNSSEC, not modelled here, removes the problem by signing records."
 msgstr ""
 
 #: src/fec.c:507
@@ -3606,136 +3613,136 @@ msgid ""
 "A web page is usually an HTML document plus the objects it references. HTTP/1.0 opened a new TCP connection for every object, paying a three-way handshake and a fresh slow start each time. HTTP/1.1 keeps the connection open (persistent connections), so later requests skip the handshake and inherit an already opened congestion window: compare keepalive=1 and keepalive=0 on a path with some delay and the difference in page load time is exactly those saved round trips. Here requests on a connection are strictly sequential; HTTP/2 multiplexes them and HTTP/3 moves the whole thing onto QUIC to avoid head-of-line blocking."
 msgstr ""
 
-#: src/ip6.c:621
+#: src/ip6.c:622
 msgid "reachable → stale"
 msgstr ""
 
-#: src/ip6.c:696 src/ip6.c:1478 src/stack.c:722 src/stack.c:1137
+#: src/ip6.c:702 src/ip6.c:1484 src/stack.c:741 src/stack.c:1165
 #: src/tcp.c:2015 src/tcp.c:2031
 msgid "no route to"
 msgstr ""
 
-#: src/ip6.c:701
+#: src/ip6.c:707
 msgid "no usable source address yet for"
 msgstr ""
 
-#: src/ip6.c:718
+#: src/ip6.c:724
 msgid "source fragmentation"
 msgstr ""
 
-#: src/ip6.c:719
+#: src/ip6.c:725
 msgid "path MTU"
 msgstr ""
 
-#: src/ip6.c:719 src/stack.c:651
+#: src/ip6.c:725 src/stack.c:667
 msgid "fragments"
 msgstr ""
 
-#: src/ip6.c:856
+#: src/ip6.c:862
 msgid "is anybody already using"
 msgstr ""
 
-#: src/ip6.c:887
+#: src/ip6.c:893
 msgid "neighbor cache"
 msgstr ""
 
-#: src/ip6.c:923
+#: src/ip6.c:929
 msgid "is already in use on this link (DAD)"
 msgstr ""
 
-#: src/ip6.c:923
+#: src/ip6.c:929
 msgid "not configured"
 msgstr ""
 
-#: src/ip6.c:961
+#: src/ip6.c:967
 msgid "autoconfigured address"
 msgstr ""
 
-#: src/ip6.c:961
+#: src/ip6.c:967
 msgid "prefix advertised by"
 msgstr ""
 
-#: src/ip6.c:1049 src/stack.c:819
+#: src/ip6.c:1055 src/stack.c:847
 msgid "wrong checksum: discarded"
 msgstr ""
 
-#: src/ip6.c:1101
+#: src/ip6.c:1107
 msgid "path MTU towards"
 msgstr ""
 
-#: src/ip6.c:1102
+#: src/ip6.c:1108
 msgid "reported by"
 msgstr ""
 
-#: src/ip6.c:1230 src/stack.c:976
+#: src/ip6.c:1236 src/stack.c:1004
 msgid "wrong checksum: datagram discarded"
 msgstr ""
 
-#: src/ip6.c:1340 src/stack.c:1077
+#: src/ip6.c:1346 src/stack.c:1105
 msgid "datagram reassembled"
 msgstr ""
 
-#: src/ip6.c:1470 src/stack.c:1129
+#: src/ip6.c:1476 src/stack.c:1157
 msgid "expired"
 msgstr ""
 
-#: src/ip6.c:1487
+#: src/ip6.c:1493
 msgid "routers do not fragment IPv6: dropped, Packet Too Big sent"
 msgstr ""
 
-#: src/ip6.c:1572
+#: src/ip6.c:1578
 msgid "router solicitation: is there a router?"
 msgstr ""
 
-#: src/ip6.c:1591
+#: src/ip6.c:1597
 msgid "nobody objected (DAD): address in use"
 msgstr ""
 
-#: src/ip6.c:1610 src/stack.c:415
+#: src/ip6.c:1616 src/stack.c:431
 msgid "no answer for"
 msgstr ""
 
-#: src/ip6.c:1620
+#: src/ip6.c:1626
 msgid "does not answer any more: removed from the neighbor cache"
 msgstr ""
 
-#: src/ip6.c:1816
+#: src/ip6.c:1822
 msgid "router advertisement on"
 msgstr ""
 
-#: src/ip6.c:1817
+#: src/ip6.c:1823
 msgid "prefix(es)"
 msgstr ""
 
-#: src/ip6.c:1817
+#: src/ip6.c:1823
 msgid "router lifetime"
 msgstr ""
 
-#: src/ip6.c:1842
+#: src/ip6.c:1848
 msgid "needs a router in a lab that uses IPv6"
 msgstr ""
 
-#: src/ip6.c:1904
+#: src/ip6.c:1910
 msgid "advertisements sent"
 msgstr ""
 
-#: src/ip6.c:1905
+#: src/ip6.c:1911
 msgid "interval / router lifetime"
 msgstr ""
 
-#: src/ip6.c:1914
+#: src/ip6.c:1920
 msgid "on-link, autonomous"
 msgstr ""
 
-#: src/ip6.c:1914
+#: src/ip6.c:1920
 msgid "on-link"
 msgstr ""
 
-#: src/ip6.c:1921
+#: src/ip6.c:1927
 msgid "Router advertisements: IPv6 hosts configure themselves (SLAAC)"
 msgstr ""
 
-#: src/ip6.c:1923
+#: src/ip6.c:1929
 msgid ""
 "run ROUTER ra [interval=10s] [lifetime=1800s] [managed=0] [other=0] [autonomous=1]\n"
 "  managed=1 sets the M flag (addresses come from DHCPv6), other=1 the O flag (other\n"
@@ -3747,7 +3754,7 @@ msgid ""
 "  router solicitations. Hosts of a lab that uses IPv6 listen without any command."
 msgstr ""
 
-#: src/ip6.c:1931
+#: src/ip6.c:1937
 msgid "An IPv6 host needs no server to get an address. Every interface first gives itself a link-local address (fe80::/64 plus an identifier derived from its MAC address) and checks with duplicate address detection that nobody else on the link uses it. Then it asks \"is there a router?\" with a Router Solicitation sent to the all-routers group. A router answers with a Router Advertisement carrying the prefixes of the link: for each prefix marked autonomous the host builds prefix + its own identifier, checks that address too, and uses the router's link-local address as default gateway for as long as the advertised router lifetime. Routers also repeat the advertisement periodically. This is stateless address autoconfiguration (RFC 4862) on top of Neighbor Discovery (RFC 4861). Two flags of the advertisement point to DHCPv6: M (managed) says addresses are handed out by a DHCPv6 server, O (other) says only the remaining settings, such as DNS servers, are. The default route always comes from the advertisement. Simplified here: preferred and valid lifetimes are advertised but autoconfigured addresses do not expire, and there are no privacy addresses."
 msgstr ""
 
@@ -4162,7 +4169,7 @@ msgstr ""
 msgid "bad time"
 msgstr ""
 
-#: src/main.c:181 src/ui.c:1451
+#: src/main.c:181 src/ui.c:1460
 msgid "expectations"
 msgstr ""
 
@@ -4979,7 +4986,7 @@ msgid ""
 msgstr ""
 
 #: src/qdisc.c:182 src/qdisc.c:297 src/qdisc.c:434 src/qdisc.c:533
-#: src/qdisc.c:941 src/qdisc.c:1035 src/qdisc.c:1071 src/ui.c:607
+#: src/qdisc.c:941 src/qdisc.c:1035 src/qdisc.c:1071 src/ui.c:616
 msgid "queue"
 msgstr ""
 
@@ -5592,7 +5599,7 @@ msgstr ""
 msgid "too many IPv6 addresses on %s:%s (max %d)"
 msgstr ""
 
-#: src/scenario.c:253 src/scenario.c:279 src/scenario.c:358 src/scenario.c:409
+#: src/scenario.c:253 src/scenario.c:279 src/scenario.c:358 src/scenario.c:424
 #, c-format
 msgid "gateway %s is not on a subnet of %s"
 msgstr ""
@@ -5606,7 +5613,7 @@ msgstr ""
 msgid "unknown interface '%s'"
 msgstr ""
 
-#: src/scenario.c:281 src/scenario.c:394
+#: src/scenario.c:281 src/scenario.c:401 src/scenario.c:409
 #, c-format
 msgid "unknown gateway '%s'"
 msgstr ""
@@ -5629,139 +5636,144 @@ msgstr ""
 msgid "gateway '%s' is not on a subnet of %s"
 msgstr ""
 
-#: src/scenario.c:422
+#: src/scenario.c:404
+#, c-format
+msgid "an IPv6 next hop needs `dev IF` unless it is on a prefix of %s"
+msgstr ""
+
+#: src/scenario.c:437
 msgid "usage: vlan SWITCH:PORT N|trunk"
 msgstr ""
 
-#: src/scenario.c:425
+#: src/scenario.c:440
 #, c-format
 msgid "unknown port '%s'"
 msgstr ""
 
-#: src/scenario.c:459
+#: src/scenario.c:474
 #, c-format
 msgid "unknown node '%s'"
 msgstr ""
 
-#: src/scenario.c:461
+#: src/scenario.c:476
 #, c-format
 msgid "unknown module '%s' (try: help)"
 msgstr ""
 
-#: src/scenario.c:465
+#: src/scenario.c:480
 #, c-format
 msgid "node %s is down"
 msgstr ""
 
-#: src/scenario.c:482
+#: src/scenario.c:497
 #, c-format
 msgid "module '%s' cannot be run"
 msgstr ""
 
-#: src/scenario.c:483
+#: src/scenario.c:498
 #, c-format
 msgid "%s on %s failed (see the log)"
 msgstr ""
 
-#: src/scenario.c:549
+#: src/scenario.c:564
 msgid "Commands: NODE MODULE args… · link A B up|down|key=value · node N up|down · stop NODE MODULE · set speed|detail N · help MODULE"
 msgstr ""
 
-#: src/scenario.c:688
+#: src/scenario.c:703
 msgid "usage: note TIME text"
 msgstr ""
 
-#: src/scenario.c:705
+#: src/scenario.c:720
 msgid "usage: duration TIME"
 msgstr ""
 
-#: src/scenario.c:721
+#: src/scenario.c:736
 msgid "usage: auto addr|routes|all|addr6|routes6|all6"
 msgstr ""
 
-#: src/scenario.c:727
+#: src/scenario.c:742
 msgid "usage: ipv6 on|off"
 msgstr ""
 
-#: src/scenario.c:734
+#: src/scenario.c:749
 msgid "usage: place NODE HOST[:PORT]"
 msgstr ""
 
-#: src/scenario.c:742
+#: src/scenario.c:757
 msgid "usage: monitor HOST[:PORT]"
 msgstr ""
 
-#: src/scenario.c:750 src/scenario.c:755 src/scenario.c:759
+#: src/scenario.c:765 src/scenario.c:770 src/scenario.c:774
 msgid "usage: expect NODE COUNTER ==|!=|>=|<=|>|< VALUE [if A ==|!= B]"
 msgstr ""
 
-#: src/scenario.c:777
+#: src/scenario.c:792
 msgid "usage: at TIME command"
 msgstr ""
 
-#: src/scenario.c:782
+#: src/scenario.c:797
 msgid "usage: run NODE MODULE [args]"
 msgstr ""
 
-#: src/scenario.c:789
+#: src/scenario.c:804
 msgid "usage: stop NODE MODULE"
 msgstr ""
 
-#: src/scenario.c:802
+#: src/scenario.c:817
 msgid "usage: node NAME up|down"
 msgstr ""
 
-#: src/scenario.c:810
+#: src/scenario.c:825
 msgid "usage: set speed|detail|baseport VALUE"
 msgstr ""
 
-#: src/scenario.c:814
+#: src/scenario.c:829
 #, c-format
 msgid "unknown setting '%s'"
 msgstr ""
 
-#: src/scenario.c:824
+#: src/scenario.c:839
 #, c-format
 msgid "unknown command '%s' (try: help)"
 msgstr ""
 
-#: src/scenario.c:870
+#: src/scenario.c:885
 msgid "cannot open scenario"
 msgstr ""
 
-#: src/scenario.c:1300
+#: src/scenario.c:1315
 msgid "got"
 msgstr ""
 
-#: src/stack.c:481
+#: src/stack.c:497
 msgid "cache"
 msgstr ""
 
-#: src/stack.c:590
+#: src/stack.c:606
 msgid "learned"
 msgstr ""
 
-#: src/stack.c:591
+#: src/stack.c:607
 msgid " (moved)"
 msgstr ""
 
-#: src/stack.c:609
+#: src/stack.c:625
 msgid "flooding"
 msgstr ""
 
-#: src/stack.c:650
+#: src/stack.c:666
 msgid "fragmentation"
 msgstr ""
 
-#: src/stack.c:738
+#: src/stack.c:766
 msgid "packet too big and DF set: not sent"
 msgstr ""
 
-#: src/stack.c:1111
+#: src/stack.c:1139
 msgid "wrong header checksum: packet discarded"
 msgstr ""
 
-#: src/stack.c:1157
+#: src/stack.c:1187
 msgid "too big and DF set: dropped, ICMP sent"
 msgstr ""
 
@@ -6398,7 +6410,7 @@ msgstr ""
 msgid "(remote)"
 msgstr ""
 
-#: src/ui.c:425 src/ui.c:634
+#: src/ui.c:425 src/ui.c:643
 msgid "Node"
 msgstr ""
 
@@ -6458,246 +6470,246 @@ msgstr ""
 msgid "direct"
 msgstr ""
 
-#: src/ui.c:551
+#: src/ui.c:560
 msgid "resolving"
 msgstr ""
 
-#: src/ui.c:554
+#: src/ui.c:563
 msgid "expires in"
 msgstr ""
 
-#: src/ui.c:558 src/ui.c:580
+#: src/ui.c:567 src/ui.c:589
 msgid "(empty: no neighbor resolved yet)"
 msgstr ""
 
-#: src/ui.c:560
+#: src/ui.c:569
 msgid "incomplete"
 msgstr ""
 
-#: src/ui.c:560
+#: src/ui.c:569
 msgid "reachable"
 msgstr ""
 
-#: src/ui.c:560
+#: src/ui.c:569
 msgid "stale"
 msgstr ""
 
-#: src/ui.c:560
+#: src/ui.c:569
 msgid "probe"
 msgstr ""
 
-#: src/ui.c:564
+#: src/ui.c:573
 msgid "IPv6 neighbors (NDP)"
 msgstr ""
 
-#: src/ui.c:601
+#: src/ui.c:610
 msgid "DOWN"
 msgstr ""
 
-#: src/ui.c:605
+#: src/ui.c:614
 msgid "corrupt"
 msgstr ""
 
-#: src/ui.c:606
+#: src/ui.c:615
 msgid "code"
 msgstr ""
 
-#: src/ui.c:617
+#: src/ui.c:626
 msgid "damaged"
 msgstr ""
 
-#: src/ui.c:618
+#: src/ui.c:627
 msgid "queue drops"
 msgstr ""
 
-#: src/ui.c:661
+#: src/ui.c:670
 msgid "(this node runs in another process)"
 msgstr ""
 
-#: src/ui.c:703
+#: src/ui.c:712
 msgid "(End: newest)"
 msgstr ""
 
-#: src/ui.c:774 src/ui.c:815
+#: src/ui.c:783 src/ui.c:824
 msgid "(no frame transmitted yet)"
 msgstr ""
 
-#: src/ui.c:783
+#: src/ui.c:792
 msgid "link"
 msgstr ""
 
-#: src/ui.c:783
+#: src/ui.c:792
 msgid "summary"
 msgstr ""
 
-#: src/ui.c:836
+#: src/ui.c:845
 msgid "(too many nodes for this width: widen the window or zoom with z)"
 msgstr ""
 
-#: src/ui.c:877
+#: src/ui.c:886
 msgid "(the selected node records no time series; pick another node with n)"
 msgstr ""
 
-#: src/ui.c:1019
+#: src/ui.c:1028
 msgid "What happens"
 msgstr ""
 
-#: src/ui.c:1029
+#: src/ui.c:1038
 msgid "Try it"
 msgstr ""
 
-#: src/ui.c:1030
+#: src/ui.c:1039
 msgid "Press : and type a command, for example:  h1 ping h2   ·   link r1 r2 down   ·   link h1 r1 loss=0.3   ·   node r2 down   ·   help"
 msgstr ""
 
-#: src/ui.c:1037
+#: src/ui.c:1046
 msgid "Log"
 msgstr ""
 
-#: src/ui.c:1037
+#: src/ui.c:1046
 msgid "Packets"
 msgstr ""
 
-#: src/ui.c:1037
+#: src/ui.c:1046
 msgid "Sequence"
 msgstr ""
 
-#: src/ui.c:1037
+#: src/ui.c:1046
 msgid "Graphs"
 msgstr ""
 
-#: src/ui.c:1037
+#: src/ui.c:1046
 msgid "Guide"
 msgstr ""
 
-#: src/ui.c:1045
+#: src/ui.c:1054
 msgid "only"
 msgstr ""
 
-#: src/ui.c:1064
+#: src/ui.c:1073
 msgid "pause / resume"
 msgstr ""
 
-#: src/ui.c:1065
+#: src/ui.c:1074
 msgid "when paused: advance to the next event"
 msgstr ""
 
-#: src/ui.c:1066
+#: src/ui.c:1075
 msgid "faster / slower"
 msgstr ""
 
-#: src/ui.c:1067
+#: src/ui.c:1076
 msgid "skip idle time automatically (on/off)"
 msgstr ""
 
-#: src/ui.c:1068
+#: src/ui.c:1077
 msgid "detail: overview, protocol messages, every frame"
 msgstr ""
 
-#: src/ui.c:1069
+#: src/ui.c:1078
 msgid "move the focus: network, node, bottom panel"
 msgstr ""
 
-#: src/ui.c:1070
+#: src/ui.c:1079
 msgid "focused panel: select node / change tab / scroll"
 msgstr ""
 
-#: src/ui.c:1071
+#: src/ui.c:1080
 msgid "next / previous node"
 msgstr ""
 
-#: src/ui.c:1072
+#: src/ui.c:1081
 msgid "bottom panel: log, packets, sequence, graphs, guide"
 msgstr ""
 
-#: src/ui.c:1073
+#: src/ui.c:1082
 msgid "packets: open or close the dissection of the selected frame"
 msgstr ""
 
-#: src/ui.c:1074
+#: src/ui.c:1083
 msgid "packet dissection: previous / next field (highlights its bytes)"
 msgstr ""
 
-#: src/ui.c:1075
+#: src/ui.c:1084
 msgid "log: show only the selected node (on/off)"
 msgstr ""
 
-#: src/ui.c:1076
+#: src/ui.c:1085
 msgid "zoom the focused panel to the whole window"
 msgstr ""
 
-#: src/ui.c:1077
+#: src/ui.c:1086
 msgid "crash / recover the selected node"
 msgstr ""
 
-#: src/ui.c:1078
+#: src/ui.c:1087
 msgid "command line (h1 ping h2 · link a b down · help)"
 msgstr ""
 
-#: src/ui.c:1079
+#: src/ui.c:1088
 msgid "this help"
 msgstr ""
 
-#: src/ui.c:1080 src/ui.c:1171
+#: src/ui.c:1089 src/ui.c:1180
 msgid "quit"
 msgstr ""
 
-#: src/ui.c:1088
+#: src/ui.c:1097
 msgid "Keys"
 msgstr ""
 
-#: src/ui.c:1124
+#: src/ui.c:1133
 msgid "  [node]"
 msgstr ""
 
-#: src/ui.c:1124
+#: src/ui.c:1133
 msgid "  [monitor]"
 msgstr ""
 
-#: src/ui.c:1127 src/ui.c:1169
+#: src/ui.c:1136 src/ui.c:1178
 msgid "speed"
 msgstr ""
 
-#: src/ui.c:1128 src/ui.c:1169
+#: src/ui.c:1137 src/ui.c:1178
 msgid "detail"
 msgstr ""
 
-#: src/ui.c:1169
+#: src/ui.c:1178
 msgid "pause"
 msgstr ""
 
-#: src/ui.c:1169
+#: src/ui.c:1178
 msgid "step"
 msgstr ""
 
-#: src/ui.c:1170
+#: src/ui.c:1179
 msgid "focus"
 msgstr ""
 
-#: src/ui.c:1170
+#: src/ui.c:1179
 msgid "node"
 msgstr ""
 
-#: src/ui.c:1170
+#: src/ui.c:1179
 msgid "views"
 msgstr ""
 
-#: src/ui.c:1170
+#: src/ui.c:1179
 msgid "command"
 msgstr ""
 
-#: src/ui.c:1171
+#: src/ui.c:1180
 msgid "help"
 msgstr ""
 
-#: src/ui.c:1335
+#: src/ui.c:1344
 msgid "idle time is skipped"
 msgstr ""
 
-#: src/ui.c:1335
+#: src/ui.c:1344
 msgid "real pace: idle time is not skipped"
 msgstr ""
 
-#: src/ui.c:1431
+#: src/ui.c:1440
 msgid "press ? for the keys, u for the guide"
 msgstr ""

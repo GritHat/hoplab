@@ -35,7 +35,7 @@ exchange **real, byte-exact frames** (Ethernet, ARP, IPv4, ICMP, UDP, TCP, DNS,
 …) over links with bandwidth, delay, loss, bit errors and queues. You watch the
 packets cross the map, open any of them down to the bytes, read each node's
 tables, plot what the protocols measure, break things, and see what happens.
-A catalog of 77 labs and a study guide take you from "what is a frame?" to
+A catalog of 78 labs and a study guide take you from "what is a frame?" to
 BGP hijacks, CoDel, Raft under partitions and CRDTs.
 
 It is written in C11 with no dependencies, runs in any terminal, speaks
@@ -91,7 +91,7 @@ one, including what it simplifies with respect to the real protocol.
 
 ### The catalog
 
-77 labs in four levels — **Foundations** (first contact), **Core** (an
+78 labs in four levels — **Foundations** (first contact), **Core** (an
 undergraduate course), **Advanced** (graduate), **Frontier** (research
 flavoured). Each lab is a small text file with a description, tunable
 parameters, a narrated timeline and expectations that `hoplab check` verifies:

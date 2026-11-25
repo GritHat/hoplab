@@ -55,7 +55,7 @@ Suggested metadata:
 
 **Title**
 
-> hoplab — a network laboratory in your terminal (every packet, every layer, 77 labs)
+> hoplab — a network laboratory in your terminal (every packet, every layer, 78 labs)
 
 **Description**
 
@@ -69,7 +69,7 @@ Suggested metadata:
 > IPv6, RIP, OSPF, BGP, NAT, queue management (RED, CoDel, fair queueing), UDP, TCP
 > congestion control (Reno, CUBIC, BBR), load balancing, DNS, DHCP, HTTP, error
 > correcting codes, medium access, Raft, gossip/SWIM, vector clocks, two-phase
-> commit, Chord, CRDTs — 77 ready-made labs in four levels, and a study guide
+> commit, Chord, CRDTs — 78 ready-made labs in four levels, and a study guide
 > from the first ping to consensus algorithms. One window, tiled windows as
 > separate processes, or several machines. C11, no dependencies, English and
 > Italian.

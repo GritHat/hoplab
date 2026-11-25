@@ -530,10 +530,18 @@ static int tab_routes(const nl_node *n, int x, int y, int w, int h)
             snprintf(dst, sizeof(dst), "default");
         else
             snprintf(dst, sizeof(dst), "%s/%d", nl_ip6_str(&r->dst), r->plen);
-        tui_print(x, y + row++, w, ST(usable ? C_TEXT : C_FAINT), "%-20s %-5s %3d %s%-9s" T_RESET " %s", dst,
+        tui_print(x, y + row++, w, ST(usable ? C_TEXT : C_FAINT), "%-20s %-5s %3d %s%s", dst,
                   n->ifc[r->ifx].name, r->metric,
                   r->proto == NL_RT_CONNECTED ? T_DIM : r->proto == NL_RT_STATIC ? T_INFO : T_ACK,
-                  nl_route_proto_name(r->proto), nl_ip6_zero(&r->gw) ? "" : nl_ip6_str(&r->gw));
+                  nl_route_proto_name(r->proto));
+        /* a next hop is too long to share the line in a narrow panel */
+        if (!nl_ip6_zero(&r->gw) && row < h) {
+            if (w >= 78)
+                tui_print(x + 44, y + row - 1, w - 44, ST(usable ? C_TEXT : C_FAINT), "%s %s", _("via"),
+                          nl_ip6_str(&r->gw));
+            else
+                tui_print(x + 4, y + row++, w - 4, ST(C_DIM), "%s %s", _("via"), nl_ip6_str(&r->gw));
+        }
     }
     return row;
 }

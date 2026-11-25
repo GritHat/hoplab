@@ -34,7 +34,7 @@ DNS, …) su collegamenti con larghezza di banda, ritardo, perdita, errori sui
 bit e code. Si guardano i pacchetti attraversare la mappa, si apre ciascuno
 fino ai byte, si leggono le tabelle di ogni nodo, si tracciano i grafici di ciò
 che i protocolli misurano, si rompe qualcosa e si osserva che cosa succede. Un
-catalogo di 77 laboratori e una guida di studio accompagnano da «che cos'è un
+catalogo di 78 laboratori e una guida di studio accompagnano da «che cos'è un
 frame?» fino ai dirottamenti BGP, a CoDel, a Raft sotto partizione e ai CRDT.
 
 È scritto in C11 senza dipendenze, funziona in qualsiasi terminale, parla
@@ -95,7 +95,7 @@ rispetto al protocollo reale.
 
 ### Il catalogo
 
-77 laboratori su quattro livelli — **Rudimenti** (primo contatto),
+78 laboratori su quattro livelli — **Rudimenti** (primo contatto),
 **Fondamenti** (un corso di laurea triennale), **Avanzato** (magistrale),
 **Frontiera** (taglio di ricerca). Ogni laboratorio è un piccolo file di testo con una
 descrizione, parametri regolabili, una cronologia commentata e attese che

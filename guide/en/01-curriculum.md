@@ -98,6 +98,7 @@ A suggested order for a course: the network layer first (200, 201, 202, then the
 - `330-ospf-vs-rip` Convergence after a failure: link state against distance vector
 - `331-bgp-basics` BGP: autonomous systems, AS paths and withdrawals
 - `332-bgp-ipv6` BGP for two protocols: IPv6 prefixes in a multiprotocol session
+- `333-bgp-ipv4-over-ipv6` IPv4 islands over an IPv6-only core: BGP with IPv6 next hops
 - `340-dns-ttl` CNAME chains, negative caching and the TTL trade-off
 - `350-nat-hole-punching` NAT behaviours and UDP hole punching
 - `351-lb-algorithms` Load balancing algorithms compared
