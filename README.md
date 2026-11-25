@@ -1,172 +1,203 @@
-# Trasferimento affidabile su UDP
+<p align="center">
+  <img src="media/logo.svg" width="128" alt="netlab logo: three nodes in a terminal window; the direct link loses a packet, the arc above delivers one">
+</p>
 
-Implementazioni in C di protocolli di reliable data transfer sopra UDP, con un
-canale inaffidabile simulato e un'interfaccia grafica da terminale che mostra i
-pacchetti in viaggio tra sender e receiver.
+<h1 align="center">netlab</h1>
 
-| Protocollo | Sender | Receiver |
-|---|---|---|
-| Stop-and-wait (bit alternato, rdt 3.0) | `stop_and_wait_send` | `stop_and_wait_recv` |
-| Go-Back-N | `go_back_n_send` | `go_back_n_recv` |
-| Selective Repeat | `selective_repeat_send` | `selective_repeat_recv` |
+<p align="center">
+  <b>A network laboratory in your terminal.</b><br>
+  Every packet, every layer, every protocol — from the first ping to consensus algorithms.
+</p>
 
-## Compilazione e avvio
+<p align="center">
+  <a href="README.it.md">Italiano</a> ·
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#whats-inside">What's inside</a> ·
+  <a href="#the-study-guide">Study guide</a> ·
+  <a href="docs/">Docs</a>
+</p>
+
+<p align="center">
+  <img src="media/preview.gif" width="860" alt="A ping crossing a router in netlab: ARP first, then ICMP, shown on the map, as a sequence diagram and dissected byte by byte">
+</p>
+
+<!-- VIDEO: upload media/netlab-demo.mp4 to YouTube (title, description and tags are in
+     docs/video.md), then replace the href below with the YouTube URL. -->
+<p align="center">
+  <a href="media/netlab-demo.mp4">
+    <img src="media/thumbnail.png" width="480" alt="Watch the one-minute demo video">
+  </a><br>
+  <sub>▶ One-minute demo (with its own soundtrack, <i>Round Trip</i>, synthesised by <code>tools/media/music.py</code>)</sub>
+</p>
+
+netlab emulates a network inside one program: hosts, routers and switches
+exchange **real, byte-exact frames** (Ethernet, ARP, IPv4, ICMP, UDP, TCP, DNS,
+…) over links with bandwidth, delay, loss, bit errors and queues. You watch the
+packets cross the map, open any of them down to the bytes, read each node's
+tables, plot what the protocols measure, break things, and see what happens.
+A catalog of 64 labs and a study guide take you from "what is a frame?" to
+BGP hijacks, CoDel, Raft under partitions and CRDTs.
+
+It is written in C11 with no dependencies, runs in any terminal, speaks
+English and Italian, and the same lab can run in one window, in tiled windows
+as separate processes, or across several machines.
+
+## Quick start
 
 ```sh
-make                 # compila tutto
-./demo.sh            # stop-and-wait: sender (sinistra) e receiver (destra) affiancati
-./demo.sh gbn        # Go-Back-N
+make            # builds ./netlab and the classic demos (needs only a C compiler)
+./netlab        # menu: catalog, study guide, topology wizard
+```
+
+or go straight to a lab:
+
+```sh
+./netlab list                          # the catalog
+./netlab run 101-ping                  # run a lab in this window
+./netlab run 320-tcp-congestion cc=cubic   # labs have parameters
+./netlab guide                         # the study guide
+make test                              # every lab, headless, with its checks
+```
+
+Inside a lab: `space` pauses, `.` steps, `+`/`-` change speed, `1 2 3` choose
+how much detail you see, `n` selects the next node, `l p s g u` switch the
+bottom view (log, packets, sequence diagram, graphs, guide), `:` opens a
+command line (`h1 ping h2`, `link r1 r2 down`, `link h1 r1 loss=0.3`,
+`node n3 down`), `?` lists every key.
+
+<p align="center">
+  <img src="media/screenshot-dissection.png" width="48%" alt="Packet list with full dissection and hex dump">
+  <img src="media/screenshot-tcp.png" width="48%" alt="TCP congestion window sawtooth">
+  <img src="media/screenshot-raft.png" width="48%" alt="Raft leader election">
+  <img src="media/screenshot-guide.png" width="48%" alt="The study guide">
+</p>
+
+## What's inside
+
+| Layer | Protocols, mechanisms and tools |
+|---|---|
+| Physical / link | links with bandwidth, propagation delay, jitter, loss (independent or in bursts), bit error rate, duplication, reordering, MTU, queues · link codes: parity, Internet checksum, CRC-8/16/32, repetition, Hamming(7,4), SECDED, interleaved Hamming, Reed–Solomon(255,223) · a coding bench · medium access lab: ALOHA, slotted ALOHA, CSMA, CSMA/CD, CSMA/CA with hidden terminals and RTS/CTS |
+| Link | Ethernet, ARP, learning switches, 802.1Q VLANs and trunks, spanning tree |
+| Network | IPv4 forwarding with longest prefix match, TTL, fragmentation and reassembly, ICMP, `ping`, `traceroute` · routing: static, RIP, OSPF (link state), BGP (path vector, policies, origin validation) · NAT (four behaviours, port forwarding, hole punching) · queue disciplines: drop-tail, RED, CoDel, PIE, fair queueing, strict priority, token bucket · ECN |
+| Transport | UDP · TCP (handshake, sliding window, RTO, fast retransmit, flow control, Tahoe / Reno / NewReno / CUBIC / a reduced BBR, ECN) · layer-4 load balancer (round robin, weighted, least connections, hashing, consistent hashing, Maglev, power of two choices, health checks) |
+| Application | DNS (authoritative, recursive resolver with cache, `dig`, cache-poisoning lab) · DHCP · HTTP/1.1 · traffic generators and sinks |
+| Distributed systems | Raft · gossip and SWIM failure detection · Lamport and vector clocks, causal and total order broadcast · two- and three-phase commit · Chord DHT · CRDTs |
+
+Everything runs on virtual time driven by an event queue, so a run is
+reproducible from its seed, can be paused and stepped, and idle time is
+skipped. `./netlab modules` lists every module; `./netlab help NAME` explains
+one, including what it simplifies with respect to the real protocol.
+
+### The catalog
+
+64 labs in four levels — **Foundations** (first contact), **Core** (an
+undergraduate course), **Advanced** (graduate), **Frontier** (research
+flavoured). Each lab is a small text file with a description, tunable
+parameters, a narrated timeline and expectations that `netlab check` verifies:
+
+```
+title  A routing loop, and the TTL that saves the network
+level  2
+param  ttl 16 Initial TTL of the ping
+node h1 host
+node r1 router
+node r2 router
+link h1 r1 delay=2ms
+link r1 r2 delay=8ms
+...
+run h1 ping 10.9.1.1 count=1 ttl=$ttl
+note 0  The packet bounces between r1 and r2, losing one TTL unit per hop...
+expect h1 ping.error == 1
+```
+
+Write your own with any editor, or let the wizard in the menu build one
+(topology, links, routing, traffic). The language is documented in
+[docs/scenario-format.md](docs/scenario-format.md).
+
+### Three ways to run a lab
+
+| | Command | What happens |
+|---|---|---|
+| One window | `netlab run LAB` | every node is simulated in this process; you can pause, step and change speed |
+| Tiled windows | `netlab windows LAB` | one pane per node plus the whole-network view (kitty or tmux); each pane is a separate process and the links between them are UDP tunnels on 127.0.0.1 |
+| Several machines | `netlab node LAB NODE` on each machine, `netlab monitor LAB` on one | the same tunnels across a real network: put the address of each machine in the scenario (`place r1 192.168.1.20`), or let the menu write it; `netlab plan LAB` prints the commands |
+
+See [docs/distributed.md](docs/distributed.md).
+
+<p align="center">
+  <img src="media/screenshot-windows.png" width="80%" alt="Tiled windows: the whole network on the left, one pane per node on the right">
+</p>
+
+## The study guide
+
+`./netlab guide` (or the menu) opens a curriculum organised by level and topic.
+Every topic can be read at three depths — essentials, standard, in depth —
+lists the labs that show it, and starts them with one key. The same files are
+plain Markdown in [`guide/en`](guide/en) and [`guide/it`](guide/it).
+
+| Track | For | Topics |
+|---|---|---|
+| Getting started | everybody | using netlab, the curriculum, writing your own labs |
+| Foundations | first contact | layers and packets, links, error detection, reliable transfer, LANs and switches, IP and routers, transport, DNS/DHCP/HTTP, sharing a channel |
+| Core | an undergraduate course | forwarding and static routes, MTU and fragmentation, VLANs and spanning tree, distance-vector and link-state routing, TCP reliability and flow control, DNS and DHCP in depth, NAT and load balancing, coding and medium access, logical time |
+| Advanced | graduate | congestion control, queue management, convergence and inter-domain routing, NAT traversal and balancing algorithms, codes and channels, Raft, epidemic protocols, ordering and causality, atomic commit, DHTs and CRDTs |
+| Frontier | research | fairness and model-based congestion control, BGP policy and security, DNS security, hashing for scale, wireless medium access, consensus under partitions, membership and churn, doing research with netlab |
+
+## Where it started: reliable transfer over UDP
+
+The repository began as three programs — stop-and-wait, Go-Back-N and
+Selective Repeat — that move a text between two **real** processes over real
+UDP sockets through a channel that loses and corrupts packets on purpose, with
+an interface showing packets in flight, the protocol rules being applied and
+the sliding windows. They are still here, reachable from the menu or directly:
+
+```sh
+./demo.sh            # stop-and-wait, sender and receiver side by side
+./demo.sh gbn -w 4   # Go-Back-N
 ./demo.sh sr         # Selective Repeat
 ```
 
-`demo.sh` apre sender e receiver in una nuova finestra massimizzata del
-terminale da cui lo lanci, se è fra quelli supportati: kitty, gnome-terminal,
-ptyxis, kgx, konsole, xfce4-terminal, mate-terminal, tilix, terminator,
-lxterminal, alacritty, foot, wezterm o xterm. Altrimenti, per esempio dal
-terminale di VS Code, usa kitty se c'è, poi il primo di quegli altri che trova
-installato (o x-terminal-emulator). `-m` sceglie il modo:
+[docs/reliable-transfer.md](docs/reliable-transfer.md) describes the protocols
+and every option.
 
-- `kitty`: una finestra kitty massimizzata divisa in due;
-- `terminal`: come sopra ma senza kitty: una finestra del terminale corrente o
-  del primo trovato, divisa in due come quella di kitty;
-- `split`: il terminale corrente diviso in due, senza programmi aggiuntivi. È
-  quello che usa `terminal` dentro la nuova finestra, e quello scelto da solo
-  quando non c'è un'interfaccia grafica (console di Linux, ssh); `q` chiude;
-- `gnome`: due finestre gnome-terminal separate, ognuna su metà del monitor
-  principale (su Wayland tramite un'istanza di gnome-terminal su XWayland,
-  perché le finestre Wayland non possono scegliere dove aprirsi);
-- `tmux`: due pannelli tmux affiancati (scelto da solo se si è già in tmux).
+## Languages
 
-```sh
-./demo.sh -p 9000 -s "-l 0.3 -c 0.2" -r "-l 0.3"   # porta e opzioni di sender/receiver
-./demo.sh sr -w 6 -b 4                             # finestra e numeri di sequenza
-./demo.sh -m split gbn                             # nel terminale corrente
-RDT_TERMINAL=konsole ./demo.sh                     # preferisce konsole a ogni altro
+Text is English in the source and translated through standard PO catalogs
+(`locale/<lang>/`, one per module; scenario files and the guide carry their
+own translations). Italian ships complete. The language follows
+`NETLAB_LANG`, `LC_ALL`, `LANG`, or `--lang it`. To add one, see
+[locale/README.md](locale/README.md).
+
+## Repository layout
+
+```
+src/            netlab: core (events, links, stack, scenarios, interface) and one file per protocol
+scenarios/      the catalog (*.nl)
+guide/en, it/   the study guide (Markdown)
+locale/         message catalogs (PO) and the template netlab.pot
+docs/           scenario language, writing modules, distributed runs, the classic demos
+tools/          string extraction, module-only builds, the media pipeline
+media/          logo, screenshots, preview, video, soundtrack
+*.c *.h demo.sh the classic reliable-transfer demos and the shared terminal library
 ```
 
-Nella divisione in due, `split` e `terminal`, sender e receiver sono
-affiancati se la finestra ha almeno 145 colonne; se è stretta ma alta, con
-almeno 49 righe, stanno uno sopra l'altro. La disposizione si adatta mentre
-si ridimensiona la finestra.
+## Extending it
 
-Sulla console testuale di Linux (`TERM=linux`, per esempio Ctrl+Alt+F3)
-l'interfaccia usa i 16 colori della console e solo caratteri presenti nei suoi
-font (code page 437): ╭ diventa ┌, ▶ diventa ►, ✓ diventa √ e così via.
-`RDT_BASIC=1` forza questa modalità in qualsiasi terminale, `RDT_BASIC=0` la
-esclude.
+A protocol is one C file in `src/` that registers itself; nothing else needs
+editing. It gets timers, UDP/TCP/IP/Ethernet handlers, routes, packet hooks,
+dissectors, counters, graphs and a panel in the interface.
+[docs/writing-modules.md](docs/writing-modules.md) walks through a complete
+example.
 
-`-w` e `-b` vengono passati a entrambi i programmi quando servono.
+## Requirements and limits
 
-A mano, in due terminali (prima il receiver):
-
-```sh
-./go_back_n_recv [opzioni] [host] [porta]
-./go_back_n_send [opzioni] [host] [porta]
-```
-
-Di default comunicano su `127.0.0.1:8142`. Tutte le opzioni sono descritte da
-`-h`; le principali:
-
-| Opzione | Significato | Default |
-|---|---|---|
-| `-a HOST`, `-p PORTA` | receiver da contattare / indirizzo di ascolto | `127.0.0.1`, `8142` |
-| `-l P` | probabilità di perdere un pacchetto inviato (DATA o ACK) | 15% |
-| `-c P` | probabilità di invertire un bit di un pacchetto inviato | 10% |
-| `-d MS` | ritardo di propagazione simulato | 1000 ms |
-| `-t MS` | timeout di ritrasmissione (solo sender) | 2,5·ritardo + 500 |
-| `-w N` | finestra (Go-Back-N, Selective Repeat) | 4 |
-| `-b K` | bit dei numeri di sequenza: numeri 0…2^K−1 (Go-Back-N, Selective Repeat) | 3 |
-| `-i MS` | intervallo minimo fra due invii (sender a finestra) | ritardo/4 |
-| `-m TESTO`, `-f FILE`, `-s N` | dati da inviare e byte per pacchetto (solo sender) | frase di prova, 10 |
-| `-S N` | seme casuale, per ripetere lo stesso scenario | casuale |
-
-Sender e receiver devono usare gli stessi `-b`, e per Selective Repeat anche lo
-stesso `-w` (il receiver Go-Back-N ha sempre finestra 1).
-
-Ogni processo applica perdita e corruzione ai pacchetti che *lui* invia: il
-sender ai DATA, il receiver agli ACK. Premere `q` per uscire. Se l'output è
-rediretto su file, i programmi stampano solo il registro eventi in testo
-semplice.
-
-## Stop-and-wait
-
-Ogni pacchetto porta un bit di sequenza (0/1) e l'ACK riporta lo stesso bit.
-
-- Il sender invia DATA *b*, avvia il timer e aspetta ACK *b*. Se arriva un ACK
-  con il bit diverso, quell'ACK si riferisce al trasferimento precedente, quindi
-  DATA *b* va ritrasmesso; lo stesso se l'ACK è corrotto o se scade il timer.
-- Il receiver che riceve DATA *b* integro e atteso lo consegna e risponde ACK *b*.
-  Se riceve un duplicato (l'altro bit) non lo riconsegna ma ritrasmette l'ACK; se
-  riceve un pacchetto corrotto rinvia l'ACK dell'ultimo bit corretto.
-- Un FIN numerato e riscontrato come i dati chiude il trasferimento.
-
-Con un timeout più corto dell'RTT (2·ritardo) il sender ritrasmette prima
-dell'arrivo dell'ACK, quindi da quel punto ogni pacchetto parte almeno due
-volte (l'intestazione lo segnala).
-
-## Go-Back-N
-
-Il sender tiene in volo fino a N pacchetti, la finestra [base, base+N−1], con
-numeri di sequenza modulo 2^K. Un solo timer sorveglia il pacchetto `base`.
-
-- **Sender.** Invia il pacchetto `nextseqnum` se `nextseqnum < base+N`, e avvia
-  il timer se la finestra era vuota. Un ACK *n* è cumulativo: conferma tutti i
-  pacchetti fino a *n*, quindi `base = n+1` e il timer riparte, o si ferma se non
-  resta nulla in volo. Allo scadere del timer ritrasmette **tutti** i pacchetti
-  da `base` a `nextseqnum−1`. ACK corrotti o duplicati sono ignorati.
-- **Receiver.** Non ha buffer: accetta solo `expectedseqnum`, lo consegna e
-  risponde ACK con quel numero. Ogni altro pacchetto, fuori ordine o corrotto,
-  viene scartato e il receiver rinvia l'ACK dell'ultimo ricevuto in ordine.
-
-Serve N ≤ 2^K − 1: con N = 2^K, se si perdono tutti gli ACK di una finestra,
-l'ACK del pacchetto prima di `base` è indistinguibile da quello dell'ultimo
-pacchetto in volo (`./demo.sh gbn -w 8 -b 3` per vederlo).
-
-## Selective Repeat
-
-Come Go-Back-N la finestra del sender è di N pacchetti, ma ognuno ha il suo
-timer e il receiver riscontra i pacchetti uno per uno.
-
-- **Sender.** Un ACK *n* nella finestra segna *n* come riscontrato e ne ferma
-  il timer; se *n* è `send_base` la finestra scorre fino al primo pacchetto non
-  ancora riscontrato. Allo scadere del timer di *n* si ritrasmette **solo** *n*.
-- **Receiver.** Ha una finestra di N posti a partire da `rcv_base`. Un pacchetto
-  nella finestra viene riscontrato e messo nel buffer; se è `rcv_base` viene
-  consegnato insieme a tutti i successivi già nel buffer. Un pacchetto in
-  [`rcv_base`−N, `rcv_base`−1] è già stato consegnato: il receiver rinvia l'ACK,
-  perché evidentemente il sender non l'ha ricevuto. Tutto il resto, e i
-  pacchetti corrotti, vengono ignorati senza ACK.
-
-Serve N ≤ 2^(K−1), altrimenti le due finestre del receiver si sovrappongono e
-un pacchetto vecchio ritrasmesso può essere consegnato come nuovo: con
-`./demo.sh sr -w 3 -b 2 -s "-l 0.4" -r "-l 0.4"` il testo ricevuto finisce
-per contenere pezzi ripetuti. In entrambi i protocolli l'intestazione segnala
-le finestre troppo grandi.
-
-### Cosa mostra l'interfaccia
-
-Oltre al canale e al registro eventi, ogni finestra mostra:
-
-- le regole del protocollo, con quella appena applicata evidenziata;
-- la striscia dei numeri di sequenza: una cella per pacchetto con il suo
-  numero (modulo 2^K), i puntatori (`base`/`send_base`, `nextseqnum`,
-  `expectedseqnum`, `rcv_base`), la finestra e, sotto le celle, i timer.
-
-Il sender invia al massimo un pacchetto ogni `-i` millisecondi (il tempo di
-trasmissione simulato), così i pacchetti di una finestra viaggiano uno dietro
-l'altro invece che sovrapposti. Con N·intervallo ≥ RTT il canale non resta mai
-vuoto.
-
-## File
-
-- `rdt.h/.c`: formato del pacchetto (intestazione di 12 byte e checksum di
-  Internet), opzioni da riga di comando, dati da inviare, socket, tempo e
-  numeri casuali.
-- `channel.h/.c`: canale inaffidabile simulato (perdita, corruzione, ritardo) e
-  pacchetti in volo.
-- `tui.h/.c`: grafica da terminale (pannelli, registro eventi, animazione del
-  canale, regole, striscia della finestra), disegno in metà schermo
-  (`RDT_PANE`) e modalità per la console di Linux.
-- `stop_and_wait_*.c`, `go_back_n_*.c`, `selective_repeat_*.c`: sender e
-  receiver dei tre protocolli.
-- `demo.sh`: compila e apre sender e receiver affiancati.
+- Linux (it uses `/proc/self/exe`, `poll`, a 256-colour UTF-8 terminal), a C11
+  compiler and `make`. `tmux` or `kitty` for the tiled mode. Python 3, Pillow,
+  numpy and ffmpeg only to regenerate the media.
+- It is a teaching emulator, not a performance simulator: at most 64 nodes and
+  160 links per lab, IPv4 only, and several protocols are deliberately reduced
+  (each module's help says how: for example BGP sessions run over UDP, TCP has
+  no SACK, BBR is a simplified model). Frames are real, wires are not: nothing
+  touches your actual network except the UDP tunnels of the multi-process
+  modes.
+</content>

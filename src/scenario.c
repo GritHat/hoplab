@@ -661,7 +661,7 @@ int nl_exec(const char *line0)
         const char *k = nl_arg_pos(&a, 1), *v = nl_arg_pos(&a, 2);
         if (!k || !v)
             return fail(_("usage: set speed|detail|baseport VALUE"));
-        if (!strcmp(k, "speed"))         W.speed = atof(v) > 0 ? atof(v) : 1.0;
+        if (!strcmp(k, "speed"))         { W.speed = atof(v) > 0 ? atof(v) : 1.0; W.speed_set = 1; }
         else if (!strcmp(k, "detail"))   W.detail = atoi(v) < 1 ? 1 : atoi(v) > 3 ? 3 : atoi(v);
         else if (!strcmp(k, "baseport")) { if (!W.baseport_fixed) W.baseport = atoi(v); }
         else return fail(_("unknown setting '%s'"), k);
@@ -673,7 +673,7 @@ int nl_exec(const char *line0)
     }
     /* "h1 ping h2" is short for "run h1 ping h2" */
     if (nl_node_find(key) && a.argc >= 2)
-        return run_module(key, &a, 1);
+        return g_loading ? defer(0, line) : run_module(key, &a, 1);
     return fail(_("unknown command '%s' (try: help)"), key);
 }
 

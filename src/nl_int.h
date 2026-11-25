@@ -64,6 +64,7 @@ typedef struct nl_world {
 
     nl_time  now;
     double   speed;
+    int      speed_set;        /* chosen by the user or the scenario: no automatic time scale */
     int      paused;
     int      detail;           /* 1..3 */
     int      mode;

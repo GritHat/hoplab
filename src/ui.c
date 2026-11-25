@@ -1357,7 +1357,7 @@ int nl_ui_run(void)
     for (i = W.nnodes - 1; i >= 0; i--)
         if ((W.nodes[i].local || W.mode == NL_MODE_MONITOR) && W.nodes[i].kind != NL_SWITCH)
             U.sel = i;
-    if (W.speed == 1.0 && W.mode == NL_MODE_RUN)    /* not chosen by the user or the scenario */
+    if (!W.speed_set && W.mode == NL_MODE_RUN)    /* not chosen by the user or the scenario */
         W.speed = auto_speed();
     if (!tui_init())
         return 1;

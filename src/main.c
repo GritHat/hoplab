@@ -122,8 +122,10 @@ static int load(const options *o, int first_param)
     nl_srand(W.seed);
     if (o->detail)
         W.detail = o->detail < 1 ? 1 : o->detail > 3 ? 3 : o->detail;
-    if (o->speed > 0)
+    if (o->speed > 0) {
         W.speed = o->speed;
+        W.speed_set = 1;
+    }
     if (o->until && !nl_parse_time(o->until, &W.duration)) {
         fprintf(stderr, "netlab: --until: %s\n", _("bad time"));
         return -1;

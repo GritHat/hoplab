@@ -11,9 +11,12 @@ compiled: catalogs are plain text files read when the program starts.
   shown in English.
 - **Catalogs are standard gettext PO files** in `locale/<lang>/`, one per
   module (`core.po`, `tcp.po`, `dns.po`, ...). Every `.po` file in the
-  directory of the current language is loaded; when the same `msgid` appears
-  in several files the first one read wins, so short generic words (`sent`,
-  `lost`, `from`) should be translated the same way everywhere.
+  directory of the current language is loaded. A catalog is named after the
+  source file it translates (`tcp.po` for `src/tcp.c`); one that covers
+  several files lists them in a first-line comment (`# files: rdt tui
+  channel`). A lookup made from `foo.c` prefers `foo.po`, then `core.po`,
+  then any other catalog, so the same short word (`sent`, `lost`, `from`)
+  can be translated differently where the context differs.
 - **The language** is taken from `--lang xx`, or else from the first of
   `NETLAB_LANG`, `LC_ALL`, `LC_MESSAGES`, `LANG` that is set. Only the first
   two letters matter (`it_IT.UTF-8` → `it`).
