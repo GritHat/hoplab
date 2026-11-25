@@ -747,7 +747,17 @@ int nl_exec(const char *line0)
         if (!strcmp(key, "expect")) {
             nl_expect *e;
             if (a.argc < 5)
-                return fail(_("usage: expect NODE COUNTER ==|!=|>=|<=|>|< VALUE"));
+                return fail(_("usage: expect NODE COUNTER ==|!=|>=|<=|>|< VALUE [if A ==|!= B]"));
+            /* `if $param == value`: the expectation only applies to that configuration */
+            if (a.argc >= 9 && !strcmp(a.argv[5], "if")) {
+                int same = strcmp(a.argv[6], a.argv[8]) == 0;
+                if (strcmp(a.argv[7], "==") && strcmp(a.argv[7], "!="))
+                    return fail(_("usage: expect NODE COUNTER ==|!=|>=|<=|>|< VALUE [if A ==|!= B]"));
+                if (same != (a.argv[7][0] == '='))
+                    return 0;
+            } else if (a.argc > 5) {
+                return fail(_("usage: expect NODE COUNTER ==|!=|>=|<=|>|< VALUE [if A ==|!= B]"));
+            }
             if (W.nexpects >= (int)(sizeof(W.expects) / sizeof(W.expects[0])))
                 return 0;
             e = &W.expects[W.nexpects++];

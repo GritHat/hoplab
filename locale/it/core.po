@@ -525,8 +525,8 @@ msgid "usage: monitor HOST[:PORT]"
 msgstr "uso: monitor HOST[:PORTA]"
 
 #: src/scenario.c:611
-msgid "usage: expect NODE COUNTER ==|!=|>=|<=|>|< VALUE"
-msgstr "uso: expect NODO CONTATORE ==|!=|>=|<=|>|< VALORE"
+msgid "usage: expect NODE COUNTER ==|!=|>=|<=|>|< VALUE [if A ==|!= B]"
+msgstr "uso: expect NODO CONTATORE ==|!=|>=|<=|>|< VALORE [if A ==|!= B]"
 
 #: src/scenario.c:628
 msgid "usage: at TIME command"

@@ -22,14 +22,14 @@ PASS  430-bgp-policies  keepalive=1s
 PASS  430-bgp-policies  keepalive=10s
 # policy=0: no business relations, everything is exported: after the peering
 # link fails hc1 still reaches hc2, through the customer m (6 replies, no error)
-FAIL  430-bgp-policies  policy=0
+PASS  430-bgp-policies  policy=0
 
 PASS  431-bgp-hijack
 PASS  431-bgp-hijack  keepalive=1s
 PASS  431-bgp-hijack  keepalive=10s
 # rov=1: the forged announcements are rejected, the real server answers every
 # ping (srv serves 12, fake 0)
-FAIL  431-bgp-hijack  rov=1
+PASS  431-bgp-hijack  rov=1
 
 # regression only (not in the catalog): sessions over TCP survive lossy links,
 # a silent crash is detected by the hold timer, a restart re-establishes, and

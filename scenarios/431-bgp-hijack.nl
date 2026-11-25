@@ -100,5 +100,7 @@ at 36s run obs ping 10.1.0.10 count=2
 duration 42s
 expect client ping.reply == 6
 expect obs ping.reply == 6
-expect srv icmp.echo_served == 6
-expect fake icmp.echo_served == 6
+expect srv icmp.echo_served == 6 if $rov == 0
+expect fake icmp.echo_served == 6 if $rov == 0
+expect srv icmp.echo_served == 12 if $rov == 1
+expect fake icmp.echo_served == 0 if $rov == 1

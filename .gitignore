@@ -9,3 +9,4 @@ selective_repeat_recv
 build/
 /netlab-*
 __pycache__/
+.claude/worktrees/

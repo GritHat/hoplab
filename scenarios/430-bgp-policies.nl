@@ -98,8 +98,11 @@ at 26s run hc1 ping hc2 count=3
 at 30s run hm ping hc2 count=2
 at 33s run hm ping hc1 count=2
 duration 38s
-expect hc1 ping.reply == 3
-expect hc1 ping.error >= 2
+expect hc1 ping.reply == 3 if $policy == 1
+expect hc1 ping.error >= 2 if $policy == 1
+expect hc1 ping.reply == 6 if $policy == 0
+expect hc1 ping.error == 0 if $policy == 0
 expect hm ping.reply == 6
-expect p1 bgp.routes == 2
+expect p1 bgp.routes == 2 if $policy == 1
+expect p1 bgp.routes == 3 if $policy == 0
 expect m bgp.routes == 2

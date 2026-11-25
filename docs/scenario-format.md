@@ -689,6 +689,17 @@ An expectation that names an unknown node, or uses an unknown operator,
 fails. At most 32 expectations; later ones are ignored. Write expectations
 for the default parameter values.
 
+An expectation can be limited to one configuration of the lab with a trailing
+`if A == B` or `if A != B` (a plain text comparison, normally of a parameter
+with a value), so that every documented setting of a parameter has its own
+checked outcome:
+
+```
+param  policy 1 Apply business relations
+expect hc1 ping.reply == 3 if $policy == 1
+expect hc1 ping.reply == 6 if $policy == 0
+```
+
 ## Distributed runs
 
 ```

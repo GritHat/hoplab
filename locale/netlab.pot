@@ -1162,7 +1162,7 @@ msgstr ""
 msgid "in the buffer (acknowledged)"
 msgstr ""
 
-#: selective_repeat_recv.c:299 src/bgp.c:612 src/tcp.c:1186
+#: selective_repeat_recv.c:299 src/bgp.c:719 src/tcp.c:1186
 msgid "expected"
 msgstr ""
 
@@ -1262,7 +1262,7 @@ msgid "reply"
 msgstr ""
 
 #: src/apps.c:118 src/apps.c:127 src/apps.c:163 src/apps.c:181 src/apps.c:505
-#: src/apps.c:518 src/apps.c:594 src/apps.c:606 src/bgp.c:611 src/chord.c:528
+#: src/apps.c:518 src/apps.c:594 src/apps.c:606 src/bgp.c:718 src/chord.c:528
 #: src/chord.c:598 src/clock.c:163 src/clock.c:274 src/clock.c:283
 #: src/clock.c:291 src/clock.c:314 src/dhcp.c:265 src/dhcp.c:273
 #: src/dhcp.c:286 src/dhcp.c:591 src/dns.c:941 src/dns.c:971 src/gossip.c:564
@@ -1457,199 +1457,312 @@ msgstr ""
 msgid "run NODE sink [port=9000]"
 msgstr ""
 
-#: src/bgp.c:284
+#: src/bgp.c:356
 msgid "originated here"
 msgstr ""
 
-#: src/bgp.c:294
+#: src/bgp.c:374
 msgid "connected network"
 msgstr ""
 
-#: src/bgp.c:314
+#: src/bgp.c:394
 msgid "only path"
 msgstr ""
 
-#: src/bgp.c:315 src/bgp.c:320
+#: src/bgp.c:395 src/bgp.c:400
 msgid "higher local preference"
 msgstr ""
 
-#: src/bgp.c:316 src/bgp.c:321
+#: src/bgp.c:396 src/bgp.c:401
 msgid "shorter AS path"
 msgstr ""
 
-#: src/bgp.c:317 src/bgp.c:321
+#: src/bgp.c:397 src/bgp.c:401
 msgid "lowest router id"
 msgstr ""
 
-#: src/bgp.c:343
+#: src/bgp.c:423
 msgid "no path left, route withdrawn"
 msgstr ""
 
-#: src/bgp.c:359
+#: src/bgp.c:439
 msgid "best path via"
 msgstr ""
 
-#: src/bgp.c:401
+#: src/bgp.c:481
 msgid "not exported to"
 msgstr ""
 
-#: src/bgp.c:401
+#: src/bgp.c:481
 msgid "valley-free policy"
 msgstr ""
 
-#: src/bgp.c:443 src/bgp.c:633
+#: src/bgp.c:524 src/bgp.c:776
 msgid "session with"
 msgstr ""
 
-#: src/bgp.c:444
+#: src/bgp.c:525
 msgid "is down"
 msgstr ""
 
-#: src/bgp.c:464 src/ospf.c:432 src/rip.c:241
-msgid "interface down"
+#: src/bgp.c:549
+msgid "connection with"
 msgstr ""
 
-#: src/bgp.c:478
-msgid "hold timer expired: nothing heard"
-msgstr ""
-
-#: src/bgp.c:565
+#: src/bgp.c:654
 msgid "our own AS is in the path: loop, rejected"
 msgstr ""
 
-#: src/bgp.c:574
+#: src/bgp.c:663
 msgid "originated by"
 msgstr ""
 
-#: src/bgp.c:575
+#: src/bgp.c:664
 msgid "origin validation says INVALID (wrong origin AS or too specific): rejected"
 msgstr ""
 
-#: src/bgp.c:612
+#: src/bgp.c:693
+msgid "OPEN received in the wrong state"
+msgstr ""
+
+#: src/bgp.c:697
+msgid "malformed OPEN"
+msgstr ""
+
+#: src/bgp.c:701
+msgid "unsupported BGP version"
+msgstr ""
+
+#: src/bgp.c:719
 msgid "session refused"
 msgstr ""
 
-#: src/bgp.c:619
-msgid "the neighbor restarted"
+#: src/bgp.c:721
+msgid "wrong AS number in the OPEN"
 msgstr ""
 
-#: src/bgp.c:634
+#: src/bgp.c:726
+msgid "unacceptable hold time"
+msgstr ""
+
+#: src/bgp.c:741
+msgid "connection collision with"
+msgstr ""
+
+#: src/bgp.c:742
+msgid "keeping the connection opened by"
+msgstr ""
+
+#: src/bgp.c:766
+msgid "malformed KEEPALIVE"
+msgstr ""
+
+#: src/bgp.c:777
 msgid "Established: exchanging routes"
 msgstr ""
 
-#: src/bgp.c:646
-msgid "the neighbor closed it (NOTIFICATION)"
+#: src/bgp.c:780
+msgid "KEEPALIVE received in the wrong state"
 msgstr ""
 
-#: src/bgp.c:747
+#: src/bgp.c:785
+msgid "UPDATE received before the session was established"
+msgstr ""
+
+#: src/bgp.c:787
+msgid "malformed UPDATE"
+msgstr ""
+
+#: src/bgp.c:795
+msgid "the neighbor closed it"
+msgstr ""
+
+#: src/bgp.c:800
+msgid "unknown message type"
+msgstr ""
+
+#: src/bgp.c:825
+msgid "on the connection the neighbor opened"
+msgstr ""
+
+#: src/bgp.c:825
+msgid "on the connection we opened"
+msgstr ""
+
+#: src/bgp.c:842
+msgid "connection from"
+msgstr ""
+
+#: src/bgp.c:843
+msgid "not a configured neighbor, refused"
+msgstr ""
+
+#: src/bgp.c:880
+msgid "the byte stream is not a sequence of BGP messages"
+msgstr ""
+
+#: src/bgp.c:898
+msgid "the neighbor closed the TCP connection"
+msgstr ""
+
+#: src/bgp.c:908
+msgid "TCP connection reset"
+msgstr ""
+
+#: src/bgp.c:909
+msgid "TCP connection refused"
+msgstr ""
+
+#: src/bgp.c:910
+msgid "TCP connection timed out"
+msgstr ""
+
+#: src/bgp.c:910
+msgid "TCP connection closed"
+msgstr ""
+
+#: src/bgp.c:934 src/ospf.c:432 src/rip.c:241
+msgid "interface down"
+msgstr ""
+
+#: src/bgp.c:951
+msgid "no TCP connection yet: ConnectRetry timer expired, trying again"
+msgstr ""
+
+#: src/bgp.c:956
+msgid "hold timer expired: nothing heard"
+msgstr ""
+
+#: src/bgp.c:1092
 msgid "usage: bgp announce|withdraw PREFIX/LEN"
 msgstr ""
 
-#: src/bgp.c:751
+#: src/bgp.c:1096
 msgid "now originates"
 msgstr ""
 
-#: src/bgp.c:751
+#: src/bgp.c:1096
 msgid "stops originating"
 msgstr ""
 
-#: src/bgp.c:774
+#: src/bgp.c:1127
 msgid "as=NUMBER is required"
 msgstr ""
 
-#: src/bgp.c:782
+#: src/bgp.c:1135
 msgid "bad neighbor"
 msgstr ""
 
-#: src/bgp.c:783
+#: src/bgp.c:1136
 msgid "(NODE:AS[:customer|peer|provider], on a shared network, different AS)"
 msgstr ""
 
-#: src/bgp.c:788
+#: src/bgp.c:1141
 msgid "bad network"
 msgstr ""
 
-#: src/bgp.c:814
+#: src/bgp.c:1174
+msgid "cannot listen on TCP port 179"
+msgstr ""
+
+#: src/bgp.c:1180
 msgid "neighbors"
 msgstr ""
 
-#: src/bgp.c:814
+#: src/bgp.c:1180
 msgid "networks originated"
 msgstr ""
 
-#: src/bgp.c:863
+#: src/bgp.c:1245
 msgid "autonomous system"
 msgstr ""
 
-#: src/bgp.c:864
+#: src/bgp.c:1246
 msgid "  policies off"
 msgstr ""
 
-#: src/bgp.c:864
+#: src/bgp.c:1246
 msgid "  origin validation on"
 msgstr ""
 
-#: src/bgp.c:866 src/ospf.c:397 src/ospf.c:504 src/ospf.c:729
+#: src/bgp.c:1248 src/ospf.c:397 src/ospf.c:504 src/ospf.c:729
 msgid "neighbor"
 msgstr ""
 
-#: src/bgp.c:867
+#: src/bgp.c:1249
 msgid "relation"
 msgstr ""
 
-#: src/bgp.c:867 src/dhcp.c:694 src/ospf.c:730 src/qdisc.c:440 src/stp.c:745
+#: src/bgp.c:1249 src/dhcp.c:694 src/ospf.c:730 src/qdisc.c:440 src/stp.c:745
 #: src/ui.c:544
 msgid "state"
 msgstr ""
 
-#: src/bgp.c:867
+#: src/bgp.c:1249
 msgid "updates in/out"
 msgstr ""
 
-#: src/bgp.c:875
+#: src/bgp.c:1258
+msgid "opened by the neighbor"
+msgstr ""
+
+#: src/bgp.c:1258
+msgid "opened by us"
+msgstr ""
+
+#: src/bgp.c:1258
+msgid "hold"
+msgstr ""
+
+#: src/bgp.c:1262
 msgid "prefix"
 msgstr ""
 
-#: src/bgp.c:875 src/rip.c:288 src/stp.c:738
+#: src/bgp.c:1262 src/rip.c:288 src/stp.c:738
 msgid "via"
 msgstr ""
 
-#: src/bgp.c:876
+#: src/bgp.c:1263
 msgid "AS path"
 msgstr ""
 
-#: src/bgp.c:876
+#: src/bgp.c:1263
 msgid "why it is the best"
 msgstr ""
 
-#: src/bgp.c:900
+#: src/bgp.c:1287
 msgid "BGP — path-vector routing between autonomous systems"
 msgstr ""
 
-#: src/bgp.c:901
+#: src/bgp.c:1288
 msgid ""
 "run ROUTER bgp as=N [network=PREFIX/LEN ...] [neighbor=NODE:AS[:RELATION] ...]\n"
-"               [connected=1] [keepalive=30s] [hold=3×keepalive] [mrai=500ms]\n"
-"               [prepend=N] [policy=1] [rov=1 roa=PREFIX/LEN:AS[:MAXLEN] ...]\n"
+"               [connected=1] [keepalive=30s] [hold=3×keepalive] [retry=keepalive]\n"
+"               [mrai=500ms] [prepend=N] [prepend.NEIGHBOR=N] [policy=1]\n"
+"               [rov=1 roa=PREFIX/LEN:AS[:MAXLEN] ...]\n"
 "run ROUTER bgp announce|withdraw PREFIX/LEN\n"
 "  network= and neighbor= can be repeated. RELATION says what the neighbor is for\n"
 "  this AS: customer, peer or provider (none: no policy on that session).\n"
-"  connected=1 also originates every connected network.\n"
-"  policy=0 ignores the relations; prepend=N lengthens the AS path we export.\n"
+"  connected=1 also originates every connected network; `withdraw` silences one.\n"
+"  policy=0 ignores the relations. prepend=N lengthens the AS path we export to\n"
+"  everybody, prepend.NEIGHBOR=N only towards that neighbor.\n"
 "  Nothing checks that an AS owns what it announces: that is the hijack lab;\n"
 "  rov=1 with roa= entries rejects announcements with the wrong origin.\n"
-"  Sessions use UDP port 179 here (TCP in real BGP): use loss-free links."
+"  Sessions run over TCP port 179. keepalive is at least 1 s and hold at least 3 s;\n"
+"  retry is the ConnectRetry timer. AS numbers may be four octets long."
 msgstr ""
 
-#: src/bgp.c:912
+#: src/bgp.c:1302
 msgid ""
-"The Internet is a network of autonomous systems (AS): networks under one administration, each with its own interior routing. BGP is the protocol they use to tell each other which address blocks (prefixes) they can reach. It is a path-vector protocol: an announcement carries the whole list of ASes it has crossed (the AS path). When a router passes a route on, it prepends its own AS number; a router that finds its own number in a path discards it, which prevents loops without any count-to-infinity. When a route disappears an explicit withdrawal is sent. Two BGP routers keep a session alive with KEEPALIVE messages and tear it down, withdrawing everything learned over it, when the hold timer expires.\n"
+"The Internet is a network of autonomous systems (AS): networks under one administration, each with its own interior routing. BGP is the protocol they use to tell each other which address blocks (prefixes) they can reach. It is a path-vector protocol: an announcement carries the whole list of ASes it has crossed (the AS path). When a router passes a route on, it prepends its own AS number; a router that finds its own number in a path discards it, which prevents loops without any count-to-infinity. When a route disappears an explicit withdrawal is sent.\n"
+"\n"
+"Two BGP routers talk over a TCP connection to port 179, so BGP itself needs no acknowledgements or retransmissions: a route is sent once and stays valid until it is withdrawn or the session ends. Either router may open the connection (if both do, the one opened by the router with the higher identifier is kept). Each sends an OPEN with its AS number, identifier and proposed hold time, confirms the other's with a KEEPALIVE, and the session is Established; then the whole table is sent as UPDATE messages, and afterwards only the changes. KEEPALIVEs every third of the hold time prove the neighbor is alive; when the hold timer expires, or the connection breaks, everything learned over the session is withdrawn. Errors are reported with a NOTIFICATION, which also closes the session.\n"
 "\n"
 "Unlike interior protocols, BGP does not look for the shortest path: it applies policy. Each AS first ranks the routes it hears by local preference, which encodes business relations (a route through a customer earns money, through a peer is free, through a provider costs), and only then by AS-path length. Export follows the same logic (Gao-Rexford rules): routes learned from customers are announced to everyone, routes learned from peers and providers only to customers. The result is that paths are valley-free: they go up through providers, cross at most one peering link, and go down through customers; nobody carries traffic for free between two of its providers.\n"
 "\n"
 "BGP trusts what it is told. An AS that announces a prefix it does not own attracts the traffic of everyone for whom its path looks better (prefix hijack), and announcing a more specific prefix attracts everyone, because forwarding always follows the longest match. Route origin validation (RPKI) lets routers reject announcements whose origin AS or prefix length does not match a signed authorization.\n"
 "\n"
-"Simplified here: sessions over UDP instead of TCP, eBGP only, one router per AS, no MED, communities or aggregation."
+"Not modelled here: iBGP (there is one router per AS and neighbors are directly connected), MED, communities, aggregation and route-flap damping; each UPDATE carries one prefix."
 msgstr ""
 
 #: src/chord.c:222
@@ -5058,45 +5171,45 @@ msgstr ""
 msgid "usage: monitor HOST[:PORT]"
 msgstr ""
 
-#: src/scenario.c:750
-msgid "usage: expect NODE COUNTER ==|!=|>=|<=|>|< VALUE"
+#: src/scenario.c:750 src/scenario.c:755 src/scenario.c:759
+msgid "usage: expect NODE COUNTER ==|!=|>=|<=|>|< VALUE [if A ==|!= B]"
 msgstr ""
 
-#: src/scenario.c:767
+#: src/scenario.c:777
 msgid "usage: at TIME command"
 msgstr ""
 
-#: src/scenario.c:772
+#: src/scenario.c:782
 msgid "usage: run NODE MODULE [args]"
 msgstr ""
 
-#: src/scenario.c:779
+#: src/scenario.c:789
 msgid "usage: stop NODE MODULE"
 msgstr ""
 
-#: src/scenario.c:792
+#: src/scenario.c:802
 msgid "usage: node NAME up|down"
 msgstr ""
 
-#: src/scenario.c:800
+#: src/scenario.c:810
 msgid "usage: set speed|detail|baseport VALUE"
-msgstr ""
-
-#: src/scenario.c:804
-#, c-format
-msgid "unknown setting '%s'"
 msgstr ""
 
 #: src/scenario.c:814
 #, c-format
+msgid "unknown setting '%s'"
+msgstr ""
+
+#: src/scenario.c:824
+#, c-format
 msgid "unknown command '%s' (try: help)"
 msgstr ""
 
-#: src/scenario.c:860
+#: src/scenario.c:870
 msgid "cannot open scenario"
 msgstr ""
 
-#: src/scenario.c:1290
+#: src/scenario.c:1300
 msgid "got"
 msgstr ""
 
