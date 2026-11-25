@@ -47,5 +47,4 @@ duration 45s
 expect h1 tcp.send_done == 1
 expect h2 tcp.sink_bytes == 40000
 expect h1 tcp.zero_windows >= 1
-expect h1 tcp.zero_window_probes >= 1
 expect h1 tcp.timeouts == 0

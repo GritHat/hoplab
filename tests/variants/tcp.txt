@@ -1,0 +1,81 @@
+# Parameterised runs of the TCP labs that must keep their outcome.
+#   PASS|FAIL  scenario  key=value ...
+# PASS: every `expect` of the scenario holds with these parameters.
+# FAIL: at least one does not, on purpose (the variant shows the other
+#       behaviour: see the scenario's description).
+# tools/check-variants.sh runs each line with seeds 1..5.
+
+PASS 120-tcp-handshake
+PASS 120-tcp-handshake bytes=50000
+PASS 120-tcp-handshake bytes=50000 loss=0.1
+PASS 120-tcp-handshake delay=200ms
+PASS 120-tcp-handshake iw=10 bytes=20000
+PASS 121-http-page
+
+PASS 220-tcp-loss
+PASS 220-tcp-loss loss=0.01
+PASS 220-tcp-loss loss=0.2
+PASS 220-tcp-loss cc=tahoe
+PASS 220-tcp-loss cc=newreno
+PASS 220-tcp-loss cc=cubic
+PASS 220-tcp-loss cc=bbr
+PASS 220-tcp-loss sack=0
+PASS 220-tcp-loss sack=0 cc=newreno loss=0.1
+PASS 220-tcp-loss delay=100ms
+PASS 221-tcp-flow-control
+PASS 221-tcp-flow-control rwnd=30000
+PASS 221-tcp-flow-control readrate=64k
+
+PASS 320-tcp-congestion
+PASS 320-tcp-congestion cc=tahoe
+PASS 320-tcp-congestion cc=newreno
+PASS 320-tcp-congestion cc=cubic
+PASS 320-tcp-congestion cc=bbr
+PASS 320-tcp-congestion queue=5
+PASS 320-tcp-congestion queue=200
+PASS 320-tcp-congestion queue=5 cc=cubic
+PASS 320-tcp-congestion queue=200 cc=cubic
+PASS 320-tcp-congestion queue=5 cc=bbr
+PASS 320-tcp-congestion queue=200 cc=bbr
+PASS 320-tcp-congestion sack=0
+PASS 320-tcp-congestion sack=0 cc=newreno
+PASS 320-tcp-congestion sack=0 cc=cubic
+PASS 320-tcp-congestion sack=0 cc=bbr
+PASS 320-tcp-congestion sack=0 cc=bbr queue=5
+PASS 320-tcp-congestion sack=0 cc=cubic queue=200
+PASS 320-tcp-congestion loss=0.01
+PASS 320-tcp-congestion loss=0.01 cc=cubic
+PASS 320-tcp-congestion loss=0.01 cc=bbr
+PASS 320-tcp-congestion ssthresh=20
+PASS 320-tcp-congestion bw=1M
+PASS 320-tcp-congestion delay=60ms
+
+PASS 321-tcp-sack
+PASS 321-tcp-sack cc=cubic
+PASS 321-tcp-sack cc=reno
+PASS 321-tcp-sack delay=80ms
+FAIL 321-tcp-sack sack=0
+FAIL 321-tcp-sack sack=0 cc=cubic
+
+PASS 420-tcp-fairness
+PASS 420-tcp-fairness cc1=reno cc2=reno
+PASS 420-tcp-fairness cc1=cubic cc2=cubic
+PASS 420-tcp-fairness cc1=cubic cc2=reno
+PASS 420-tcp-fairness cc1=bbr cc2=bbr
+PASS 420-tcp-fairness cc1=bbr cc2=cubic
+PASS 420-tcp-fairness cc1=bbr cc2=cubic queue=10
+PASS 420-tcp-fairness cc1=bbr cc2=cubic queue=200
+PASS 420-tcp-fairness cc1=bbr cc2=reno queue=10
+PASS 420-tcp-fairness queue=10
+PASS 420-tcp-fairness queue=200
+PASS 420-tcp-fairness delay2=40ms
+PASS 420-tcp-fairness delay2=3ms
+PASS 420-tcp-fairness bw=10M delay=40ms cc1=cubic cc2=reno
+
+PASS 421-bbr-anatomy
+PASS 421-bbr-anatomy queue=5
+PASS 421-bbr-anatomy queue=300
+PASS 421-bbr-anatomy bw=8M bw2=2M
+PASS 421-bbr-anatomy delay=50ms
+FAIL 421-bbr-anatomy cc=cubic
+FAIL 421-bbr-anatomy cc=reno

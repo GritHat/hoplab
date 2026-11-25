@@ -53,9 +53,9 @@ In lab 221 the buffer is 8000 bytes and the application reads 16 kbit/s = 2000 b
 <!-- detail: 3 -->
 ## In depth
 
-**Cumulative ACKs are robust but poor in information.** A lost ACK is harmless, because the next one covers it. But a sender that has lost several segments of a window learns about one hole per round trip. **Selective acknowledgements** (SACK, RFC 2018) list the blocks received beyond the hole; NewReno (RFC 6582) is the best that can be done without them. netlab does not implement SACK.
+**Cumulative ACKs are robust but poor in information.** A lost ACK is harmless, because the next one covers it. But a sender that has lost several segments of a window learns about one hole per round trip. **Selective acknowledgements** (SACK, RFC 2018) list the blocks received beyond the hole; the sender keeps a scoreboard of them and repairs every hole of a window in about one round trip (RFC 6675). NewReno (RFC 6582) is the best that can be done without them. netlab negotiates SACK by default; `sack=0` on a `tcp send` falls back to NewReno, and lab `321-tcp-sack` compares the two.
 
-**Delayed ACKs.** Real receivers acknowledge every second full segment, or after at most 500 ms (RFC 1122; typically 40 to 200 ms), to save packets. This interacts badly with Nagle's algorithm (RFC 896), which holds small segments while data is unacknowledged: the classic 40 ms stalls of request/response protocols, and the reason for the TCP_NODELAY option. netlab acknowledges every segment immediately.
+**Delayed ACKs.** Real receivers acknowledge every second full segment, or after at most 500 ms (RFC 1122; typically 40 to 200 ms), to save packets. This interacts badly with Nagle's algorithm (RFC 896), which holds small segments while data is unacknowledged: the classic 40 ms stalls of request/response protocols, and the reason for the TCP_NODELAY option. netlab does both: ACKs wait for a second segment or for 40 ms (`delack=`, 0 to acknowledge everything at once) and Nagle is on (`nagle=0` to disable it).
 
 **Timers in real stacks.** The RFC's 1 s minimum was chosen against spurious timeouts; Linux uses 200 ms, and data centres go lower. The timestamp option (RFC 7323) gives a sample for every ACK, including retransmissions, making Karn's restriction unnecessary, and protects against wrapped sequence numbers (PAWS) on fast links. The same RFC defines window scaling: the 16-bit window field limits the window to 64 kB, far too little for a long fast path, so both sides agree on a shift factor in the SYN. A spurious timeout can be detected and undone (F-RTO, RFC 5682; Eifel). Modern Linux uses time-based loss detection (RACK-TLP, RFC 8985), which also sends a probe to turn tail losses into fast recoveries.
 
@@ -77,7 +77,7 @@ In lab 221 the buffer is 8000 bytes and the application reads 16 kbit/s = 2000 b
 **Lab 220: `./netlab run 220-tcp-loss`**
 
 - Select h1 and open its `tcp` tab: srtt, rto, cwnd, ssthresh, and the counters of fast retransmits and timeouts.
-- In the log at detail 2 find `3 duplicate ACKs: fast retransmit` and `retransmission timeout (RTO ...)`. Open the graphs (`g`) for the RTT and the window.
+- In the log at detail 2 find `SACK shows a hole: fast retransmit` (with `sack=0`: `3 duplicate ACKs: fast retransmit`) and `retransmission timeout (RTO ...)`. Open the graphs (`g`) for the RTT and the window.
 - In the packets view find a group of ACKs with the same Ack number followed by the retransmitted segment.
 - Predict, then try: `./netlab run 220-tcp-loss loss=0.2`. Which kind of repair dominates now, and why? Look for RTO values of 1 s, 2 s, 4 s: where do they come from?
 - Predict, then try: `./netlab run 220-tcp-loss delay=100ms`. Estimate the RTT and the RTO after the first sample before you look.

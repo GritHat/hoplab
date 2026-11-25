@@ -49,11 +49,11 @@ From `src/nl.h` and the scenario documentation: 64 nodes, 160 links, 16 interfac
 
 Time is virtual, in microseconds, and advances only through events. Nodes compute in zero time: there is no CPU, no scheduling delay, no disk. Anything whose real behaviour is governed by processing cost (fsync latency in consensus, slow members in failure detection, softirq batching in TCP) is absent. Clocks are perfect unless a module adds an offset.
 
-Protocols are simplified, and each module's help text lists how. The ones that most affect conclusions in this track: TCP without SACK, delayed ACKs or timestamps, and a reduced BBR; BGP with eBGP only and one router per AS; DNS without TCP fallback, EDNS or DNSSEC; a tick-based CSMA/CA with no capture; Raft without snapshots, membership change or linearizable reads.
+Protocols are simplified, and each module's help text lists how. The ones that most affect conclusions in this track: TCP without timestamps, tail-loss probe or HyStart, and BBR in its first version without policer detection; BGP with eBGP only and one router per AS; DNS without TCP fallback, EDNS or DNSSEC; a tick-based CSMA/CA with no capture; Raft without snapshots, membership change or linearizable reads.
 
 ## Threats to validity
 
-- **Construct validity.** Does the counter measure the concept? Whole-transfer goodput is not a share of a bottleneck; an oracle's false-positive count is not what an operator sees.
+- **Construct validity.** Does the counter measure the concept? Whole-transfer goodput is not a share of a bottleneck (which is why `tcp send` also reports a steady-state rate); an oracle's false-positive count is not what an operator sees.
 - **Internal validity.** Deterministic simulations synchronise: drop-tail queues with periodic arrivals show phase effects, and one millisecond of extra delay can reverse an outcome. A difference between two configurations is evidence only if it survives small perturbations of irrelevant parameters.
 - **Statistical validity.** Report a distribution over seeds, not a run; choose the number of runs before looking at the results; when the seed has no effect, say so rather than reporting a zero-width interval.
 - **External validity.** Small topologies, a single bottleneck, synthetic traffic. Floyd and Paxson's argument still stands: look for invariants and explore the parameter space, rather than trusting one "typical" scenario.
@@ -81,22 +81,22 @@ The three exercises below are about method; they use labs you already know.
 
 **Experiment 1 — what the seed does.** Hypothesis: equal seeds give identical runs, and different seeds change the result only where the scenario draws random numbers. Manipulation: run `./netlab run 481-raft-split-votes --seed 7 --headless --detail 2` twice and compare the outputs with `diff`; then run it with seeds 1 to 10; then do the same with `420-tcp-fairness cc1=reno cc2=reno`. Metric: differing lines; spread of the leaderless time and of the goodput. Expected: identical outputs for equal seeds; a real distribution for Raft; no variation at all for the two Reno flows. Decide what you would vary in the second case to obtain an honest error bar.
 
-**Experiment 2 — from a lab to a measurement.** Hypothesis: the default fairness lab confounds sharing with a head start. Manipulation: copy the scenario to `fair.nl`; make both flows start at 1 s with `bytes=6M`; replace the `expect` lines with `expect h1 tcp.goodput_kbps >= 0`, the same for h2, and the two `tcp.retransmits`; then sweep:
+**Experiment 2 — from a lab to a measurement.** Hypothesis: who wins between BBR and CUBIC depends on the buffer, and one run per point is not enough to say how. Manipulation: the fairness lab already starts both flows together, with a random offset, and reports steady-state rates and Jain's index; sweep the queue and the seed and keep the numbers:
 
 ```
 for q in 10 20 40 80 160; do for s in 1 2 3 4 5; do
-  ./netlab run ./fair.nl cc1=bbr cc2=cubic queue=$q --seed $s --headless --lang en \
-    | grep got | tr -d '()' | awk -v q=$q -v s=$s '{print q, s, $2, $3, $NF}'
+  ./netlab run 420-tcp-fairness cc1=bbr cc2=cubic queue=$q --seed $s --headless --detail 1 --lang en \
+    | grep Jain | awk -v q=$q -v s=$s '{print q, s, $(NF-4)}'
 done; done > fair.dat
 ```
 
-Metric: Jain's index and the retransmission ratio per queue size, with the spread over seeds. Expected: BBR ahead with a heavy retransmission cost at `queue=10`, but no clean monotone trend beyond that: in our runs the winner changed more than once between 10 and 200 packets. That is a finding about the fragility of single-configuration claims, not a failure of the exercise. Note also that the slower flow's goodput is still inflated by the time it spends alone after the other finishes, and decide how to remove that too.
+Metric: Jain's index per queue size, with its spread over seeds; add the two `steady` figures of the `done` lines to see who is ahead. Expected: BBR ahead with a heavy cost in timeouts for CUBIC at `queue=10`, the two close around 40 packets, CUBIC ahead at 160: a crossover near a few BDPs of buffer. Check how much the index moves between seeds at each point before drawing the curve: where the spread is as large as the difference between neighbouring points, you have not located the crossover.
 
-**Experiment 3 — a sensitivity check.** Hypothesis: a conclusion drawn from one configuration of a deterministic simulation can be a phase artefact. Manipulation: with `fair.nl` and `cc1=reno cc2=reno`, sweep `delay2` from 2 ms to 12 ms in steps of 1 ms. Metric: goodput ratio against `delay2`. Expected: the ratio jumps between neighbouring values, and even changes sign, rather than varying smoothly: you are looking at phase effects, not at RTT, and must average over perturbations (start offsets, or a discipline such as `qdisc=red` that randomises drops) before claiming anything about RTT.
+**Experiment 3 — a sensitivity check.** Hypothesis: a conclusion drawn from one configuration can be a phase artefact. Manipulation: `./netlab run 420-tcp-fairness cc1=reno cc2=reno` with `delay2` from 2 ms to 12 ms in steps of 1 ms, five seeds each. Metric: ratio of the steady rates against `delay2`. Expected: the ratio jumps between neighbouring values, and even changes sign, rather than varying smoothly, and the seeds of one value agree with each other more than neighbouring values do: you are looking at phase effects, not at RTT, and must average over perturbations (delays, or a discipline such as `qdisc=red` that randomises drops) before claiming anything about RTT.
 
 ## Ten project ideas
 
-- **Loss recovery.** Add SACK (RFC 2018, RFC 6675) or RACK-TLP (RFC 8985) to `src/tcp.c`. Measure timeouts, retransmissions and goodput with several losses per window, and rerun the fairness experiments: which conclusions of topic 40 change?
+- **Loss recovery.** Add tail-loss probes and the full RACK-TLP of RFC 8985, or proportional rate reduction (RFC 6937), to `src/tcp.c`, next to the SACK recovery that is there. Measure timeouts, retransmissions and goodput when the last segments of a window are lost, and rerun the fairness experiments: which conclusions of topic 40 change?
 - **A QUIC-like transport over UDP** (RFC 9000, RFC 9002): monotonic packet numbers, ACK ranges, independent streams. Measure head-of-line blocking against TCP for two streams under loss, and handshake latency.
 - **A delay-based controller** (Vegas, Copa). Measure standing queue and RTT inflation alone, then the share obtained against Reno and CUBIC as a function of buffer size.
 - **L4S in miniature.** A DCTCP-style sender and a step-marking or dual-queue discipline. Measure queueing delay and the rate ratio between scalable and classic flows.

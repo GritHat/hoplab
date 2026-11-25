@@ -89,6 +89,7 @@ Un ordine consigliato per un corso: prima il livello di rete (200, 201, 202, poi
 ## Avanzato
 
 - `320-tcp-congestion` Controllo di congestione su un collo di bottiglia: il dente di sega
+- `321-tcp-sack` Molte perdite in una finestra: NewReno contro SACK
 - `330-ospf-vs-rip` Convergenza dopo un guasto: link state contro distance vector
 - `331-bgp-basics` BGP: sistemi autonomi, AS path e ritiri
 - `340-dns-ttl` Catene di CNAME, caching negativo e il compromesso del TTL
@@ -117,6 +118,7 @@ Tre cammini attraversano questo percorso. **Congestione e code**: 320, poi 371, 
 ## Frontiera
 
 - `420-tcp-fairness` Due flussi, un collo di bottiglia: equità fra Reno, CUBIC e BBR
+- `421-bbr-anatomy` Anatomia di BBR: un modello del percorso invece di una reazione alle perdite
 - `430-bgp-policies` Politiche BGP: clienti, peer, provider e percorsi valley-free
 - `431-bgp-hijack` BGP: dirottamento di un prefisso, prefisso più specifico e validazione dell'origine
 - `440-dns-poisoning` Avvelenamento della cache DNS e perché conta la casualità della porta
@@ -139,7 +141,7 @@ Il catalogo si può anche filtrare per livello con `Tab`, cosa utile quando stud
 
 - **Fisico e collegamento**: 100, 102, 160, 161, 162, 170, 203, 260, 261, 270, 271, 360, 361, 370, 460
 - **Rete**: 101, 200, 201, 202, 230, 231, 232, 250, 251, 272, 330, 331, 350, 371, 372, 373, 374, 430, 431
-- **Trasporto**: 120, 220, 221, 252, 320, 351, 420, 450
+- **Trasporto**: 120, 220, 221, 252, 320, 321, 351, 420, 421, 450
 - **Applicazione**: 121, 140, 141, 240, 241, 340, 440
 - **Distribuito**: 290, 380, 381, 382, 390, 391, 392, 393, 394, 480, 481, 482, 483, 490, 491
 

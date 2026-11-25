@@ -89,6 +89,7 @@ A suggested order for a course: the network layer first (200, 201, 202, then the
 ## Advanced
 
 - `320-tcp-congestion` Congestion control on a bottleneck: the sawtooth
+- `321-tcp-sack` Many losses in one window: NewReno against SACK
 - `330-ospf-vs-rip` Convergence after a failure: link state against distance vector
 - `331-bgp-basics` BGP: autonomous systems, AS paths and withdrawals
 - `340-dns-ttl` CNAME chains, negative caching and the TTL trade-off
@@ -117,6 +118,7 @@ Three paths cross this track. **Congestion and queues**: 320, then 371, 372, 373
 ## Frontier
 
 - `420-tcp-fairness` Two flows, one bottleneck: fairness of Reno, CUBIC and BBR
+- `421-bbr-anatomy` Anatomy of BBR: a model of the path instead of a reaction to loss
 - `430-bgp-policies` BGP policies: customers, peers, providers and valley-free paths
 - `431-bgp-hijack` BGP prefix hijack, more-specific hijack and origin validation
 - `440-dns-poisoning` DNS cache poisoning and why port randomisation matters
@@ -139,7 +141,7 @@ The catalog can also be filtered by layer with `Tab`, which is useful when you s
 
 - **Physical and link**: 100, 102, 160, 161, 162, 170, 203, 260, 261, 270, 271, 360, 361, 370, 460
 - **Network**: 101, 200, 201, 202, 230, 231, 232, 250, 251, 272, 330, 331, 350, 371, 372, 373, 374, 430, 431
-- **Transport**: 120, 220, 221, 252, 320, 351, 420, 450
+- **Transport**: 120, 220, 221, 252, 320, 321, 351, 420, 421, 450
 - **Application**: 121, 140, 141, 240, 241, 340, 440
 - **Distributed**: 290, 380, 381, 382, 390, 391, 392, 393, 394, 480, 481, 482, 483, 490, 491
 
