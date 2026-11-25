@@ -201,3 +201,8 @@ example.
   touches your actual network except the UDP tunnels of the multi-process
   modes.
 </content>
+
+## License
+
+Apache License 2.0: see [LICENSE](LICENSE) and [NOTICE](NOTICE). Release notes
+are in [CHANGELOG.md](CHANGELOG.md).

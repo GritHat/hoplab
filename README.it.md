@@ -212,3 +212,8 @@ esempio completo.
   i timestamp). I frame sono veri, i cavi no: nulla tocca la rete reale
   tranne i tunnel UDP delle modalità a più processi.
 </content>
+
+## Licenza
+
+Apache License 2.0: vedi [LICENSE](LICENSE) e [NOTICE](NOTICE). Le note di
+rilascio sono in [CHANGELOG.md](CHANGELOG.md).

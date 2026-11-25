@@ -12,7 +12,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#define HOPLAB_VERSION "1.0"
+#define HOPLAB_VERSION "1.0.0"
 
 static void usage(void)
 {
