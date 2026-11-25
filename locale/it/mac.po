@@ -1,8 +1,10 @@
 # Italian translation of netlab: medium access laboratory
 msgid ""
 msgstr ""
-"Content-Type: text/plain; charset=UTF-8\n"
 "Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
 
 msgid "pure ALOHA"
 msgstr "ALOHA puro"
@@ -49,17 +51,20 @@ msgstr "ultimi"
 msgid "so far"
 msgstr "finora"
 
-msgid "stations"
-msgstr "stazioni"
-
 msgid "load"
 msgstr "carico"
 
 msgid "best throughput"
 msgstr "throughput massimo"
 
+msgid "stations"
+msgstr "stazioni"
+
 msgid "unknown protocol"
 msgstr "protocollo sconosciuto"
+
+msgid "too many stations: using the maximum,"
+msgstr "troppe stazioni: uso il massimo,"
 
 msgid "offered load"
 msgstr "carico offerto"

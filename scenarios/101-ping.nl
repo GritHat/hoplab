@@ -30,6 +30,8 @@ at 8s run h1 udp h2 msg=hello size=3000
 note 8s    A 3000-byte datagram over a 1500-byte MTU: three fragments, reassembled only at the destination.
 note[it] 8s Un datagramma da 3000 byte su una MTU di 1500: tre frammenti, riassemblati solo a destinazione.
 duration 12s
-expect h1 ping.reply == 3
-expect h1 traceroute.hops == 2
-expect h1 udp.reply == 1
+# without loss everything arrives; with loss the tools report what is missing
+at 11900ms run h1 check all "$loss > 0 || (h1:ping.reply == 3 && h1:traceroute.hops == 2 && h1:udp.reply == 1)"
+at 11900ms run h1 check sane "h1:ping.reply <= h1:ping.sent && h1:ping.sent == 3"
+expect h1 check.all == 1
+expect h1 check.sane == 1

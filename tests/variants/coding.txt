@@ -1,0 +1,38 @@
+# Parameter variants verified by tests/run-variants.sh: each line is run with
+# seeds 1..5 and must give this result every time.
+#   PASS  scenario  key=value ...
+PASS  160-error-detection
+PASS  160-error-detection  ber=1e-3
+PASS  160-error-detection  ber=1e-3 size=1200
+PASS  160-error-detection  ber=1e-5
+PASS  160-error-detection  ber=1e-6
+PASS  160-error-detection  size=100
+PASS  160-error-detection  size=1200
+PASS  161-error-correction
+PASS  161-error-correction  ber=1e-3
+PASS  161-error-correction  ber=1e-4
+PASS  161-error-correction  ber=1e-5
+PASS  161-error-correction  ber=3e-3
+PASS  260-coding-bench
+PASS  260-coding-bench  code=checksum
+PASS  260-coding-bench  code=crc16
+PASS  260-coding-bench  code=crc32
+PASS  260-coding-bench  code=crc8
+PASS  260-coding-bench  code=hamming74
+PASS  260-coding-bench  code=hamming74i
+PASS  260-coding-bench  code=parity
+PASS  260-coding-bench  code=rep3
+PASS  260-coding-bench  code=rs
+PASS  260-coding-bench  frames=200
+PASS  260-coding-bench  text=netlab
+PASS  360-rs-vs-hamming
+PASS  360-rs-vs-hamming  ber=1e-4
+PASS  360-rs-vs-hamming  ber=2e-2
+PASS  360-rs-vs-hamming  ber=5e-3
+PASS  360-rs-vs-hamming  burst=1
+PASS  360-rs-vs-hamming  burst=1000
+PASS  360-rs-vs-hamming  burst=200
+PASS  360-rs-vs-hamming  burst=4
+PASS  360-rs-vs-hamming  burst=40
+PASS  360-rs-vs-hamming  burst=60
+PASS  360-rs-vs-hamming  frames=200

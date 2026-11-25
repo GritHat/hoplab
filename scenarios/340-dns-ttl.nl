@@ -24,4 +24,8 @@ at 7s run h1 dig www.example.com server=r
 duration 10s
 expect h1 dig.answers >= 2
 expect h1 dig.nxdomain >= 1
-expect r  dns.cache_hits >= 1
+# shop -> www -> host is resolved once (2 questions: the chain comes back in one answer, then ghost).
+# The lookup of www at 7 s costs one more question only if the records have expired (ttl under 6 s),
+# and the second lookup of ghost at 5 s only if the negative answer has (negttl under 2 s)
+at 9900ms run r check cached "r:dns.upstream_queries == 2 + ($ttl < 6) + ($negttl < 2)"
+expect r check.cached == 1

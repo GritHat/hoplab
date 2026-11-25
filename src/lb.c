@@ -191,9 +191,24 @@ static int pick(lb_state *st, uint32_t h)
                 best = live[i];
         return best;
     case A_P2C:
-        a = live[nl_rand((unsigned)n)];
-        b = live[nl_rand((unsigned)n)];
-        return st->b[b].flows < st->b[a].flows ? b : a;
+        /* two candidates drawn in proportion to their weight; the one with
+         * fewer active flows per unit of weight wins */
+        for (i = 0; i < n; i++)
+            total += st->b[live[i]].weight > 0 ? st->b[live[i]].weight : 1;
+        a = b = live[0];
+        for (best = 0; best < 2; best++) {
+            int r = (int)nl_rand((unsigned)total), c = live[n - 1];
+            for (i = 0; i < n; i++) {
+                r -= st->b[live[i]].weight > 0 ? st->b[live[i]].weight : 1;
+                if (r < 0) {
+                    c = live[i];
+                    break;
+                }
+            }
+            if (best == 0) a = c; else b = c;
+        }
+        return st->b[b].flows * (st->b[a].weight > 0 ? st->b[a].weight : 1) <
+               st->b[a].flows * (st->b[b].weight > 0 ? st->b[b].weight : 1) ? b : a;
     default:
         for (i = 1; i <= LB_MAXB; i++)
             if (usable(st, (st->rr + i) % LB_MAXB)) {

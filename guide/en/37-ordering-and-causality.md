@@ -87,7 +87,7 @@ total    extra rounds or a leader; equivalent to consensus
 
 **Round 2 (4 s), causal order.** Same exchange. At n3 the log shows "held back «ten o'clock» from n2: a message it depends on has not arrived yet", then the question is delivered and "leaves the hold-back queue" follows immediately. Measure the time the answer spends in the queue (about 40 ms: the difference between the two paths) and note `clock.heldback` = 1.
 
-**Experiment 1: FIFO is not enough.** `./netlab run 390-causal-broadcast order2=fifo`. Predict the outcome before running: the two messages have different senders, so FIFO imposes nothing between them and n3 violates causality again (`clock.violations` = 2; the scenario's checks fail, as they should).
+**Experiment 1: FIFO is not enough.** `./netlab run 390-causal-broadcast order2=fifo`. Predict the outcome before running: the two messages have different senders, so FIFO imposes nothing between them and n3 violates causality again (`clock.violations` = 2: the lab's check `causality` expects exactly that for `none` and `fifo`, and 1 for `causal` and `total`).
 
 **Experiment 2: the price of total order.** `order2=total`. Every process now queues each message ("queued … waiting for every process to acknowledge") and delivers only when all have acknowledged. Measure when n1 delivers its own question: about 300 ms after sending, a round trip on the slow link, against 0 ms before. All three deliver in the same order. Then raise `slow=500ms` and predict the new delivery times for causal and for total.
 

@@ -85,7 +85,8 @@ Nel laboratorio 241 L = 10 s: h1 ottiene l'indirizzo a 1,01 s e rinnova a 6,01 s
 - Segui DISCOVER, OFFER, REQUEST, ACK per h1 a 1 s; apri ciascuno nella vista Pacchetti e trova xid, yiaddr e le opzioni 53, 51 e 54. Nota gli indirizzi sorgente e destinazione della DISCOVER.
 - A 3 s h3 trova il pool esaurito. A 6 s h1 raggiunge T1 e rinnova con una REQUEST in unicast. Apri la scheda `dhcp` di s per vedere la tabella dei lease.
 - Prevedi, poi prova: `:h1 dhcp release`. Che cosa succede a h3, ed entro quanti secondi?
-- Prevedi, poi prova: riavvia, e intorno agli 8 s digita `:node s down`. Scrivi quando h1 registrerà T1, T2 e `lease scaduto`, poi controlla. Riaccendere il nodo con `:node s up` non riavvia il servizio: esegui `:s dhcp server pool=10.0.5.100-10.0.5.101 lease=10s router=10.0.5.1` e guarda chi ottiene i due indirizzi questa volta.
+- A 14 s il laboratorio fa cadere il server per 26 secondi. Prima che succeda, scrivi quando h1 registrerà T1, T2 e `lease scaduto`, poi controlla. A 40 s il server torna con la sua tabella dei lease (è su memoria stabile, come il file dei lease di un server reale) e i client, che nel frattempo hanno continuato a inviare DISCOVER, vengono di nuovo serviti: guarda chi ottiene i due indirizzi questa volta, e spiega perché non devono essere per forza gli stessi due host.
+- Prevedi, poi prova: `./netlab run 241-dhcp-leases lease=60`. Qualche client si accorge dell'interruzione?
 - Prova anche `./netlab run 241-dhcp-leases lease=4`: a quali istanti rinnova h1?
 
 ## Verifica

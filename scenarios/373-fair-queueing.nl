@@ -12,7 +12,8 @@ about  hog gets all the rest but can only hurt itself.
 about
 about  Watch: the per-flow backlog in the qdisc panel of r1; loss and delay in the sinks d1 (hog)
 about  and d2 (mouse). Try: qdisc=droptail to see the mouse suffer; mouse=600k (above its fair
-about  share: now both are cut to 500 kbit/s); quantum=300 (finer interleaving).
+about  share: now both are cut to 500 kbit/s); quantum=300 (finer interleaving) or quantum=9000 (the
+about  mouse now waits for six hog packets at each turn); hog=600k (no overload: nothing to protect from).
 about[it]  Un mittente ingordo ("hog", 3 Mbit/s) e uno modesto ("mouse", 100 kbit/s) attraversano lo
 about[it]  stesso collegamento da 1 Mbit/s. In un'unica FIFO lo hog riempie il buffer e il mouse perde
 about[it]  pacchetti nella stessa proporzione ed eredita il ritardo dello hog. Il fair queueing dà a ogni
@@ -22,9 +23,11 @@ about[it]  non aspetta mai, e lo hog prende tutto il resto ma può danneggiare s
 about[it]
 about[it]  Osserva: l'arretrato per flusso nel pannello qdisc di r1; perdita e ritardo nei sink d1
 about[it]  (hog) e d2 (mouse). Prova: qdisc=droptail per vedere il mouse soffrire; mouse=600k (oltre la
-about[it]  quota equa: ora entrambi sono tagliati a 500 kbit/s); quantum=300 (alternanza più fine).
-param      qdisc fq Queue discipline of the bottleneck (fq, droptail)
-param[it]  qdisc Disciplina di coda della strozzatura (fq, droptail)
+about[it]  quota equa: ora entrambi sono tagliati a 500 kbit/s); quantum=300 (alternanza più fine) o
+about[it]  quantum=9000 (il mouse ora aspetta sei pacchetti dell'hog a ogni giro); hog=600k (nessun
+about[it]  sovraccarico: nulla da cui proteggersi).
+param      qdisc fq Queue discipline of the bottleneck (fq, droptail, fifo)
+param[it]  qdisc Disciplina di coda della strozzatura (fq, droptail, fifo)
 param      hog 3M Rate of the greedy flow
 param[it]  hog Velocità del flusso ingordo
 param      mouse 100k Rate of the small flow
@@ -61,8 +64,16 @@ note 6s Round robin: after each packet of the hog the scheduler looks at the mou
 note[it] 6s Round robin: dopo ogni pacchetto dello hog lo scheduler guarda la coda del mouse. Quando il buffer è pieno, paga il flusso con la coda più lunga (lo hog).
 
 duration 14s
-expect d2 sink.lost == 0
-expect d2 sink.received > 780
-expect d2 sink.delay_ms < 40
-expect d1 sink.lost > 500
-expect r1 fq.drops > 500
+# on the wire: mouse x 1.23 (200-byte datagrams), hog x 1.046; the fair share is 500 kbit/s each
+at 13900ms run r1 check overload "$mouse * 1.23 + $hog * 1.046 > 1M"
+at 13900ms run r1 check mouse_lost "mouse:cbr.sent - d2:sink.received"
+at 13900ms run r1 check modest "$mouse * 1.23 <= 480k"
+# fair queueing, mouse within its share: it loses nothing and waits at most one quantum of the hog
+at 13900ms run r1 check shielded "is_$qdisc != is_fq || r1:check.modest == 0 || (r1:check.mouse_lost <= 5 && d2:sink.delay_ms < 25 + $quantum * 0.008)"
+# fair queueing, mouse above its share while the hog wants more than its own: both are cut to 500 kbit/s
+at 13900ms run r1 check capped "is_$qdisc != is_fq || r1:check.modest == 1 || $hog * 1.046 < 520k || (abs(d2:sink.received - 3300) < 700 && abs(d1:sink.received - 657) < 130)"
+# one queue for everybody (droptail, fifo, or prio with unmarked packets): the mouse shares the hog's losses
+at 13900ms run r1 check exposed "is_$qdisc == is_fq || (r1:check.overload == 1 && r1:check.mouse_lost > 0.2 * mouse:cbr.sent) || (r1:check.overload == 0 && r1:check.mouse_lost <= 5)"
+expect r1 check.shielded == 1
+expect r1 check.capped == 1
+expect r1 check.exposed == 1

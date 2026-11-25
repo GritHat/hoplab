@@ -1,0 +1,21 @@
+# Parameter variants verified by tests/run-variants.sh: each line is run with
+# seeds 1..5 and must give this result every time.
+#   PASS  scenario  key=value ...
+PASS  290-lamport-clocks
+PASS  290-lamport-clocks  mode=vector
+PASS  290-lamport-clocks  mode=vector slow=500ms
+PASS  290-lamport-clocks  slow=10ms
+PASS  290-lamport-clocks  slow=300ms
+PASS  290-lamport-clocks  slow=500ms
+PASS  390-causal-broadcast
+PASS  390-causal-broadcast  order2=fifo
+PASS  390-causal-broadcast  order2=fifo slow=300ms
+PASS  390-causal-broadcast  order2=none
+PASS  390-causal-broadcast  order2=none slow=30ms
+PASS  390-causal-broadcast  order2=total
+PASS  390-causal-broadcast  order2=total slow=500ms
+PASS  390-causal-broadcast  order2=total slow=50ms
+PASS  390-causal-broadcast  slow=130ms
+PASS  390-causal-broadcast  slow=30ms
+PASS  390-causal-broadcast  slow=500ms
+PASS  390-causal-broadcast  slow=80ms

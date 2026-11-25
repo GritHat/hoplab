@@ -11,6 +11,7 @@
 #include "nl_int.h"
 
 #include <ctype.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -416,6 +417,7 @@ typedef struct dns_state {
     dns_zone *zone[4];
     int       nzone;
     int       resolver, randomize;
+    int       idbits, portbits;         /* how many random bits in the id and in the source port */
     nl_ip     root;
     uint16_t  next_id;
     nl_time   timeout;
@@ -635,11 +637,25 @@ static uint32_t cache_ttl(const dns_rr *c)
 
 static void job_step(dns_job *j);
 
+/* Give the source port of a job back, unless another job is using the
+ * same one (possible when the port space is made small on purpose) */
+static void port_release(dns_job *j)
+{
+    dns_state *st = j->st;
+    int k;
+
+    if (!j->sport || j->sport == DNS_PORT)
+        return;
+    for (k = 0; k < JOB_MAX; k++)
+        if (&st->job[k] != j && st->job[k].used && st->job[k].sport == j->sport)
+            return;
+    nl_udp_unbind(st->n, j->sport);
+}
+
 static void job_free(dns_job *j)
 {
     nl_cancel(&j->timer);
-    if (j->sport && j->sport != DNS_PORT)
-        nl_udp_unbind(j->st->n, j->sport);
+    port_release(j);
     j->used = 0;
     j->sport = 0;
 }
@@ -709,18 +725,21 @@ static void job_send(dns_job *j)
     dns_buf o;
     int k;
 
-    if (j->sport && j->sport != DNS_PORT)
-        nl_udp_unbind(st->n, j->sport);
+    port_release(j);
     if (st->randomize) {
-        /* unpredictable source port and identifier: what an off-path forger must guess */
+        /* unpredictable source port and identifier: what an off-path forger
+         * must guess. idbits + portbits is the entropy: 16 + 14 as deployed,
+         * fewer when a lab wants the odds to be visible */
+        int tries = 0;
+
         do {
-            j->sport = (uint16_t)(49152 + nl_rand(16384));
+            j->sport = (uint16_t)(49152 + nl_rand(1u << st->portbits));
             for (k = 0; k < JOB_MAX; k++)
                 if (&st->job[k] != j && st->job[k].used && st->job[k].sport == j->sport)
                     break;
-        } while (k < JOB_MAX);
+        } while (k < JOB_MAX && ++tries < 32);
         nl_udp_bind(st->n, j->sport, resolver_rx, st);
-        j->qid = (uint16_t)nl_rand(65536);
+        j->qid = (uint16_t)nl_rand(1u << st->idbits);
     } else {
         j->sport = DNS_PORT;
         j->qid = ++st->next_id;
@@ -1058,6 +1077,8 @@ static int dns_run(nl_node *n, const nl_args *a)
             return -1;
         st->n = n;
         st->randomize = 1;
+        st->idbits = 16;
+        st->portbits = 14;
         st->timeout = NL_MS(800);
         nl_mod_set(n, &dns_mod, st);
         nl_udp_bind(n, DNS_PORT, dns_rx, st);
@@ -1077,6 +1098,14 @@ static int dns_run(nl_node *n, const nl_args *a)
         }
         st->randomize = (int)nl_arg_int(a, "randomize", st->randomize);
         st->timeout = nl_arg_time(a, "timeout", st->timeout);
+        if (nl_arg_has(a, "entropy")) {
+            int bits = (int)nl_arg_int(a, "entropy", 30);
+
+            if (bits < 1) bits = 1;
+            if (bits > 30) bits = 30;
+            st->idbits = bits < 16 ? bits : 16;
+            st->portbits = bits - st->idbits;
+        }
         nl_log(n, NL_L_APP, 2, 0, T_FIN "DNS" T_RESET " %s %s%s", _("recursive resolver ready, root server"),
                nl_ip_str(st->root), st->randomize ? "" : _(" — fixed source port, sequential ids"));
     }
@@ -1197,8 +1226,9 @@ static const nl_module dns_mod = {
                 "    a=www:10.0.3.10  cname=web:www  mx=@:mail[:10]  txt=@:hello\n"
                 "    ns=@:ns1  ns=sub:ns.sub  glue=ns.sub:10.0.4.2   (ns below the apex = delegation)\n"
                 "  the root zone is zone=. ; repeat the command to add records or zones.\n"
-                "run NODE dns resolver root=ADDR [randomize=1] [timeout=800ms]   recursive resolver\n"
+                "run NODE dns resolver root=ADDR [randomize=1] [entropy=30] [timeout=800ms]   recursive resolver\n"
                 "  randomize=0: fixed source port 53 and sequential ids (for the poisoning lab)\n"
+                "  entropy=B: random bits in id (up to 16) and source port (the rest, up to 14)\n"
                 "run NODE dns flush     empty the resolver cache"),
     .theory = N_("The Domain Name System is a distributed database that maps names to records "
                  "(A: an IPv4 address, NS: the name servers of a zone, CNAME: an alias, MX: the mail "
@@ -1532,15 +1562,18 @@ NL_MODULE(dig_mod)
 typedef struct {
     nl_node *n;
     nl_ip    victim, as, fake;
-    char     name[NAME_MAX_];
+    char     base[NAME_MAX_], name[NAME_MAX_];
     int      guesses, sent, first_id, port, sport;
+    int      idbits, portbits;          /* blind mode: the space the resolver draws from */
+    int      rounds, round, waiting;
     uint32_t ttl;
-    nl_time  gap;
-    nl_ev    timer;
-    unsigned attacks, wins;
+    nl_time  gap, lead;
+    nl_ev    timer, round_timer;
+    unsigned attacks, wins, done, sent_total, sent_lost;
 } spoof_state;
 
 static const nl_module spoof_mod;
+static void spoof_round(void *ctx);
 
 static void spoof_tick(void *ctx)
 {
@@ -1553,10 +1586,10 @@ static void spoof_tick(void *ctx)
     s->timer = 0;
     if (s->sent >= s->guesses)
         return;
-    /* port known (the resolver always uses the same one): walk the ids;
-     * port unknown: both must be guessed blindly */
-    id = s->port ? (uint16_t)(s->first_id + s->sent) : (uint16_t)nl_rand(65536);
-    port = s->port ? (uint16_t)s->port : (uint16_t)(49152 + nl_rand(16384));
+    /* port known (the resolver always uses the same one): walk the ids from
+     * the one expected next; port unknown: id and port are both guessed */
+    id = s->port ? (uint16_t)(s->first_id + s->round + s->sent) : (uint16_t)nl_rand(1u << s->idbits);
+    port = s->port ? (uint16_t)s->port : (uint16_t)(49152 + nl_rand(1u << s->portbits));
     buf_start(&o, id, F_QR | F_AA, s->name, T_A);
     memset(&r, 0, sizeof(r));
     strcpy(r.name, s->name);
@@ -1568,8 +1601,91 @@ static void spoof_tick(void *ctx)
     tx.dst = s->victim;
     nl_udp_send_ex(s->n, &tx, DNS_PORT, port, o.b, o.len);
     s->sent++;
+    s->sent_total++;
     nl_count(s->n, "spoof.forged", 1);
     s->timer = nl_after(s->n, s->gap, spoof_tick, s);
+}
+
+/* All the races have been run: compare the wins with the odds */
+static void spoof_report(spoof_state *s)
+{
+    /* how many forged answers fit in a race: measured on the races lost
+     * (a race that is won ends early and would bias the count) */
+    double per_round = s->done > s->wins ? (double)s->sent_lost / (s->done - s->wins) : s->guesses;
+    double space = s->port ? 0 : (double)(1u << s->idbits) * (double)(1u << s->portbits);
+
+    nl_count_set(s->n, "spoof.per_round", per_round);
+    if (s->rounds <= 1)
+        return;
+    if (s->port)
+        nl_log(s->n, NL_L_APP, 1, 0, T_ERR "dnsspoof" T_RESET " %u / %u %s — %s", s->wins, s->done,
+               _("races won"), _("known port and predictable ids: nothing to guess"));
+    else
+        nl_log(s->n, NL_L_APP, 1, 0, T_INFO "dnsspoof" T_RESET " %u / %u %s — %s %.0f %s %.0f %s: %s %.3g%%",
+               s->wins, s->done, _("races won"), _("about"), per_round, _("forged answers per race against"),
+               space, _("equally likely (id, port) pairs"), _("expected odds per race"),
+               100.0 * (1.0 - exp(-per_round / space)));
+}
+
+/* The race is over (the resolver answered, or nothing came back) */
+static void spoof_end(spoof_state *s, int won, uint32_t pkt_id)
+{
+    nl_cancel(&s->timer);
+    nl_cancel(&s->round_timer);
+    s->waiting = 0;
+    s->done++;
+    nl_count(s->n, "spoof.rounds", 1);
+    if (won) {
+        s->wins++;
+        nl_count(s->n, "spoof.success", 1);
+        if (s->round == 0)
+            nl_count_set(s->n, "spoof.first", 1);
+        nl_log(s->n, NL_L_APP, s->rounds > 1 && s->round > 0 ? 2 : 1, pkt_id,
+               T_ERR "dnsspoof: %s" T_RESET " — %s %s → %s (%d %s)", _("cache POISONED"),
+               _("the resolver now answers"), s->name, nl_ip_str(s->fake), s->sent, _("forged responses sent"));
+    } else {
+        s->sent_lost += (unsigned)s->sent;
+        nl_log(s->n, NL_L_APP, s->rounds > 1 && s->round > 0 ? 2 : 1, pkt_id,
+               T_OK "dnsspoof: %s" T_RESET " — %s (%d %s)", _("attack failed"),
+               _("the genuine answer won the race"), s->sent, _("forged responses sent"));
+    }
+    nl_count_set(s->n, "spoof.per_round",
+                 s->done > s->wins ? (double)s->sent_lost / (s->done - s->wins) : s->guesses);
+    if (++s->round < s->rounds)
+        s->round_timer = nl_after(s->n, NL_MS(20), spoof_round, s);
+    else
+        spoof_report(s);
+}
+
+static void spoof_giveup(void *ctx)
+{
+    spoof_state *s = ctx;
+
+    s->round_timer = 0;
+    if (s->waiting)
+        spoof_end(s, 0, 0);
+}
+
+/* One race: make the resolver ask for a name, then flood it with forged
+ * answers. The first race is for the name itself; the following ones use
+ * names nobody has asked before (x1.NAME, x2.NAME, ...), because a name
+ * already in the cache gives no race at all. */
+static void spoof_round(void *ctx)
+{
+    spoof_state *s = ctx;
+    dns_buf o;
+
+    s->round_timer = 0;
+    if (s->round == 0)
+        snprintf(s->name, sizeof(s->name), "%s", s->base);
+    else
+        snprintf(s->name, sizeof(s->name), "x%d.%.*s", s->round, (int)(sizeof(s->name) - 12), s->base);
+    s->sent = 0;
+    s->waiting = 1;
+    buf_start(&o, (uint16_t)(0x6600 + s->attacks * 64 + s->round), F_RD, s->name, T_A);
+    nl_udp_send(s->n, (uint16_t)s->sport, s->victim, DNS_PORT, o.b, o.len);
+    s->timer = nl_after(s->n, s->lead, spoof_tick, s);
+    s->round_timer = nl_after(s->n, NL_SEC(3), spoof_giveup, s);
 }
 
 static void spoof_rx(nl_node *n, void *ctx, const nl_udpmsg *m)
@@ -1578,6 +1694,7 @@ static void spoof_rx(nl_node *n, void *ctx, const nl_udpmsg *m)
     dns_msg *r = malloc(sizeof(*r));
     int i, won = 0;
 
+    (void)n;
     if (!r)
         return;
     if (msg_parse(m->data, m->len, r))
@@ -1585,17 +1702,8 @@ static void spoof_rx(nl_node *n, void *ctx, const nl_udpmsg *m)
             if (r->rr[i].sec == SEC_AN && r->rr[i].type == T_A && r->rr[i].ip == s->fake)
                 won = 1;
     free(r);
-    nl_cancel(&s->timer);
-    if (won) {
-        s->wins++;
-        nl_count(n, "spoof.success", 1);
-        nl_log(n, NL_L_APP, 1, m->pkt_id, T_ERR "dnsspoof: %s" T_RESET " — %s %s → %s (%d %s)",
-               _("cache POISONED"), _("the resolver now answers"), s->name, nl_ip_str(s->fake), s->sent,
-               _("forged responses sent"));
-    } else {
-        nl_log(n, NL_L_APP, 1, m->pkt_id, T_OK "dnsspoof: %s" T_RESET " — %s (%d %s)", _("attack failed"),
-               _("the genuine answer won the race"), s->sent, _("forged responses sent"));
-    }
+    if (s->waiting)
+        spoof_end(s, won, m->pkt_id);
 }
 
 static int spoof_run(nl_node *n, const nl_args *a)
@@ -1603,7 +1711,7 @@ static int spoof_run(nl_node *n, const nl_args *a)
     spoof_state *s = nl_mod_get(n, &spoof_mod);
     const char *victim = nl_arg_str(a, "resolver", NULL), *as = nl_arg_str(a, "as", NULL);
     const char *name = nl_arg_str(a, "name", NULL), *fake = nl_arg_str(a, "fake", "6.6.6.6");
-    dns_buf o;
+    int bits;
 
     if (!s) {
         s = calloc(1, sizeof(*s));
@@ -1619,22 +1727,35 @@ static int spoof_run(nl_node *n, const nl_args *a)
         return -1;
     }
     nl_cancel(&s->timer);
-    name_norm(name, s->name);
+    nl_cancel(&s->round_timer);
+    name_norm(name, s->base);
     s->guesses = (int)nl_arg_int(a, "guesses", 64);
     s->first_id = (int)nl_arg_int(a, "firstid", 1);
     s->port = (int)nl_arg_int(a, "port", DNS_PORT);
+    if (nl_arg_int(a, "blind", 0))
+        s->port = 0;
+    bits = (int)nl_arg_int(a, "entropy", 30);
+    if (bits < 1) bits = 1;
+    if (bits > 30) bits = 30;
+    s->idbits = bits < 16 ? bits : 16;
+    s->portbits = bits - s->idbits;
+    s->rounds = (int)nl_arg_int(a, "rounds", 1);
+    if (s->rounds < 1) s->rounds = 1;
+    if (s->rounds > 2000) s->rounds = 2000;
     s->ttl = (uint32_t)nl_arg_int(a, "ttl", 3600);
     s->gap = nl_arg_time(a, "gap", NL_US(200));
-    s->sent = 0;
+    s->lead = nl_arg_time(a, "lead", NL_US(100));
+    s->round = 0;
+    s->wins = s->done = s->sent_total = s->sent_lost = 0;
     s->attacks++;
+    nl_count_set(n, "spoof.success", 0);
+    nl_count_set(n, "spoof.rounds", 0);
+    nl_count_set(n, "spoof.first", 0);
     nl_log(n, NL_L_APP, 1, 0, T_ERR "dnsspoof" T_RESET " %s %s: %s %s, %s %d %s %s %s",
-           _("attack on resolver"), nl_ip_str(s->victim), _("trigger a lookup of"), s->name, _("then race"),
+           _("attack on resolver"), nl_ip_str(s->victim), _("trigger a lookup of"), s->base, _("then race"),
            s->guesses, _("forged answers pretending to come from"), nl_ip_str(s->as),
            s->port ? "" : _("(blind: random ports and ids)"));
-    /* make the resolver ask, then flood it with forged answers */
-    buf_start(&o, (uint16_t)(0x6600 + s->attacks), F_RD, s->name, T_A);
-    nl_udp_send(n, (uint16_t)s->sport, s->victim, DNS_PORT, o.b, o.len);
-    s->timer = nl_after(n, nl_arg_time(a, "lead", NL_US(100)), spoof_tick, s);
+    spoof_round(s);
     return 0;
 }
 
@@ -1645,6 +1766,7 @@ static void spoof_stop(nl_node *n)
     if (!s)
         return;
     nl_cancel(&s->timer);
+    nl_cancel(&s->round_timer);
     nl_udp_unbind(n, (uint16_t)s->sport);
     nl_mod_set(n, &spoof_mod, NULL);
     free(s);
@@ -1659,8 +1781,10 @@ static int spoof_panel(nl_node *n, int x, int y, int w, int h, int detail)
     (void)detail;
     row += nl_ui_kv(x, y + row, w, _("target resolver"), "%s", nl_ip_str(s->victim));
     row += nl_ui_kv(x, y + row, w, _("impersonated server"), "%s", nl_ip_str(s->as));
-    row += nl_ui_kv(x, y + row, w, _("forged record"), "%s A %s", s->name, nl_ip_str(s->fake));
-    row += nl_ui_kv(x, y + row, w, _("attacks / successful"), "%u / %u", s->attacks, s->wins);
+    row += nl_ui_kv(x, y + row, w, _("forged record"), "%s A %s", s->base, nl_ip_str(s->fake));
+    row += nl_ui_kv(x, y + row, w, _("races run / won"), "%u / %u", s->done, s->wins);
+    if (!s->port)
+        row += nl_ui_kv(x, y + row, w, _("pairs to guess from"), "2^%d", s->idbits + s->portbits);
     row += nl_ui_kv(x, y + row, w, _("forged responses"), "%.0f", nl_count_get(n, "spoof.forged"));
     return row;
 }
@@ -1668,10 +1792,14 @@ static int spoof_panel(nl_node *n, int x, int y, int w, int h, int detail)
 static const nl_module spoof_mod = {
     .name = "dnsspoof", .title = N_("DNS cache poisoning: an off-path forger of answers"), .layer = NL_L_APP,
     .usage = N_("run NODE dnsspoof resolver=ADDR as=ADDR name=NAME [fake=6.6.6.6] [guesses=64]\n"
-                "        [port=53] [firstid=1] [ttl=3600] [gap=200us]\n"
+                "        [port=53] [firstid=1] [blind=0] [entropy=30] [rounds=1] [ttl=3600] [gap=200us]\n"
                 "  Asks the resolver for NAME, then sends `guesses` forged answers with the source\n"
                 "  address of the authoritative server `as`. port=N: the resolver's known source\n"
-                "  port, ids firstid, firstid+1, ...; port=0: unknown port, random ports and ids."),
+                "  port, ids firstid, firstid+1, ...; blind=1 (or port=0): port and id unknown, both\n"
+                "  drawn at random from the 2^entropy pairs the resolver uses (see dns resolver entropy=).\n"
+                "  rounds=N repeats the race N times on fresh names (x1.NAME, x2.NAME, ...) and reports\n"
+                "  how many were won against the expected odds. Everything stays inside the emulated\n"
+                "  network. Counters: spoof.rounds spoof.success spoof.forged spoof.per_round"),
     .theory = N_("A resolver trusts a UDP response if it comes from the address it asked, arrives on "
                  "the port the query left from, and repeats the 16-bit identifier and the question. "
                  "An attacker who is not on the path cannot see the query, but can send packets with "
@@ -1682,7 +1810,10 @@ static const nl_module spoof_mod = {
                  "chooses the moment, by asking the resolver for the name himself. Randomizing the "
                  "identifier gives 16 bits of uncertainty; randomizing the source port as well "
                  "(the fix deployed after Kaminsky's 2008 attack) gives about 30, which makes a blind "
-                 "race impractical. DNSSEC, not modelled here, removes the problem by signing records."),
+                 "race impractical: a forger who lands n answers before the genuine one wins with "
+                 "probability about n / 2^bits, and the lab lets you shrink the number of random bits "
+                 "to watch that law at work. DNSSEC, not modelled here, removes the problem by signing "
+                 "records."),
     .run = spoof_run, .stop = spoof_stop, .panel = spoof_panel,
 };
 NL_MODULE(spoof_mod)

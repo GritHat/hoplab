@@ -1,0 +1,54 @@
+# Parameter variants verified by tests/run-variants.sh: each line is run with
+# seeds 1..5 and must give this result every time.
+#   PASS  scenario  key=value ...
+PASS  162-aloha
+PASS  162-aloha  frame=10ms
+PASS  162-aloha  frame=500ms
+PASS  162-aloha  load=0.05
+PASS  162-aloha  load=0.1
+PASS  162-aloha  load=0.2
+PASS  162-aloha  load=0.25
+PASS  162-aloha  load=0.5
+PASS  162-aloha  load=1
+PASS  162-aloha  load=2
+PASS  162-aloha  stations=3
+PASS  162-aloha  stations=30
+PASS  162-aloha  stations=4
+PASS  162-aloha  stations=60
+PASS  261-csma-cd
+PASS  261-csma-cd  frame=10ms
+PASS  261-csma-cd  frame=500ms
+PASS  261-csma-cd  load=0.2
+PASS  261-csma-cd  load=0.3
+PASS  261-csma-cd  load=0.5
+PASS  261-csma-cd  load=2
+PASS  261-csma-cd  prop=0.2ms
+PASS  261-csma-cd  prop=100us
+PASS  261-csma-cd  prop=10ms
+PASS  261-csma-cd  prop=3ms
+PASS  261-csma-cd  stations=3
+PASS  261-csma-cd  stations=30
+PASS  361-mac-curves
+PASS  361-mac-curves  prop=100us
+PASS  361-mac-curves  prop=10ms
+PASS  361-mac-curves  prop=30ms
+PASS  361-mac-curves  prop=3ms
+PASS  361-mac-curves  stations=24
+PASS  361-mac-curves  stations=3
+PASS  361-mac-curves  stations=4
+PASS  361-mac-curves  stations=5
+PASS  460-hidden-terminal
+PASS  460-hidden-terminal  frame=10ms
+PASS  460-hidden-terminal  load=0.1
+PASS  460-hidden-terminal  load=0.2
+PASS  460-hidden-terminal  load=0.3
+PASS  460-hidden-terminal  load=0.4
+PASS  460-hidden-terminal  load=1
+PASS  460-hidden-terminal  load=1.5
+PASS  460-hidden-terminal  load=3
+PASS  460-hidden-terminal  stations=100
+PASS  460-hidden-terminal  stations=2
+PASS  460-hidden-terminal  stations=24
+PASS  460-hidden-terminal  stations=3
+PASS  460-hidden-terminal  stations=4
+PASS  460-hidden-terminal  stations=40

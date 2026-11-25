@@ -49,7 +49,7 @@ typedef struct {
     nl_ip    rid, addr;
     int      ifx;
     nl_time  last;
-    struct { nl_ip rid; uint32_t seq; } rx[MAX_LSA];   /* flooded, not yet acknowledged */
+    struct { nl_ip rid; uint32_t seq; nl_time sent; } rx[MAX_LSA];   /* flooded, not yet acknowledged */
     int      nrx;
 } nbr;
 
@@ -194,6 +194,7 @@ static void send_lsa(ostate *s, nbr *nb, const lsa *a, int track)
     }
     nb->rx[i].rid = a->rid;
     nb->rx[i].seq = a->seq;
+    nb->rx[i].sent = nl_now();
 }
 
 static void flood(ostate *s, const lsa *a, const nbr *except)
@@ -455,6 +456,12 @@ static void rxmt_tick(void *ctx)
                 nb->rx[k] = nb->rx[--nb->nrx];
                 continue;
             }
+            /* the timer is shared: an LSA flooded a moment ago has not had its interval yet */
+            if (nl_now() - nb->rx[k].sent < s->rxmt) {
+                k++;
+                continue;
+            }
+            nb->rx[k].sent = nl_now();
             nl_log(s->n, NL_L_NET, 2, 0, T_WARN "OSPF" T_RESET " %s %s seq=%u → %s", _("no ack: retransmitting LSA"),
                    nl_ip_str(a->rid), a->seq, nl_ip_str(nb->rid));
             s->rexmits++;
@@ -463,7 +470,7 @@ static void rxmt_tick(void *ctx)
             k++;
         }
     }
-    s->rx_ev = nl_after(s->n, s->rxmt, rxmt_tick, s);
+    s->rx_ev = nl_after(s->n, s->rxmt / 4 > 0 ? s->rxmt / 4 : 1, rxmt_tick, s);
 }
 
 /* ---- input ---- */

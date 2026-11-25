@@ -10,7 +10,9 @@ about  and all the pain of the overload falls on the bulk flow.
 about
 about  Watch: the panel of r1 (module qdisc) with the three bands; the sinks on v2 and b2 (loss,
 about  delay, jitter). Try: qdisc=droptail, where both flows share one FIFO: the call now waits
-about  behind bulk packets and loses its share of packets; a faster or slower link (bw); a bigger
+about  behind bulk packets and loses its share of packets; qdisc=fq, which protects the call just as
+about  well here by giving each flow its own queue; a faster or slower link (bw: when the two flows fit,
+about  nobody loses anything and the discipline no longer matters); a bigger
 about  queue (it only adds delay for the bulk flow).
 about[it]  Una chiamata vocale (64 kbit/s, pacchetti piccoli marcati DSCP EF con tos=184) e un
 about[it]  trasferimento massivo che da solo supera la capacità condividono il collegamento lento r1 - r2.
@@ -20,8 +22,10 @@ about[it]  flusso massivo.
 about[it]
 about[it]  Osserva: il pannello di r1 (modulo qdisc) con le tre bande; i sink su v2 e b2 (perdita,
 about[it]  ritardo, jitter). Prova: qdisc=droptail, dove i due flussi condividono un'unica FIFO: la
-about[it]  chiamata ora aspetta dietro i pacchetti massivi e perde la sua quota di pacchetti; un
-about[it]  collegamento più veloce o più lento (bw); una coda più grande (aggiunge solo ritardo al flusso massivo).
+about[it]  chiamata ora aspetta dietro i pacchetti massivi e perde la sua quota di pacchetti; qdisc=fq,
+about[it]  che qui protegge la chiamata altrettanto bene dando a ogni flusso la sua coda; un collegamento
+about[it]  più veloce o più lento (bw: quando i due flussi ci stanno, nessuno perde nulla e la disciplina
+about[it]  non conta più); una coda più grande (aggiunge solo ritardo al flusso massivo).
 param      qdisc prio Queue discipline of the slow link (prio, droptail, fq)
 param[it]  qdisc Disciplina di coda del collegamento lento (prio, droptail, fq)
 param      bw 500k Capacity of the slow link
@@ -58,8 +62,16 @@ note 6s With prio, voice packets (band 0) overtake everything: at most they wait
 note[it] 6s Con prio, i pacchetti voce (banda 0) sorpassano tutto: al massimo attendono l'unico pacchetto massivo già in trasmissione. Confronta il ritardo dei due sink.
 
 duration 15s
-expect v2 sink.lost == 0
-expect v2 sink.received > 680
-expect v2 sink.delay_ms < 40
-expect b2 sink.lost > 50
-expect r1 prio.drops > 50
+# on the wire the call takes about 82 kbit/s and the bulk flow 4.6% more than its payload rate
+at 14900ms run r1 check overload "$bulk * 1.046 + 82k > $bw"
+at 14900ms run r1 check voice_lost "v1:cbr.sent - v2:sink.received"
+# a queue that separates the flows (prio, fq) protects the call: nothing lost, and it waits at most
+# for the one bulk packet already on the wire
+at 14900ms run r1 check protected "(is_$qdisc != is_prio && is_$qdisc != is_fq) || (r1:check.voice_lost <= 3 && v2:sink.delay_ms < 15 + 9000000 / $bw)"
+# one shared FIFO: under overload the call loses its share and waits behind the bulk packets
+at 14900ms run r1 check shared "is_$qdisc == is_prio || is_$qdisc == is_fq || (r1:check.overload == 1 && r1:check.voice_lost > 20) || (r1:check.overload == 0 && r1:check.voice_lost <= 3)"
+# the overload has to fall on somebody: with prio and fq it is the bulk flow alone
+at 14900ms run r1 check bulk "(r1:check.overload == 1 && b2:sink.lost > 30) || (r1:check.overload == 0 && b2:sink.lost == 0)"
+expect r1 check.protected == 1
+expect r1 check.shared == 1
+expect r1 check.bulk == 1

@@ -13,8 +13,11 @@ about  the outage lasts a few tenths of a second. With proto=rip r2 tells r1 imm
 about  route is gone (triggered update), but r1 has forgotten the worse offer of r4 and must wait
 about  for r4's next periodic update to learn the detour: up to a full update period.
 about
-about  Try both protocols, then: a longer RIP update period; ospf with carrier=0 (failures found only
-about  by the dead interval, as when a switch sits between the routers); spf=2s.
+about  Try both protocols, then: a longer RIP update period (up to 20s fits in the run); ospf with
+about  carrier=0 (failures found only by the dead interval, 4 hellos, as when a switch sits between
+about  the routers); spf=2s. The blackout to expect is: OSPF, at most hello + spf; OSPF with carrier=0,
+about  between 3 and 4 hello intervals plus spf; RIP, anything up to about one update period,
+about  depending on where in its period r4 happens to be when the link breaks.
 about[it]  Cinque router: un percorso corto r1-r2-r3 e una deviazione più lunga r1-r4-r5-r3. Un flusso
 about[it]  costante di 50 datagrammi al secondo va da h1 a h3 mentre, a 20 s, il collegamento r2-r3 si
 about[it]  rompe. Ogni datagramma inviato prima che i router concordino sulla deviazione è perso,
@@ -27,8 +30,11 @@ about[it]  non c'è più (aggiornamento immediato), ma r1 ha dimenticato l'offer
 about[it]  aspettare il prossimo aggiornamento periodico di r4 per imparare la deviazione: fino a un
 about[it]  intero periodo.
 about[it]
-about[it]  Prova entrambi i protocolli, poi: un periodo RIP più lungo; ospf con carrier=0 (guasti
-about[it]  scoperti solo dal dead interval, come quando c'è uno switch fra i router); spf=2s.
+about[it]  Prova entrambi i protocolli, poi: un periodo RIP più lungo (fino a 20s sta nell'esecuzione);
+about[it]  ospf con carrier=0 (guasti scoperti solo dal dead interval, 4 hello, come quando c'è uno
+about[it]  switch fra i router); spf=2s. L'interruzione attesa è: OSPF, al più hello + spf; OSPF con
+about[it]  carrier=0, fra 3 e 4 intervalli hello più spf; RIP, qualunque valore fino a circa un periodo
+about[it]  di aggiornamento, a seconda di dove si trova r4 nel suo periodo quando il collegamento cade.
 param  proto ospf Routing protocol: ospf or rip
 param[it] proto Protocollo di routing: ospf oppure rip
 param  update 5s RIP: period of the updates
@@ -70,10 +76,16 @@ note[it] 12s Parte un flusso costante: 50 datagrammi al secondo da h1 a h3.
 note 20s Link r2-r3 breaks. Count the datagrams lost at h3 until the detour through r4 and r5 works.
 note[it] 20s Il collegamento r2-r3 si rompe. Conta i datagrammi persi su h3 finché la deviazione via r4 e r5 funziona.
 
-at 12s run h1 cbr h3 rate=200k size=500 duration=28s
+at 12s run h1 cbr h3 rate=200k size=500 duration=50s
 at 20s link r2 r3 down
-at 34s run h1 traceroute h3
-duration 42s
-expect h1 traceroute.hops == 5
-expect h3 sink.received >= 1100
-expect h3 sink.lost <= 40
+at 58s run h1 traceroute h3
+duration 66s
+# datagrams lost = datagrams sent during the blackout, 50 per second (one every 20 ms)
+at 65s run h1 check lost "h1:cbr.sent - h3:sink.received"
+at 65s run h1 check detour "h1:traceroute.hops == 5 && h3:sink.received >= 1000"
+# OSPF told by the interface: found at the next hello tick, then the SPF hold-down.
+# OSPF with carrier=0: three to four hello intervals of silence (the dead interval), then SPF.
+# RIP: until the next periodic update of r4, at most a (jittered) period.
+at 65s run h1 check blackout "(is_$proto == is_ospf && $carrier == 1 && h1:check.lost <= ($hello + $spf) / 20 + 15) || (is_$proto == is_ospf && $carrier == 0 && h1:check.lost >= 3 * $hello / 20 - 15 && h1:check.lost <= (4 * $hello + $spf) / 20 + 15) || (is_$proto == is_rip && h1:check.lost <= (1.25 * $update + 1500) / 20)"
+expect h1 check.detour == 1
+expect h1 check.blackout == 1

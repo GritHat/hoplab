@@ -90,6 +90,43 @@ static const char *stamp(const clk *c, uint32_t ts, const uint32_t *vc)
     return b;
 }
 
+/* Vector clocks answer a question Lamport clocks cannot: are two events
+ * causally related? After each event of this process, compare its vector
+ * with the latest event of every other process and say which are
+ * concurrent (neither vector dominates). The comparison looks at the other
+ * processes' state directly: it is the view of an outside observer, which
+ * no process could have, and it only covers processes simulated here. */
+static void relate(clk *c)
+{
+    int i, k;
+
+    if (!c->vector)
+        return;
+    for (i = 0; i < c->np; i++) {
+        const nl_node *pn = i == c->me ? NULL : nl_node_find(c->names[i]);
+        const clk *o = pn && pn->local ? nl_mod_get(pn, &clock_mod) : NULL;
+        int less = 0, more = 0, any = 0;
+
+        if (!o || !o->vector || o->np != c->np)
+            continue;
+        for (k = 0; k < c->np; k++) {
+            if (o->vc[k] < c->vc[k]) more = 1;
+            if (o->vc[k] > c->vc[k]) less = 1;
+            any |= o->vc[k] != 0;
+        }
+        if (!any)
+            continue;                   /* that process has done nothing yet */
+        if (less && more) {
+            nl_count(c->n, "clock.concurrent", 1);
+            nl_log(c->n, NL_L_DIST, 1, 0, T_WARN "  ∥ %s %s %s" T_RESET T_DIM "  %s", _("concurrent with the latest event of"),
+                   c->names[i], stamp(o, o->L, o->vc), _("neither vector is ≤ the other: no message links the two"));
+        } else {
+            nl_log(c->n, NL_L_DIST, 2, 0, T_DIM "  → %s %s %s", less ? _("causally before the latest event of")
+                   : _("causally after the latest event of"), c->names[i], stamp(o, o->L, o->vc));
+        }
+    }
+}
+
 static void history(clk *c, const char *fmt, ...)
 {
     va_list ap;
@@ -290,6 +327,7 @@ static void clk_rx(nl_node *n, void *ctx, const nl_udpmsg *um)
         nl_log(n, NL_L_DIST, 1, um->pkt_id, T_OK "● %s" T_RESET " «%s» %s %s: %s %s", _("receive event"),
                m.text, _("from"), c->names[m.from], _("clock"), stamp(c, c->L, c->vc));
         nl_count(n, "clock.received", 1);
+        relate(c);
         publish(c);
         return;
     }
@@ -424,6 +462,7 @@ static int clk_run(nl_node *n, const nl_args *a)
         nl_log(n, NL_L_DIST, 1, 0, T_OK "● %s" T_RESET ": %s %s", _("local event"), _("clock"),
                stamp(c, c->L, c->vc));
         history(c, "● %s %s", _("local event"), stamp(c, c->L, c->vc));
+        relate(c);
     } else if (strcmp(cmd, "send") == 0) {
         const char *to = nl_arg_pos(a, 1);
         int i, dst = -1;
@@ -442,6 +481,7 @@ static int clk_run(nl_node *n, const nl_args *a)
         nl_log(n, NL_L_DIST, 1, 0, T_OK "● %s" T_RESET " «%s» → %s: %s %s", _("send event"), m.text, to,
                _("clock"), stamp(c, c->L, c->vc));
         history(c, "→ «%s» %s %s", m.text, to, stamp(c, c->L, c->vc));
+        relate(c);
         wire_send(c, dst, &m);
     } else if (strcmp(cmd, "bcast") == 0) {
         tick(c);

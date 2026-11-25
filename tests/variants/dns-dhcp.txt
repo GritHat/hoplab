@@ -1,0 +1,40 @@
+# Parameter variants verified by tests/run-variants.sh: each line is run with
+# seeds 1..5 and must give this result every time.
+#   PASS  scenario  key=value ...
+PASS  140-dns-first
+PASS  141-dhcp-join
+PASS  240-dns-hierarchy
+PASS  241-dhcp-leases
+PASS  241-dhcp-leases  lease=120
+PASS  241-dhcp-leases  lease=20
+PASS  241-dhcp-leases  lease=30
+PASS  241-dhcp-leases  lease=45
+PASS  241-dhcp-leases  lease=5
+PASS  241-dhcp-leases  lease=60
+PASS  241-dhcp-leases  lease=8
+PASS  340-dns-ttl
+PASS  340-dns-ttl  negttl=1
+PASS  340-dns-ttl  negttl=120
+PASS  340-dns-ttl  negttl=2
+PASS  340-dns-ttl  ttl=10
+PASS  340-dns-ttl  ttl=3
+PASS  340-dns-ttl  ttl=300
+PASS  340-dns-ttl  ttl=4 negttl=1
+PASS  340-dns-ttl  ttl=5
+PASS  440-dns-poisoning
+PASS  440-dns-poisoning  guesses=20
+PASS  440-dns-poisoning  guesses=2000
+PASS  440-dns-poisoning  randomize=1
+PASS  440-dns-poisoning  randomize=1 entropy=10
+PASS  440-dns-poisoning  randomize=1 entropy=12
+PASS  440-dns-poisoning  randomize=1 entropy=4
+PASS  440-dns-poisoning  randomize=1 entropy=6
+PASS  440-dns-poisoning  randomize=1 entropy=8
+PASS  440-dns-poisoning  randomize=1 entropy=8 guesses=2000
+PASS  440-dns-poisoning  randomize=1 entropy=8 guesses=50
+PASS  440-dns-poisoning  randomize=1 entropy=8 rounds=70
+PASS  440-dns-poisoning  randomize=1 entropy=9 rounds=200
+PASS  440-dns-poisoning  randomize=1 guesses=2000
+PASS  440-dns-poisoning  randomize=1 rounds=1
+PASS  440-dns-poisoning  rounds=1
+PASS  440-dns-poisoning  rounds=200

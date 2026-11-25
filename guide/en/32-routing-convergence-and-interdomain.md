@@ -71,9 +71,9 @@ Only the best route is exported, subject to export policy (routes from customers
 <!-- detail: 1 -->
 ## In the lab
 
-**330-ospf-vs-rip.** `./netlab run 330-ospf-vs-rip`, then `./netlab run 330-ospf-vs-rip proto=rip`. A 50 datagram/s stream runs from h1 to h3 from 12 s; at 20 s the link r2–r3 goes down. Select h3 and open its `sink` tab: the `lost` count divided by 50 is the blackout in seconds. In the log (`l`, detail `2`) follow, for OSPF, "interface down", "originating router-LSA", "stored and flooded on", "SPF #2"; for RIP, "is now unreachable", "triggered update", and then the wait. The traceroute at 34 s must show 5 hops.
+**330-ospf-vs-rip.** `./netlab run 330-ospf-vs-rip`, then `./netlab run 330-ospf-vs-rip proto=rip`. A 50 datagram/s stream runs from h1 to h3 from 12 s; at 20 s the link r2–r3 goes down. Select h3 and open its `sink` tab: the `lost` count divided by 50 is the blackout in seconds (the last lines of the log give the same number as `check lost`). In the log (`l`, detail `2`) follow, for OSPF, "interface down", "originating router-LSA", "stored and flooded on", "SPF #2"; for RIP, "is now unreachable", "triggered update", and then the wait. The traceroute at 58 s must show 5 hops.
 
-- Repeat RIP with several seeds (`--seed 1`, `--seed 2`, …). Prediction: the loss is spread between a few and about 250 datagrams, because it depends on the phase of r4's timer; OSPF stays near 11. Note that the scenario's own check `sink.lost <= 40` is written for OSPF and normally fails with RIP: that is the result, not an error.
+- Repeat RIP with several seeds (`--seed 1`, `--seed 2`, …). Prediction: the loss is spread between a few and about 250 datagrams, because it depends on the phase of r4's timer; OSPF stays near 11. The lab's check `blackout` states the bound to expect for each setting: at most hello + spf for OSPF, between three and four hellos plus spf with `carrier=0`, up to about one update period for RIP.
 - `proto=rip update=15s`: predict the mean and the maximum loss (375 and 750).
 - `proto=ospf carrier=0`: detection now waits for the dead interval, 4 hellos of 1 s. Predict about 160 lost. Then `spf=2s`: about 100.
 - In a running lab, `:` then `link r2 r3 up`, wait, and `link r2 r3 down` again: the experiment repeats with a different timer phase.

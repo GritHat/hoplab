@@ -53,14 +53,14 @@ Per saperne di più: Kurose e Ross, capitolo 1, paragrafo "Ritardi, perdite e th
 - Avvialo con `./netlab run 102-link-properties`.
 - Da 0 a 1,5 s il collegamento è scarico e h1 fa tre ping verso h2. Leggi i tempi nel Registro (`l`). Il primo è di circa 82 ms perché attende ARP; gli altri sono 41,63 ms. Verifica con 2 x (20 + 0,816).
 - A 3 s h1 avvia un flusso da 2 Mbit/s. Osserva il numero della coda accanto a h1 sulla mappa salire fino a 20, poi le righe `coda piena` comparire nel registro.
-- A 4 s lo stesso ping viene ripetuto. Due delle tre richieste trovano la coda piena e vengono scartate; quella che entra torna dopo circa 207 ms. Nel cavo non è cambiato nulla: il tempo in più è tutta attesa.
+- A 4 s h1 fa di nuovo ping, otto volte. Circa metà delle richieste trova la coda piena e viene scartata come i pacchetti del flusso; quelle che entrano tornano dopo circa 207 ms. Nel cavo non è cambiato nulla: il tempo in più è tutta attesa (20 pacchetti da circa 8,4 ms ciascuno).
 - Seleziona h1 con `n` e apri la scheda Collegamenti; seleziona h2 e premi `g` per la vista Grafici, con il ritardo misurato dal sink.
 
 **Cambia e prevedi.** Scrivi la tua previsione prima di ogni esecuzione.
 
 - `./netlab run 102-link-properties delay=100ms`: quale sarà il tempo di ping a collegamento scarico?
-- `./netlab run 102-link-properties bw=500k`: il tempo di ping a collegamento scarico cambia pochissimo, perché? Quale frazione del flusso andrà persa?
-- `./netlab run 102-link-properties bw=4M`: ci sarà una coda?
+- `./netlab run 102-link-properties bw=500k`: il tempo di ping a collegamento scarico cambia pochissimo, perché? Quale frazione del flusso andrà persa? (I ping a 4 s ora non trovano quasi mai posto: la coda è piena quasi sempre.)
+- `./netlab run 102-link-properties bw=4M`: ci sarà una coda? Si perderà qualcosa? (La verifica `stream` del laboratorio calcola la perdita attesa da `bw` e `queue`: confrontala con il tuo numero.)
 - `./netlab run 102-link-properties queue=100`: il sink perde meno pacchetti? Che cosa succede al ritardo del ping a 4 s?
 - `./netlab run 102-link-properties loss=0.2`: perché un ping riesca devono sopravvivere sia la richiesta sia la risposta. Quale frazione di ping ti aspetti che riesca?
 

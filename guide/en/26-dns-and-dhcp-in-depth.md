@@ -85,7 +85,8 @@ In lab 241 L = 10 s: h1 is bound at 1.01 s and renews at 6.01 s, 11.02 s, and so
 - Follow DISCOVER, OFFER, REQUEST, ACK for h1 at 1 s; open each in the packets view and find xid, yiaddr and options 53, 51 and 54. Note the source and destination addresses of the DISCOVER.
 - At 3 s h3 finds the pool exhausted. At 6 s h1 reaches T1 and renews with a unicast REQUEST. Open the `dhcp` tab of s to see the lease table.
 - Predict, then try: `:h1 dhcp release`. What happens to h3, and within how many seconds?
-- Predict, then try: restart, and at about 8 s type `:node s down`. Write down when h1 will log T1, T2 and `lease expired`, then check. Bringing the node back with `:node s up` does not restart the service: run `:s dhcp server pool=10.0.5.100-10.0.5.101 lease=10s router=10.0.5.1` and see who gets the two addresses this time.
+- At 14 s the lab crashes the server for 26 seconds. Before it happens, write down when h1 will log T1, T2 and `lease expired`, then check. At 40 s the server returns with its lease table (it is kept on stable storage, like the lease file of a real server) and the clients, which have been sending DISCOVER all along, are served again: see who gets the two addresses this time, and explain why it need not be the same two hosts.
+- Predict, then try: `./netlab run 241-dhcp-leases lease=60`. Does any client notice the outage?
 - Try also `./netlab run 241-dhcp-leases lease=4`: at what times does h1 renew?
 
 ## Check yourself

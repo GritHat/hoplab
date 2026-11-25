@@ -15,8 +15,12 @@ about  cache. algo=maglev builds a lookup table from per-server permutations: lo
 about  more even than with a ring, and disruption stays close to the minimum.
 about
 about  The counter reqgen.moved on c1 is the number of flows whose server changed, measured end to end;
-about  lb.remapped is the balancer's own count. Try affinity=1: the flow table hides the problem for
-about  existing flows on this balancer, but not on a second balancer or after a restart.
+about  lb.remapped is the balancer's own count (what the hash alone would have moved). Try affinity=1:
+about  the flow table hides the problem for existing flows on this balancer, but not on a second
+about  balancer or after a restart. With it the new server s4 receives only flows orphaned by the removal
+about  of s1 (these client flows never end, so there are no new ones), and with algo=hash possibly none
+about  at all: mod N sends every orphan of s1 to the same survivor. A stateful algorithm (rr, wrr,
+about  leastconn, p2c) with affinity=0 is the worst case: every packet is scheduled afresh.
 about[it]  Un bilanciatore senza stato (nessuna tabella dei flussi: affinity=0) deve inviare ogni pacchetto
 about[it]  di un flusso allo stesso server usando solo un hash del flusso. È così che i grandi siti
 about[it]  distribuiscono il carico su molti bilanciatori che non condividono stato, ed è così che cache e
@@ -31,9 +35,13 @@ about[it]  permutazioni per server: le ricerche sono O(1), il carico è più uni
 about[it]  disturbo resta vicino al minimo.
 about[it]
 about[it]  Il contatore reqgen.moved su c1 è il numero di flussi il cui server è cambiato, misurato da
-about[it]  estremo a estremo; lb.remapped è il conteggio del bilanciatore. Prova affinity=1: la tabella dei
-about[it]  flussi nasconde il problema per i flussi esistenti su questo bilanciatore, ma non su un secondo
-about[it]  bilanciatore o dopo un riavvio.
+about[it]  estremo a estremo; lb.remapped è il conteggio del bilanciatore (ciò che il solo hash avrebbe
+about[it]  spostato). Prova affinity=1: la tabella dei flussi nasconde il problema per i flussi esistenti su
+about[it]  questo bilanciatore, ma non su un secondo bilanciatore o dopo un riavvio. Con essa il nuovo server
+about[it]  s4 riceve solo i flussi rimasti orfani per la rimozione di s1 (questi flussi del client non
+about[it]  finiscono mai, quindi non ce ne sono di nuovi), e con algo=hash forse nessuno: mod N manda ogni
+about[it]  orfano di s1 allo stesso superstite. Un algoritmo con stato (rr, wrr, leastconn, p2c) con
+about[it]  affinity=0 è il caso peggiore: ogni pacchetto viene riassegnato da capo.
 param  algo consistent Hashing scheme: consistent, hash (mod N), maglev
 param[it] algo Schema di hashing: consistent, hash (mod N), maglev
 param+ affinity 0 Flow table (0 = stateless, the hash alone decides)
@@ -70,7 +78,12 @@ note 16s s1 leaves. Ideal: only its own flows move, spread over the three that r
 note[it] 16s s1 esce. Ideale: si spostano solo i suoi flussi, distribuiti sui tre che restano.
 duration 25s
 
-expect c1 reqgen.answers == 920
-expect c1 reqgen.backends_seen == 4
-expect c1 reqgen.moved >= 4
-expect c1 reqgen.moved <= 30
+at 24900ms run c1 check served "c1:reqgen.answers == 920 && c1:reqgen.lost == 0"
+# stateless: consistent hashing and Maglev move about 1/4 of the flows at the first change and 1/3
+# at the second; hash mod N moves most of them twice (so more moves than flows)
+at 24900ms run c1 check disruption "$affinity == 1 || (is_$algo == is_hash && c1:reqgen.moved >= 1.1 * $flows) || ((is_$algo == is_consistent || is_$algo == is_maglev) && c1:reqgen.moved >= 0.2 * $flows && c1:reqgen.moved <= 0.85 * $flows && c1:reqgen.backends_seen == 4) || (is_$algo != is_hash && is_$algo != is_consistent && is_$algo != is_maglev && c1:reqgen.moved >= 5 * $flows)"
+# with a flow table only the flows of the removed server move, whatever the hash would say
+at 24900ms run c1 check pinned "$affinity == 0 || (c1:reqgen.moved <= 0.6 * $flows && lb:lb.remapped >= c1:reqgen.moved)"
+expect c1 check.served == 1
+expect c1 check.disruption == 1
+expect c1 check.pinned == 1

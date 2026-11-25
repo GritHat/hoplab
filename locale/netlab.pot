@@ -169,9 +169,9 @@ msgid ""
 "\n"
 msgstr ""
 
-#: rdt.c:282 src/nat.c:262 src/nat.c:270 src/stp.c:237 src/stp.c:359
-#: src/stp.c:451 src/stp.c:485 src/stp.c:569 src/stp.c:667 src/stp.c:744
-#: src/ui.c:489
+#: rdt.c:282 src/nat.c:262 src/nat.c:270 src/stp.c:281 src/stp.c:403
+#: src/stp.c:548 src/stp.c:578 src/stp.c:591 src/stp.c:669 src/stp.c:713
+#: src/stp.c:835 src/stp.c:915 src/ui.c:489
 msgid "port"
 msgstr ""
 
@@ -272,7 +272,7 @@ msgstr ""
 msgid "acknowledgements"
 msgstr ""
 
-#: tui.c:1313 src/mac.c:550 src/scenario.c:171 src/ui.c:602
+#: tui.c:1313 src/mac.c:582 src/scenario.c:171 src/ui.c:602
 msgid "delay"
 msgstr ""
 
@@ -1237,7 +1237,7 @@ msgstr ""
 msgid "sent"
 msgstr ""
 
-#: src/apps.c:61 src/apps.c:923 src/clock.c:283
+#: src/apps.c:61 src/apps.c:923 src/clock.c:320
 msgid "received"
 msgstr ""
 
@@ -1263,11 +1263,11 @@ msgstr ""
 
 #: src/apps.c:118 src/apps.c:127 src/apps.c:163 src/apps.c:181 src/apps.c:505
 #: src/apps.c:518 src/apps.c:594 src/apps.c:606 src/bgp.c:718 src/chord.c:595
-#: src/chord.c:674 src/clock.c:163 src/clock.c:274 src/clock.c:283
-#: src/clock.c:291 src/clock.c:314 src/dhcp.c:265 src/dhcp.c:273
-#: src/dhcp.c:286 src/dhcp.c:591 src/dns.c:941 src/dns.c:971 src/gossip.c:612
-#: src/gossip.c:614 src/ip6.c:1110 src/ospf.c:480 src/ospf.c:497
-#: src/ospf.c:574 src/rip.c:328 src/stack.c:867 src/tcp.c:2355 src/twopc.c:295
+#: src/chord.c:674 src/clock.c:200 src/clock.c:311 src/clock.c:320
+#: src/clock.c:328 src/clock.c:352 src/dhcp.c:265 src/dhcp.c:273
+#: src/dhcp.c:286 src/dhcp.c:604 src/dns.c:960 src/dns.c:990 src/gossip.c:612
+#: src/gossip.c:614 src/ip6.c:1110 src/ospf.c:487 src/ospf.c:504
+#: src/ospf.c:581 src/rip.c:328 src/stack.c:867 src/tcp.c:2355 src/twopc.c:295
 #: src/twopc.c:599
 msgid "from"
 msgstr ""
@@ -1308,7 +1308,7 @@ msgstr ""
 msgid "no route to destination"
 msgstr ""
 
-#: src/apps.c:198 src/apps.c:415 src/apps.c:647 src/apps.c:770 src/lb.c:897
+#: src/apps.c:198 src/apps.c:415 src/apps.c:647 src/apps.c:770 src/lb.c:912
 #: src/stack.c:608 src/tcp.c:2424
 msgid "unknown destination"
 msgstr ""
@@ -1384,7 +1384,7 @@ msgstr ""
 msgid "server listening on UDP port"
 msgstr ""
 
-#: src/apps.c:559 src/lb.c:768 src/nat.c:761
+#: src/apps.c:559 src/lb.c:783 src/nat.c:761
 msgid "UDP port"
 msgstr ""
 
@@ -1404,7 +1404,7 @@ msgstr ""
 msgid "The simplest possible service: every datagram received is sent back to its sender. UDP adds only ports and a checksum to IP: no connection, no retransmission, no order."
 msgstr ""
 
-#: src/apps.c:593 src/apps.c:605 src/dns.c:848
+#: src/apps.c:593 src/apps.c:605 src/dns.c:867
 msgid "answer"
 msgstr ""
 
@@ -1621,7 +1621,7 @@ msgstr ""
 msgid "TCP connection closed"
 msgstr ""
 
-#: src/bgp.c:934 src/ospf.c:432 src/rip.c:241
+#: src/bgp.c:934 src/ospf.c:433 src/rip.c:241
 msgid "interface down"
 msgstr ""
 
@@ -1685,7 +1685,7 @@ msgstr ""
 msgid "  origin validation on"
 msgstr ""
 
-#: src/bgp.c:1248 src/ospf.c:397 src/ospf.c:504 src/ospf.c:729
+#: src/bgp.c:1248 src/ospf.c:398 src/ospf.c:511 src/ospf.c:736
 msgid "neighbor"
 msgstr ""
 
@@ -1693,7 +1693,7 @@ msgstr ""
 msgid "relation"
 msgstr ""
 
-#: src/bgp.c:1249 src/dhcp.c:694 src/ospf.c:730 src/qdisc.c:440 src/stp.c:745
+#: src/bgp.c:1249 src/dhcp.c:707 src/ospf.c:737 src/qdisc.c:440 src/stp.c:916
 #: src/ui.c:544
 msgid "state"
 msgstr ""
@@ -1718,7 +1718,7 @@ msgstr ""
 msgid "prefix"
 msgstr ""
 
-#: src/bgp.c:1262 src/rip.c:288 src/stp.c:738
+#: src/bgp.c:1262 src/rip.c:288 src/stp.c:907
 msgid "via"
 msgstr ""
 
@@ -1763,6 +1763,61 @@ msgid ""
 "BGP trusts what it is told. An AS that announces a prefix it does not own attracts the traffic of everyone for whom its path looks better (prefix hijack), and announcing a more specific prefix attracts everyone, because forwarding always follows the longest match. Route origin validation (RPKI) lets routers reject announcements whose origin AS or prefix length does not match a signed authorization.\n"
 "\n"
 "Not modelled here: iBGP (there is one router per AS and neighbors are directly connected), MED, communities, aggregation and route-flap damping; each UPDATE carries one prefix."
+msgstr ""
+
+#: src/check.c:76
+msgid "a number is needed, not the word"
+msgstr ""
+
+#: src/check.c:90 src/check.c:147
+msgid "missing ) before"
+msgstr ""
+
+#: src/check.c:132 src/main.c:212
+msgid "unknown node"
+msgstr ""
+
+#: src/check.c:155
+msgid "unknown function"
+msgstr ""
+
+#: src/check.c:162 src/check.c:284
+msgid "unexpected"
+msgstr ""
+
+#: src/check.c:162
+msgid "end of the expression"
+msgstr ""
+
+#: src/check.c:228
+msgid "words can only be compared with == or !=:"
+msgstr ""
+
+#: src/check.c:276
+msgid "usage: run NODE check NAME \"EXPRESSION\""
+msgstr ""
+
+#: src/check.c:286
+msgid "the expression is just the word"
+msgstr ""
+
+#: src/check.c:313
+msgid "check — state what a lab should show, as an expression over counters"
+msgstr ""
+
+#: src/check.c:315
+msgid ""
+"run NODE check NAME \"EXPRESSION\"\n"
+"  Evaluates the expression now and stores the result in the counter check.NAME\n"
+"  (1 or 0 for a condition; any other number is a measurement for a later check).\n"
+"  NODE:counter reads a counter; numbers take k M G and ms s us (times in ms);\n"
+"  bare words compare as text (is_$algo == is_rr); + - * /  < <= > >= == !=\n"
+"  && || !  ( )  min(a,b) max(a,b) pow(a,b) abs(a) exp(a) log2(a) sqrt(a).\n"
+"  Pair it with:  expect NODE check.NAME == 1"
+msgstr ""
+
+#: src/check.c:322
+msgid "A lab is an experiment, and an experiment has a prediction. Most predictions depend on the conditions: the queue discipline chosen, the protocol, the amount of noise. A check writes the prediction down in terms of what the nodes counted, for whatever value the parameters have, so that running the lab with different settings tests the explanation instead of contradicting it."
 msgstr ""
 
 #: src/chord.c:227
@@ -1833,7 +1888,7 @@ msgstr ""
 msgid "does not answer: removed from my tables"
 msgstr ""
 
-#: src/chord.c:480 src/dns.c:1397 src/http.c:396 src/main.c:310 src/tcp.c:2288
+#: src/chord.c:480 src/dns.c:1427 src/http.c:396 src/main.c:310 src/tcp.c:2288
 msgid "failed"
 msgstr ""
 
@@ -1931,140 +1986,156 @@ msgid ""
 "Failures are handled with a successor list: each node remembers its next r successors, so that when the first one stops answering it falls back on the second, and lookups route around dead fingers. Data survives because every pair exists in r copies, on its owner and on the owner's next r - 1 successors: the node that inherits the arc of a dead one already holds a copy, and whenever its neighbourhood changes a node copies the keys it owns to its new successors, so that r copies exist again before the next failure. With r = 1 there is a single copy and a single successor pointer: every crash loses the keys of the dead node. Two names that hash to the same identifier (likely with few bits) are detected and one of them moves to the next position. Here lookups are recursive (each hop forwards the query, the last one answers the origin directly), liveness is checked with pings every stabilization round, and a node that restarts has lost its memory and joins again as a new one."
 msgstr ""
 
-#: src/clock.c:162 src/core.c:457 src/fec.c:790 src/mac.c:522 src/mac.c:549
+#: src/clock.c:121
+msgid "concurrent with the latest event of"
+msgstr ""
+
+#: src/clock.c:122
+msgid "neither vector is ≤ the other: no message links the two"
+msgstr ""
+
+#: src/clock.c:124
+msgid "causally before the latest event of"
+msgstr ""
+
+#: src/clock.c:125
+msgid "causally after the latest event of"
+msgstr ""
+
+#: src/clock.c:199 src/core.c:457 src/fec.c:790 src/mac.c:554 src/mac.c:581
 msgid "delivered"
 msgstr ""
 
-#: src/clock.c:168
+#: src/clock.c:205
 msgid "causality violated"
 msgstr ""
 
-#: src/clock.c:168
+#: src/clock.c:205
 msgid "it depends on a message not delivered yet, from"
 msgstr ""
 
-#: src/clock.c:170
+#: src/clock.c:207
 msgid "delivered before its cause"
 msgstr ""
 
-#: src/clock.c:199
+#: src/clock.c:236
 msgid "leaves the hold-back queue"
 msgstr ""
 
-#: src/clock.c:275
+#: src/clock.c:312
 msgid "for"
 msgstr ""
 
-#: src/clock.c:283
+#: src/clock.c:320
 msgid "broadcast arrived"
 msgstr ""
 
-#: src/clock.c:284
+#: src/clock.c:321
 msgid "my clock"
 msgstr ""
 
-#: src/clock.c:286
+#: src/clock.c:323
 msgid "(concurrent with what I had seen)"
 msgstr ""
 
-#: src/clock.c:287
+#: src/clock.c:324
 msgid "(causally after everything I had seen)"
 msgstr ""
 
-#: src/clock.c:290
+#: src/clock.c:327
 msgid "receive event"
 msgstr ""
 
-#: src/clock.c:291 src/clock.c:424 src/clock.c:443 src/clock.c:453
+#: src/clock.c:328 src/clock.c:462 src/clock.c:482 src/clock.c:493
 msgid "clock"
 msgstr ""
 
-#: src/clock.c:313
+#: src/clock.c:351
 msgid "held back"
 msgstr ""
 
-#: src/clock.c:315
+#: src/clock.c:353
 msgid "an earlier message of the same sender is missing"
 msgstr ""
 
-#: src/clock.c:316
+#: src/clock.c:354
 msgid "a message it depends on has not arrived yet"
 msgstr ""
 
-#: src/clock.c:339 src/qdisc.c:704 src/qdisc.c:708
+#: src/clock.c:377 src/qdisc.c:704 src/qdisc.c:708
 msgid "queued"
 msgstr ""
 
-#: src/clock.c:340
+#: src/clock.c:378
 msgid "waiting for every process to acknowledge"
 msgstr ""
 
-#: src/clock.c:360
+#: src/clock.c:398
 msgid "unknown order"
 msgstr ""
 
-#: src/clock.c:364 src/clock.c:411 src/clock.c:510
+#: src/clock.c:402 src/clock.c:449 src/clock.c:550
 msgid "broadcast order"
 msgstr ""
 
-#: src/clock.c:393 src/clock.c:435 src/crdt.c:389 src/gossip.c:718
+#: src/clock.c:431 src/clock.c:474 src/crdt.c:389 src/gossip.c:718
 msgid "unknown peer"
 msgstr ""
 
-#: src/clock.c:400 src/crdt.c:396
+#: src/clock.c:438 src/crdt.c:396
 msgid "this node must be in its own peers list"
 msgstr ""
 
-#: src/clock.c:410 src/clock.c:506
+#: src/clock.c:448 src/clock.c:546
 msgid "process"
 msgstr ""
 
-#: src/clock.c:411 src/clock.c:509
+#: src/clock.c:449 src/clock.c:549
 msgid "vector clock"
 msgstr ""
 
-#: src/clock.c:411 src/clock.c:507
+#: src/clock.c:449 src/clock.c:547
 msgid "Lamport clock"
 msgstr ""
 
-#: src/clock.c:424 src/clock.c:426
+#: src/clock.c:462 src/clock.c:464
 msgid "local event"
 msgstr ""
 
-#: src/clock.c:442
+#: src/clock.c:481
 msgid "send event"
 msgstr ""
 
-#: src/clock.c:453
+#: src/clock.c:493
 msgid "broadcast"
 msgstr ""
 
-#: src/clock.c:470 src/http.c:491 src/main.c:410 src/qdisc.c:977 src/stp.c:675
+#: src/clock.c:510 src/http.c:491 src/main.c:410 src/qdisc.c:977 src/stp.c:843
 #: src/tcp.c:2449 src/twopc.c:674
 msgid "unknown command"
 msgstr ""
 
-#: src/clock.c:511
+#: src/clock.c:551
 msgid "delivered / held / violations"
 msgstr ""
 
-#: src/clock.c:516
+#: src/clock.c:556
 msgid "hold-back queue"
 msgstr ""
 
-#: src/clock.c:523
+#: src/clock.c:563
 msgid "total order queue"
 msgstr ""
 
-#: src/clock.c:529
+#: src/clock.c:569
 msgid "last events"
 msgstr ""
 
-#: src/clock.c:569
+#: src/clock.c:609
 msgid "Logical clocks and ordered broadcast (Lamport, vector, causal, total)"
 msgstr ""
 
-#: src/clock.c:571
+#: src/clock.c:611
 msgid ""
 "run NODE clock peers=n1,n2,n3 [mode=lamport|vector] [order=none|fifo|causal|total]\n"
 "run NODE clock event                 a local event\n"
@@ -2074,7 +2145,7 @@ msgid ""
 "  Every node must be started with the same peers list (it defines the process ids)."
 msgstr ""
 
-#: src/clock.c:577
+#: src/clock.c:617
 msgid ""
 "A distributed system has no shared clock: each machine only sees its own events and the messages it receives. What can still be defined is causality: event a happened before event b if they are on the same process in that order, if a is the sending of a message and b its reception, or by transitivity. Events not related this way are concurrent: no observer can tell which came first.\n"
 "\n"
@@ -2271,11 +2342,11 @@ msgstr ""
 msgid "pool exhausted, no offer"
 msgstr ""
 
-#: src/dhcp.c:297 src/dhcp.c:378 src/dhcp.c:611
+#: src/dhcp.c:297 src/dhcp.c:378 src/dhcp.c:624
 msgid "lease"
 msgstr ""
 
-#: src/dhcp.c:342 src/dhcp.c:640
+#: src/dhcp.c:342 src/dhcp.c:653
 msgid "unknown interface"
 msgstr ""
 
@@ -2291,23 +2362,27 @@ msgstr ""
 msgid "server ready, pool"
 msgstr ""
 
-#: src/dhcp.c:409
+#: src/dhcp.c:410
+msgid "server restarted: lease table read back from disk"
+msgstr ""
+
+#: src/dhcp.c:422
 msgid "pool"
 msgstr ""
 
-#: src/dhcp.c:410
+#: src/dhcp.c:423
 msgid "offers / ACK / NAK"
 msgstr ""
 
-#: src/dhcp.c:412
+#: src/dhcp.c:425
 msgid "leases (remaining)"
 msgstr ""
 
-#: src/dhcp.c:425 src/dhcp.c:725
+#: src/dhcp.c:438 src/dhcp.c:738
 msgid "DHCP server and client: hand out and renew addresses"
 msgstr ""
 
-#: src/dhcp.c:426 src/dhcp.c:726
+#: src/dhcp.c:439 src/dhcp.c:739
 msgid ""
 "run NODE dhcp server pool=FIRST-LAST [lease=60s] [dns=ADDR] [router=ADDR] [if=eth0]\n"
 "run NODE dhcp client [if=eth0]      obtain and keep an address\n"
@@ -2315,218 +2390,218 @@ msgid ""
 "  Hosts in a DHCP scenario start with no address; give the server a static ip."
 msgstr ""
 
-#: src/dhcp.c:522
+#: src/dhcp.c:535
 msgid "no answer, starting over"
 msgstr ""
 
-#: src/dhcp.c:535
+#: src/dhcp.c:548
 msgid "renewing with"
 msgstr ""
 
-#: src/dhcp.c:541
+#: src/dhcp.c:554
 msgid "rebinding (broadcast)"
 msgstr ""
 
-#: src/dhcp.c:546
+#: src/dhcp.c:559
 msgid "lease expired, dropping"
 msgstr ""
 
-#: src/dhcp.c:566
+#: src/dhcp.c:579
 msgid "broadcast from"
 msgstr ""
 
-#: src/dhcp.c:610
+#: src/dhcp.c:623
 msgid "lease renewed:"
 msgstr ""
 
-#: src/dhcp.c:610
+#: src/dhcp.c:623
 msgid "bound:"
 msgstr ""
 
-#: src/dhcp.c:610
+#: src/dhcp.c:623
 msgid "gw"
 msgstr ""
 
-#: src/dhcp.c:616
+#: src/dhcp.c:629
 msgid "from the server, starting over"
 msgstr ""
 
-#: src/dhcp.c:629
+#: src/dhcp.c:642
 msgid "releasing"
 msgstr ""
 
-#: src/dhcp.c:695 src/ip6.c:918 src/ospf.c:729
+#: src/dhcp.c:708 src/ip6.c:918 src/ospf.c:736
 msgid "address"
 msgstr ""
 
-#: src/dhcp.c:696
+#: src/dhcp.c:709
 msgid "server / gateway"
 msgstr ""
 
-#: src/dhcp.c:700
+#: src/dhcp.c:713
 msgid "lease remaining"
 msgstr ""
 
-#: src/dhcp.c:701
+#: src/dhcp.c:714
 msgid "T1 renew / T2 rebind"
 msgstr ""
 
-#: src/dhcp.c:707
+#: src/dhcp.c:720
 msgid "DHCP client state"
 msgstr ""
 
-#: src/dhcp.c:730
+#: src/dhcp.c:743
 msgid ""
 "A host that joins a network with no address uses DHCP to get one. It cannot send a normal unicast yet, so everything starts as a broadcast. The client broadcasts a DISCOVER; every server that can serve the subnet replies with an OFFER proposing an address, the subnet mask, the default gateway, the DNS servers and a lease time. The client picks one offer and broadcasts a REQUEST naming the chosen server (so the others take their offer back); that server answers ACK and the client finally configures the interface, or NAK if the address is no longer free.\n"
 "\n"
 "A lease is temporary. The client starts two timers: at T1 (half the lease) it tries to renew with the same server by unicast; at T2 (seven eighths) it broadcasts to any server; if the lease runs out it must drop the address and start over. RELEASE returns an address early. The message format is inherited from the older BOOTP protocol: a fixed header carrying the client hardware address and the offered address, followed by a list of typed options, of which option 53 (the message type) turns BOOTP into DHCP. Here one server serves its own subnet directly; real networks reach a central server through relay agents."
 msgstr ""
 
-#: src/dns.c:500
+#: src/dns.c:502
 msgid "not my zone"
 msgstr ""
 
-#: src/dns.c:567 src/dns.c:869
+#: src/dns.c:569 src/dns.c:888
 msgid "referral:"
 msgstr ""
 
-#: src/dns.c:573
+#: src/dns.c:575
 msgid "no such name"
 msgstr ""
 
-#: src/dns.c:575
+#: src/dns.c:577
 msgid "the name exists, but not with this type"
 msgstr ""
 
-#: src/dns.c:666 src/dns.c:671 src/dns.c:1160
+#: src/dns.c:682 src/dns.c:687 src/dns.c:1189
 msgid "upstream queries"
 msgstr ""
 
-#: src/dns.c:666 src/dns.c:671
+#: src/dns.c:682 src/dns.c:687
 msgid "from the cache"
 msgstr ""
 
-#: src/dns.c:694
+#: src/dns.c:710
 msgid "no answer from"
 msgstr ""
 
-#: src/dns.c:699
+#: src/dns.c:715
 msgid "timeout waiting for"
 msgstr ""
 
-#: src/dns.c:700
+#: src/dns.c:716
 msgid "asking again"
 msgstr ""
 
-#: src/dns.c:732
+#: src/dns.c:751
 msgid "ask"
 msgstr ""
 
-#: src/dns.c:733 src/dns.c:815
+#: src/dns.c:752 src/dns.c:834
 msgid "server for"
 msgstr ""
 
-#: src/dns.c:814
+#: src/dns.c:833
 msgid "ignored out-of-bailiwick record"
 msgstr ""
 
-#: src/dns.c:830
+#: src/dns.c:849
 msgid "negative answer cached for"
 msgstr ""
 
-#: src/dns.c:857
+#: src/dns.c:876
 msgid "alias (CNAME)"
 msgstr ""
 
-#: src/dns.c:909
+#: src/dns.c:928
 msgid "response matching no pending query, dropped: from"
 msgstr ""
 
-#: src/dns.c:940
+#: src/dns.c:959
 msgid "recursive query"
 msgstr ""
 
-#: src/dns.c:1019
+#: src/dns.c:1038
 msgid "unknown address"
 msgstr ""
 
-#: src/dns.c:1067
+#: src/dns.c:1088
 msgid "cache emptied"
 msgstr ""
 
-#: src/dns.c:1075
+#: src/dns.c:1096
 msgid "resolver needs root=ADDRESS (a root name server)"
 msgstr ""
 
-#: src/dns.c:1080
+#: src/dns.c:1109
 msgid "recursive resolver ready, root server"
 msgstr ""
 
-#: src/dns.c:1081
+#: src/dns.c:1110
 msgid " — fixed source port, sequential ids"
 msgstr ""
 
-#: src/dns.c:1095
+#: src/dns.c:1124
 msgid "too many zones"
 msgstr ""
 
-#: src/dns.c:1109
+#: src/dns.c:1138
 msgid "bad record (give zone=NAME first, then key=owner:value)"
 msgstr ""
 
-#: src/dns.c:1116
+#: src/dns.c:1145
 msgid "authoritative for zone"
 msgstr ""
 
-#: src/dns.c:1117
+#: src/dns.c:1146
 msgid "records"
 msgstr ""
 
-#: src/dns.c:1156
+#: src/dns.c:1185
 msgid "queries received"
 msgstr ""
 
-#: src/dns.c:1158
+#: src/dns.c:1187
 msgid "root server"
 msgstr ""
 
-#: src/dns.c:1159
+#: src/dns.c:1188
 msgid "answered from cache"
 msgstr ""
 
-#: src/dns.c:1161
+#: src/dns.c:1190
 msgid "source port / id"
 msgstr ""
 
-#: src/dns.c:1162
+#: src/dns.c:1191
 msgid "random"
 msgstr ""
 
-#: src/dns.c:1162
+#: src/dns.c:1191
 msgid "fixed 53 / sequential"
 msgstr ""
 
-#: src/dns.c:1164
+#: src/dns.c:1193
 msgid "unmatched responses"
 msgstr ""
 
-#: src/dns.c:1166
+#: src/dns.c:1195
 msgid "cache (remaining TTL)"
 msgstr ""
 
-#: src/dns.c:1179
+#: src/dns.c:1208
 msgid "referrals / NXDOMAIN"
 msgstr ""
 
-#: src/dns.c:1184
+#: src/dns.c:1213
 msgid "zone"
 msgstr ""
 
-#: src/dns.c:1193
+#: src/dns.c:1222
 msgid "DNS server: authoritative zones and recursive resolver"
 msgstr ""
 
-#: src/dns.c:1194
+#: src/dns.c:1223
 msgid ""
 "run NODE dns zone=NAME [ttl=60] [negttl=30] RECORD...   authoritative server\n"
 "  records, as key=owner:value (owner @ = the zone itself, names are relative\n"
@@ -2534,12 +2609,13 @@ msgid ""
 "    a=www:10.0.3.10  cname=web:www  mx=@:mail[:10]  txt=@:hello\n"
 "    ns=@:ns1  ns=sub:ns.sub  glue=ns.sub:10.0.4.2   (ns below the apex = delegation)\n"
 "  the root zone is zone=. ; repeat the command to add records or zones.\n"
-"run NODE dns resolver root=ADDR [randomize=1] [timeout=800ms]   recursive resolver\n"
+"run NODE dns resolver root=ADDR [randomize=1] [entropy=30] [timeout=800ms]   recursive resolver\n"
 "  randomize=0: fixed source port 53 and sequential ids (for the poisoning lab)\n"
+"  entropy=B: random bits in id (up to 16) and source port (the rest, up to 14)\n"
 "run NODE dns flush     empty the resolver cache"
 msgstr ""
 
-#: src/dns.c:1203
+#: src/dns.c:1233
 msgid ""
 "The Domain Name System is a distributed database that maps names to records (A: an IPv4 address, NS: the name servers of a zone, CNAME: an alias, MX: the mail exchanger, TXT: free text). The name space is a tree cut into zones; each zone is served by authoritative servers, and a zone delegates a subtree by publishing NS records for it, plus the addresses of those servers (glue). Nobody knows everything: the root servers only know who serves com, org, it...; those know who serves example.com; and so on.\n"
 "\n"
@@ -2548,75 +2624,75 @@ msgid ""
 "Messages have a 12-byte header (identifier, flags, four counters) followed by the question and three record sections; repeated names are compressed with pointers. DNS normally runs on UDP, so a resolver accepts a response when it comes from the address it asked, to the port it used, with the identifier and question it sent: an attacker who can guess those values can forge an answer and poison the cache, which is why resolvers randomize both the identifier and the source port. Here: class IN only, no TCP fallback, EDNS or DNSSEC, and delegations need glue."
 msgstr ""
 
-#: src/dns.c:1296
+#: src/dns.c:1326
 msgid "no answer from server"
 msgstr ""
 
-#: src/dns.c:1299 src/http.c:398 src/tcp.c:2290 src/twopc.c:751
+#: src/dns.c:1329 src/http.c:398 src/tcp.c:2290 src/twopc.c:751
 msgid "timeout"
 msgstr ""
 
-#: src/dns.c:1365
+#: src/dns.c:1395
 msgid "says it is an alias: start again from the root for"
 msgstr ""
 
-#: src/dns.c:1368
+#: src/dns.c:1398
 msgid "refers to the servers of"
 msgstr ""
 
-#: src/dns.c:1385 src/lb.c:429 src/lb.c:455
+#: src/dns.c:1415 src/lb.c:444 src/lb.c:470
 msgid "server"
 msgstr ""
 
-#: src/dns.c:1386
+#: src/dns.c:1416
 msgid ", authoritative"
 msgstr ""
 
-#: src/dns.c:1391
+#: src/dns.c:1421
 msgid "the name does not exist"
 msgstr ""
 
-#: src/dns.c:1396
+#: src/dns.c:1426
 msgid "the server could not answer"
 msgstr ""
 
-#: src/dns.c:1401
+#: src/dns.c:1431
 msgid "the name exists but has no record of type"
 msgstr ""
 
-#: src/dns.c:1426 src/dns.c:1446 src/lb.c:477 src/lb.c:529
+#: src/dns.c:1456 src/dns.c:1476 src/lb.c:492 src/lb.c:544
 msgid "unknown server"
 msgstr ""
 
-#: src/dns.c:1435
+#: src/dns.c:1465
 msgid "unknown record type (A, NS, CNAME, MX, TXT, SOA)"
 msgstr ""
 
-#: src/dns.c:1450
+#: src/dns.c:1480
 msgid "no name server configured (use server=ADDRESS, or DHCP)"
 msgstr ""
 
-#: src/dns.c:1463
+#: src/dns.c:1493
 msgid "asking"
 msgstr ""
 
-#: src/dns.c:1464
+#: src/dns.c:1494
 msgid " and following the referrals myself"
 msgstr ""
 
-#: src/dns.c:1499
+#: src/dns.c:1529
 msgid "name server"
 msgstr ""
 
-#: src/dns.c:1501
+#: src/dns.c:1531
 msgid "answers / NXDOMAIN"
 msgstr ""
 
-#: src/dns.c:1513
+#: src/dns.c:1543
 msgid "dig — ask the DNS for a name"
 msgstr ""
 
-#: src/dns.c:1514
+#: src/dns.c:1544
 msgid ""
 "run NODE dig NAME [type=A|NS|CNAME|MX|TXT] [server=ADDR] [trace=1] [root=ADDR]\n"
 "  server= is remembered as the node's name server (DHCP sets it too).\n"
@@ -2625,89 +2701,121 @@ msgid ""
 "run NODE dig server=ADDR      only set the name server"
 msgstr ""
 
-#: src/dns.c:1519
+#: src/dns.c:1549
 msgid "dig is the stub resolver of a host: it sends a single query to the configured name server with the Recursion Desired bit set and prints what comes back, with the TTL of each record. With trace=1 it plays the part of the recursive resolver instead: it asks a root server without recursion and follows the referrals one by one, so you can see the delegation chain root → top-level domain → authoritative server."
 msgstr ""
 
-#: src/dns.c:1593
+#: src/dns.c:1622 src/dns.c:1625
+msgid "races won"
+msgstr ""
+
+#: src/dns.c:1622
+msgid "known port and predictable ids: nothing to guess"
+msgstr ""
+
+#: src/dns.c:1625
+msgid "about"
+msgstr ""
+
+#: src/dns.c:1625
+msgid "forged answers per race against"
+msgstr ""
+
+#: src/dns.c:1626
+msgid "equally likely (id, port) pairs"
+msgstr ""
+
+#: src/dns.c:1626
+msgid "expected odds per race"
+msgstr ""
+
+#: src/dns.c:1644
 msgid "cache POISONED"
 msgstr ""
 
-#: src/dns.c:1593
+#: src/dns.c:1645
 msgid "the resolver now answers"
 msgstr ""
 
-#: src/dns.c:1594 src/dns.c:1597
+#: src/dns.c:1645 src/dns.c:1650
 msgid "forged responses sent"
 msgstr ""
 
-#: src/dns.c:1596
+#: src/dns.c:1649
 msgid "attack failed"
 msgstr ""
 
-#: src/dns.c:1597
+#: src/dns.c:1650
 msgid "the genuine answer won the race"
 msgstr ""
 
-#: src/dns.c:1618
+#: src/dns.c:1726
 msgid "usage: dnsspoof resolver=ADDR as=ADDR name=NAME [fake=ADDR]"
 msgstr ""
 
-#: src/dns.c:1631
+#: src/dns.c:1755
 msgid "attack on resolver"
 msgstr ""
 
-#: src/dns.c:1631
+#: src/dns.c:1755
 msgid "trigger a lookup of"
 msgstr ""
 
-#: src/dns.c:1631
+#: src/dns.c:1755
 msgid "then race"
 msgstr ""
 
-#: src/dns.c:1632
+#: src/dns.c:1756
 msgid "forged answers pretending to come from"
 msgstr ""
 
-#: src/dns.c:1633
+#: src/dns.c:1757
 msgid "(blind: random ports and ids)"
 msgstr ""
 
-#: src/dns.c:1660
+#: src/dns.c:1782
 msgid "target resolver"
 msgstr ""
 
-#: src/dns.c:1661
+#: src/dns.c:1783
 msgid "impersonated server"
 msgstr ""
 
-#: src/dns.c:1662
+#: src/dns.c:1784
 msgid "forged record"
 msgstr ""
 
-#: src/dns.c:1663
-msgid "attacks / successful"
+#: src/dns.c:1785
+msgid "races run / won"
 msgstr ""
 
-#: src/dns.c:1664
+#: src/dns.c:1787
+msgid "pairs to guess from"
+msgstr ""
+
+#: src/dns.c:1788
 msgid "forged responses"
 msgstr ""
 
-#: src/dns.c:1669
+#: src/dns.c:1793
 msgid "DNS cache poisoning: an off-path forger of answers"
 msgstr ""
 
-#: src/dns.c:1670
+#: src/dns.c:1794
 msgid ""
 "run NODE dnsspoof resolver=ADDR as=ADDR name=NAME [fake=6.6.6.6] [guesses=64]\n"
-"        [port=53] [firstid=1] [ttl=3600] [gap=200us]\n"
+"        [port=53] [firstid=1] [blind=0] [entropy=30] [rounds=1] [ttl=3600] [gap=200us]\n"
 "  Asks the resolver for NAME, then sends `guesses` forged answers with the source\n"
 "  address of the authoritative server `as`. port=N: the resolver's known source\n"
-"  port, ids firstid, firstid+1, ...; port=0: unknown port, random ports and ids."
+"  port, ids firstid, firstid+1, ...; blind=1 (or port=0): port and id unknown, both\n"
+"  drawn at random from the 2^entropy pairs the resolver uses (see dns resolver entropy=).\n"
+"  rounds=N repeats the race N times on fresh names (x1.NAME, x2.NAME, ...) and reports\n"
+"  how many were won against the expected odds. Everything stays inside the emulated\n"
+"  network. Counters: spoof.rounds spoof.success spoof.forged spoof.per_round"
 msgstr ""
 
-#: src/dns.c:1675
-msgid "A resolver trusts a UDP response if it comes from the address it asked, arrives on the port the query left from, and repeats the 16-bit identifier and the question. An attacker who is not on the path cannot see the query, but can send packets with a forged source address. If the resolver always uses the same source port and predictable identifiers, a handful of forged responses is enough: the first that matches wins, the genuine answer arriving later is discarded, and the false record stays in the cache for its whole TTL, served to every client. The attacker even chooses the moment, by asking the resolver for the name himself. Randomizing the identifier gives 16 bits of uncertainty; randomizing the source port as well (the fix deployed after Kaminsky's 2008 attack) gives about 30, which makes a blind race impractical. DNSSEC, not modelled here, removes the problem by signing records."
+#: src/dns.c:1803
+msgid "A resolver trusts a UDP response if it comes from the address it asked, arrives on the port the query left from, and repeats the 16-bit identifier and the question. An attacker who is not on the path cannot see the query, but can send packets with a forged source address. If the resolver always uses the same source port and predictable identifiers, a handful of forged responses is enough: the first that matches wins, the genuine answer arriving later is discarded, and the false record stays in the cache for its whole TTL, served to every client. The attacker even chooses the moment, by asking the resolver for the name himself. Randomizing the identifier gives 16 bits of uncertainty; randomizing the source port as well (the fix deployed after Kaminsky's 2008 attack) gives about 30, which makes a blind race impractical: a forger who lands n answers before the genuine one wins with probability about n / 2^bits, and the lab lets you shrink the number of random bits to watch that law at work. DNSSEC, not modelled here, removes the problem by signing records."
 msgstr ""
 
 #: src/fec.c:507
@@ -2858,8 +2966,8 @@ msgstr ""
 msgid "silently wrong"
 msgstr ""
 
-#: src/fec.c:795 src/ospf.c:730 src/stp.c:334 src/stp.c:338 src/stp.c:667
-#: src/stp.c:738 src/stp.c:745
+#: src/fec.c:795 src/ospf.c:737 src/stp.c:378 src/stp.c:382 src/stp.c:835
+#: src/stp.c:907 src/stp.c:916
 msgid "cost"
 msgstr ""
 
@@ -2899,7 +3007,7 @@ msgstr ""
 msgid "intact"
 msgstr ""
 
-#: src/fec.c:887 src/mac.c:550 src/qdisc.c:705 src/qdisc.c:821 src/qdisc.c:992
+#: src/fec.c:887 src/mac.c:582 src/qdisc.c:705 src/qdisc.c:821 src/qdisc.c:992
 #: src/qdisc.c:1020
 msgid "dropped"
 msgstr ""
@@ -3270,7 +3378,7 @@ msgstr ""
 msgid "server on TCP port"
 msgstr ""
 
-#: src/http.c:542 src/lb.c:769
+#: src/http.c:542 src/lb.c:784
 msgid "requests served"
 msgstr ""
 
@@ -3453,99 +3561,99 @@ msgstr ""
 msgid "# Run each command in its own terminal (the first one first):"
 msgstr ""
 
-#: src/lb.c:295
+#: src/lb.c:310
 msgid "flows lost their server"
 msgstr ""
 
-#: src/lb.c:296
+#: src/lb.c:311
 msgid "more now hash to a different server"
 msgstr ""
 
-#: src/lb.c:297
+#: src/lb.c:312
 msgid " (the flow table keeps them where they are)"
 msgstr ""
 
-#: src/lb.c:300
+#: src/lb.c:315
 msgid "flows lost their server and will be scheduled again"
 msgstr ""
 
-#: src/lb.c:326
+#: src/lb.c:341
 msgid "flow"
 msgstr ""
 
-#: src/lb.c:330
+#: src/lb.c:345
 msgid "new flow"
 msgstr ""
 
-#: src/lb.c:335
+#: src/lb.c:350
 msgid "no healthy server: request dropped"
 msgstr ""
 
-#: src/lb.c:430
+#: src/lb.c:445
 msgid "health check failed, taken out of the pool"
 msgstr ""
 
-#: src/lb.c:456
+#: src/lb.c:471
 msgid "healthy again, back in the pool"
 msgstr ""
 
-#: src/lb.c:493
+#: src/lb.c:508
 msgid "too many servers"
 msgstr ""
 
-#: src/lb.c:525
+#: src/lb.c:540
 msgid "server added to the pool:"
 msgstr ""
 
-#: src/lb.c:533
+#: src/lb.c:548
 msgid "server removed from the pool:"
 msgstr ""
 
-#: src/lb.c:546
+#: src/lb.c:561
 msgid "usage: lb [vip=ADDR[:PORT]] backends=s1,s2,..."
 msgstr ""
 
-#: src/lb.c:569
+#: src/lb.c:584
 msgid "bad virtual address"
 msgstr ""
 
-#: src/lb.c:593
+#: src/lb.c:608
 msgid "unknown algorithm"
 msgstr ""
 
-#: src/lb.c:614 src/lb.c:656
+#: src/lb.c:629 src/lb.c:671
 msgid "virtual address"
 msgstr ""
 
-#: src/lb.c:615
+#: src/lb.c:630
 msgid "servers"
 msgstr ""
 
-#: src/lb.c:616 src/lb.c:658
+#: src/lb.c:631 src/lb.c:673
 msgid ", no flow table"
 msgstr ""
 
-#: src/lb.c:657
+#: src/lb.c:672
 msgid "algorithm"
 msgstr ""
 
-#: src/lb.c:659
+#: src/lb.c:674
 msgid "requests / remapped flows"
 msgstr ""
 
-#: src/lb.c:669 src/tcp.c:2201
+#: src/lb.c:684 src/tcp.c:2201
 msgid "flows"
 msgstr ""
 
-#: src/lb.c:675
+#: src/lb.c:690
 msgid "active flows"
 msgstr ""
 
-#: src/lb.c:680
+#: src/lb.c:695
 msgid "Load balancer: one address, many servers"
 msgstr ""
 
-#: src/lb.c:681
+#: src/lb.c:696
 msgid ""
 "run NODE lb backends=s1,s2,... [vip=ADDR[:PORT]] [port=N]\n"
 "            [algo=rr|wrr|leastconn|hash|consistent|p2c|maglev] [weights=3,1,1]\n"
@@ -3560,60 +3668,60 @@ msgid ""
 "  check=0 disables health checks (ICMP echo; `fall` misses mark a server down)."
 msgstr ""
 
-#: src/lb.c:692
+#: src/lb.c:707
 msgid ""
 "A layer-4 load balancer owns a virtual IP address (VIP). Clients talk to the VIP; for the first packet of each flow the balancer picks a real server and rewrites the destination address, and for the answers it puts the VIP back as the source, so the client never learns which server it reached. A flow table (client address and port -> server) keeps every later packet of the connection on the same server: without it a TCP connection would break as soon as the choice changed. Health checks probe the servers and remove from the pool those that stop answering.\n"
 "\n"
 "How to pick the server is the interesting part. Round robin cycles through the pool; the weighted variant gives bigger servers proportionally more; least connections sends the new flow to the server with fewest active ones, which adapts to long-lived or slow connections; power of two choices samples two servers at random and takes the less loaded one, which gets most of the benefit with almost no shared state. Hashing the flow (or the client address) needs no state at all and lets several balancers make the same choice independently, but hash mod N has a flaw: when N changes almost every flow maps to a different server. Consistent hashing places servers (as many virtual nodes) and flows on a ring and assigns each flow to the next server clockwise, so that adding or removing one server moves only about 1/N of the flows. Maglev hashing reaches the same goal with a precomputed lookup table filled from per-server permutations, giving very even load and O(1) lookups. The lab counts how many flows are remapped by each scheme when the pool changes."
 msgstr ""
 
-#: src/lb.c:731
+#: src/lb.c:746
 msgid "request from"
 msgstr ""
 
-#: src/lb.c:774
+#: src/lb.c:789
 msgid "UDP server that answers with its own name"
 msgstr ""
 
-#: src/lb.c:775
+#: src/lb.c:790
 msgid ""
 "run NODE whoami [port=8000]\n"
 "  Put several behind a load balancer and ask with reqgen to see who answers."
 msgstr ""
 
-#: src/lb.c:830
+#: src/lb.c:845
 msgid "flow from port"
 msgstr ""
 
-#: src/lb.c:853 src/lb.c:927
+#: src/lb.c:868 src/lb.c:942
 msgid "requests"
 msgstr ""
 
-#: src/lb.c:853
+#: src/lb.c:868
 msgid "answers"
 msgstr ""
 
-#: src/lb.c:854
+#: src/lb.c:869
 msgid "flows changed server"
 msgstr ""
 
-#: src/lb.c:927
+#: src/lb.c:942
 msgid "flows (source ports)"
 msgstr ""
 
-#: src/lb.c:946
+#: src/lb.c:961
 msgid "requests / answers"
 msgstr ""
 
-#: src/lb.c:947
+#: src/lb.c:962
 msgid "flows / changed server"
 msgstr ""
 
-#: src/lb.c:962
+#: src/lb.c:977
 msgid "Request generator: many client flows, and which server answered"
 msgstr ""
 
-#: src/lb.c:964
+#: src/lb.c:979
 msgid ""
 "run NODE reqgen DEST [port=8000] [count=200] [rate=20] [flows=30] [life=0]\n"
 "  Sends `count` UDP requests at `rate` per second, cycling over `flows` source\n"
@@ -3701,83 +3809,87 @@ msgstr ""
 msgid "CSMA/CA (Wi-Fi)"
 msgstr ""
 
-#: src/mac.c:349 src/mac.c:410 src/mac.c:542
+#: src/mac.c:352 src/mac.c:413 src/mac.c:574
 msgid "theory"
 msgstr ""
 
-#: src/mac.c:351
+#: src/mac.c:354
 msgid "frames delivered"
 msgstr ""
 
-#: src/mac.c:352
+#: src/mac.c:355
 msgid "collided transmissions"
 msgstr ""
 
-#: src/mac.c:352
+#: src/mac.c:355
 msgid "mean delay"
 msgstr ""
 
-#: src/mac.c:353 src/mac.c:371
+#: src/mac.c:356 src/mac.c:374
 msgid "frame times"
 msgstr ""
 
-#: src/mac.c:367 src/mac.c:523
+#: src/mac.c:370 src/mac.c:555
 msgid "collision"
 msgstr ""
 
-#: src/mac.c:371 src/ospf.c:724
+#: src/mac.c:374 src/ospf.c:731
 msgid "last"
 msgstr ""
 
-#: src/mac.c:372
+#: src/mac.c:375
 msgid "so far"
 msgstr ""
 
-#: src/mac.c:396 src/mac.c:472 src/mac.c:522
-msgid "stations"
-msgstr ""
-
-#: src/mac.c:411
+#: src/mac.c:414
 msgid "load"
 msgstr ""
 
-#: src/mac.c:417
+#: src/mac.c:424
 msgid "best throughput"
 msgstr ""
 
-#: src/mac.c:449
+#: src/mac.c:435 src/mac.c:501 src/mac.c:554
+msgid "stations"
+msgstr ""
+
+#: src/mac.c:475
 msgid "unknown protocol"
 msgstr ""
 
-#: src/mac.c:472
+#: src/mac.c:480
+msgid "too many stations: using the maximum,"
+msgstr ""
+
+#: src/mac.c:501
 msgid "offered load"
 msgstr ""
 
-#: src/mac.c:472
+#: src/mac.c:501
 msgid "frame time"
 msgstr ""
 
-#: src/mac.c:473
+#: src/mac.c:502
 msgid ", two groups that cannot hear each other"
 msgstr ""
 
-#: src/mac.c:523
+#: src/mac.c:555
 msgid "waiting"
 msgstr ""
 
-#: src/mac.c:550
+#: src/mac.c:582
 msgid "collisions"
 msgstr ""
 
-#: src/mac.c:573
+#: src/mac.c:605
 msgid "run NODE mac proto=aloha stations=10 load=0.5"
 msgstr ""
 
-#: src/mac.c:578
+#: src/mac.c:610
 msgid "medium access lab — ALOHA, CSMA, CSMA/CD, CSMA/CA on a shared channel"
 msgstr ""
 
-#: src/mac.c:580
+#: src/mac.c:612
 msgid ""
 "run NODE mac proto=aloha|slotted|csma|csma1|csmap|csmacd|csmaca [stations=10] [load=0.5]\n"
 "             [frame=1ms] [prop=frame/100] [p=0.1] [hidden=1] [rts=1] [duration=TIME]\n"
@@ -3787,7 +3899,7 @@ msgid ""
 "run NODE mac stop"
 msgstr ""
 
-#: src/mac.c:586
+#: src/mac.c:618
 #, c-format
 msgid ""
 "When many stations share one channel, two transmissions that overlap destroy each other: a collision. A medium access protocol decides who may talk and when, without a central arbiter.\n"
@@ -3850,10 +3962,6 @@ msgstr ""
 
 #: src/main.c:195
 msgid "usage: netlab node SCENARIO NODE[,NODE...]"
-msgstr ""
-
-#: src/main.c:212
-msgid "unknown node"
 msgstr ""
 
 #: src/main.c:275
@@ -4026,7 +4134,7 @@ msgstr ""
 msgid "nodes"
 msgstr ""
 
-#: src/menu.c:534 src/ospf.c:386 src/ospf.c:574 src/ospf.c:741
+#: src/menu.c:534 src/ospf.c:387 src/ospf.c:581 src/ospf.c:748
 msgid "links"
 msgstr ""
 
@@ -4482,99 +4590,99 @@ msgstr ""
 msgid "Two hosts behind different NATs cannot simply send to each other: neither knows the other's public address and port, and both NATs drop unsolicited packets. A rendezvous server with a public address solves the first problem: each peer sends it a datagram, and the server reads the source address and port as rewritten by the NAT (this is what STUN does) and passes each endpoint to the other peer. Then both peers send datagrams to the endpoint they were given, at the same time. The first packet of each side may be dropped by the other NAT, but on its way out it opened a mapping and a filter entry for the peer; the following packets pass in both directions. This relies on the NAT reusing the same public port it showed to the server: symmetric NATs do not, so the punch fails unless the other side accepts packets from any port. The lab reports which combinations work."
 msgstr ""
 
-#: src/ospf.c:342
+#: src/ospf.c:343
 msgid "routers in the shortest-path tree"
 msgstr ""
 
-#: src/ospf.c:342 src/ospf.c:725 src/rip.c:329
+#: src/ospf.c:343 src/ospf.c:732 src/rip.c:329
 msgid "routes"
 msgstr ""
 
-#: src/ospf.c:385
+#: src/ospf.c:386
 msgid "originating router-LSA"
 msgstr ""
 
-#: src/ospf.c:434
+#: src/ospf.c:435
 msgid "dead interval expired: no Hello heard"
 msgstr ""
 
-#: src/ospf.c:458
+#: src/ospf.c:465
 msgid "no ack: retransmitting LSA"
 msgstr ""
 
-#: src/ospf.c:481
+#: src/ospf.c:488
 msgid "hello/dead intervals differ from ours: ignored, no adjacency"
 msgstr ""
 
-#: src/ospf.c:498
+#: src/ospf.c:505
 msgid "new neighbor, state Init"
 msgstr ""
 
-#: src/ospf.c:505
+#: src/ospf.c:512
 msgid "two-way, adjacency Full: exchanging databases"
 msgstr ""
 
-#: src/ospf.c:512
+#: src/ospf.c:519
 msgid "it no longer lists us: restarted"
 msgstr ""
 
-#: src/ospf.c:575
+#: src/ospf.c:582
 msgid "newer: stored and flooded on"
 msgstr ""
 
-#: src/ospf.c:649
+#: src/ospf.c:656
 msgid "usage: ospf cost IFACE N"
 msgstr ""
 
-#: src/ospf.c:653
+#: src/ospf.c:660
 msgid "cost of"
 msgstr ""
 
-#: src/ospf.c:654
+#: src/ospf.c:661
 msgid "a new LSA tells everyone"
 msgstr ""
 
-#: src/ospf.c:684
+#: src/ospf.c:691
 msgid "started: router id"
 msgstr ""
 
-#: src/ospf.c:722
+#: src/ospf.c:729
 msgid "router id"
 msgstr ""
 
-#: src/ospf.c:723
+#: src/ospf.c:730
 msgid "hello / dead"
 msgstr ""
 
-#: src/ospf.c:724
+#: src/ospf.c:731
 msgid "SPF runs"
 msgstr ""
 
-#: src/ospf.c:727
+#: src/ospf.c:734
 msgid "LSAs flooded / retransmitted"
 msgstr ""
 
-#: src/ospf.c:730 src/rip.c:435 src/ui.c:503
+#: src/ospf.c:737 src/rip.c:435 src/ui.c:503
 msgid "dev"
 msgstr ""
 
-#: src/ospf.c:740
+#: src/ospf.c:747
 msgid "LSDB: router"
 msgstr ""
 
-#: src/ospf.c:741
+#: src/ospf.c:748
 msgid "(neighbor:cost, network/cost)"
 msgstr ""
 
-#: src/ospf.c:741 src/rip.c:435 src/ui.c:489
+#: src/ospf.c:748 src/rip.c:435 src/ui.c:489
 msgid "age"
 msgstr ""
 
-#: src/ospf.c:763
+#: src/ospf.c:770
 msgid "OSPF — link-state routing with shortest-path-first"
 msgstr ""
 
-#: src/ospf.c:764
+#: src/ospf.c:771
 msgid ""
 "run ROUTER ospf [hello=10s] [dead=4×hello] [cost=N] [cost.eth1=N] [id=A.B.C.D]\n"
 "                [rxmt=TIME] [spf=200ms] [carrier=1]\n"
@@ -4584,7 +4692,7 @@ msgid ""
 "  Neighbors must use the same hello and dead intervals."
 msgstr ""
 
-#: src/ospf.c:770
+#: src/ospf.c:777
 msgid ""
 "A link-state protocol makes every router learn the whole map. Each router does three things. First, it discovers its neighbors by sending Hello packets on every interface; two routers become adjacent when each sees itself listed in the other's Hello, and a neighbor that stays silent for the dead interval is declared down. Second, it describes itself in a link-state advertisement (LSA): the list of its neighbors and attached networks with a cost for each. The LSA carries a sequence number and is flooded: a router that receives a newer LSA stores it, acknowledges it and passes it on to all its other neighbors, retransmitting until acknowledged. Soon every router holds the same link-state database. Third, each router runs Dijkstra's algorithm on that database with itself as the root and installs, for every network, the first hop of the cheapest path.\n"
 "\n"
@@ -5353,150 +5461,181 @@ msgstr ""
 msgid "too big and DF set: dropped, ICMP sent"
 msgstr ""
 
-#: src/stp.c:146
+#: src/stp.c:187
 msgid "root"
 msgstr ""
 
-#: src/stp.c:147
+#: src/stp.c:188
 msgid "designated"
 msgstr ""
 
-#: src/stp.c:148
+#: src/stp.c:189
 msgid "alternate"
 msgstr ""
 
-#: src/stp.c:149
+#: src/stp.c:190
 msgid "disabled"
 msgstr ""
 
-#: src/stp.c:156
+#: src/stp.c:197
 msgid "listening"
 msgstr ""
 
-#: src/stp.c:157
+#: src/stp.c:198
 msgid "learning"
 msgstr ""
 
-#: src/stp.c:158
+#: src/stp.c:199
 msgid "forwarding"
 msgstr ""
 
-#: src/stp.c:159
+#: src/stp.c:200
 msgid "blocking"
 msgstr ""
 
-#: src/stp.c:207
+#: src/stp.c:251
 msgid "topology change detected: forwarding table flushed, notifying the tree"
 msgstr ""
 
-#: src/stp.c:208
+#: src/stp.c:252
 msgid "topology change notified: forwarding table flushed"
 msgstr ""
 
-#: src/stp.c:330
+#: src/stp.c:374
 msgid "this bridge is the root:"
 msgstr ""
 
-#: src/stp.c:334
+#: src/stp.c:378
 msgid "root bridge is"
 msgstr ""
 
-#: src/stp.c:334
+#: src/stp.c:378
 msgid "root port"
 msgstr ""
 
-#: src/stp.c:337
+#: src/stp.c:381
 msgid "new root port"
 msgstr ""
 
-#: src/stp.c:452
+#: src/stp.c:499
+msgid "agreement: my other ports cannot close a loop, you may forward"
+msgstr ""
+
+#: src/stp.c:500
+msgid "proposal: I am designated here and want to forward"
+msgstr ""
+
+#: src/stp.c:549
 msgid "no BPDU for max-age, information discarded"
 msgstr ""
 
-#: src/stp.c:452
+#: src/stp.c:549
 msgid "was"
 msgstr ""
 
-#: src/stp.c:486
+#: src/stp.c:579
+msgid "BPDU received: no longer an edge port"
+msgstr ""
+
+#: src/stp.c:592
 msgid "BPDU older than max-age ignored (stale information)"
 msgstr ""
 
-#: src/stp.c:570
+#: src/stp.c:603
+msgid "agreement received: forwarding without waiting for the timers"
+msgstr ""
+
+#: src/stp.c:670
+msgid "no BPDU heard for 3 hello times: edge port, forwarding at once"
+msgstr ""
+
+#: src/stp.c:714
 msgid "link is up"
 msgstr ""
 
-#: src/stp.c:570
+#: src/stp.c:714
 msgid "link is down"
 msgstr ""
 
-#: src/stp.c:612
+#: src/stp.c:777
 msgid "bridge"
 msgstr ""
 
-#: src/stp.c:613
+#: src/stp.c:778
 msgid "every port starts blocked; claiming to be the root"
 msgstr ""
 
-#: src/stp.c:639
+#: src/stp.c:807
 msgid "only switches run the spanning tree"
 msgstr ""
 
-#: src/stp.c:662
+#: src/stp.c:830
 msgid "usage: stp cost PORT N"
 msgstr ""
 
-#: src/stp.c:733
+#: src/stp.c:902
 msgid "bridge id"
 msgstr ""
 
-#: src/stp.c:735 src/stp.c:737
+#: src/stp.c:904 src/stp.c:906
 msgid "root bridge"
 msgstr ""
 
-#: src/stp.c:735 src/stp.c:754
+#: src/stp.c:904 src/stp.c:925
 msgid "this bridge"
 msgstr ""
 
-#: src/stp.c:739
+#: src/stp.c:908
 msgid "timers"
 msgstr ""
 
-#: src/stp.c:742
+#: src/stp.c:911
 msgid "topology changes"
 msgstr ""
 
-#: src/stp.c:744 src/twopc.c:747 src/twopc.c:749
+#: src/stp.c:913
+msgid "proposals / agreements sent"
+msgstr ""
+
+#: src/stp.c:915 src/twopc.c:747 src/twopc.c:749
 msgid "role"
 msgstr ""
 
-#: src/stp.c:745
+#: src/stp.c:916
 msgid "designated bridge on the segment"
 msgstr ""
 
-#: src/stp.c:793
+#: src/stp.c:925
+msgid " (edge)"
+msgstr ""
+
+#: src/stp.c:979
 msgid "Spanning Tree Protocol — loop-free switching with redundant links"
 msgstr ""
 
-#: src/stp.c:795
+#: src/stp.c:981
 msgid ""
 "run SWITCH stp [priority=32768] [hello=1s] [maxage=6s] [fwd=3s] [portfast=0] [rapid=0]\n"
 "run SWITCH stp priority N        change the bridge priority (lowest identifier becomes root)\n"
 "run SWITCH stp cost PORT N       change the path cost of a port (default 10^9 / bandwidth)\n"
 "  The timers are shorter than the standard ones (2 s, 20 s, 15 s) so that labs are\n"
 "  watchable; the timers of the root bridge apply to the whole tree.\n"
-"  portfast=1: ports that face a host forward at once. rapid=1: a new root port\n"
-"  forwards at once (simplified RSTP).\n"
+"  portfast=1: ports that face a host forward at once. rapid=1: Rapid Spanning Tree\n"
+"  (802.1w): proposal/agreement between neighbours instead of the forward-delay timers,\n"
+"  alternate ports that take over at once, automatic edge ports, 3 hellos to forget.\n"
 "  Counters: stp.is_root stp.blocked_ports stp.forwarding_ports stp.topology_changes\n"
-"  stp.root_changes stp.last_change_ms"
+"  stp.root_changes stp.last_change_ms stp.agreements"
 msgstr ""
 
-#: src/stp.c:804
+#: src/stp.c:991
 msgid ""
 "Ethernet switches forward a frame for an unknown or broadcast destination out of every other port, and Ethernet frames carry no hop limit. If the switches are connected in a loop, as one wants for redundancy, a single broadcast therefore circulates for ever, is copied to every host at each lap, and the forwarding tables keep changing their mind about where each address is: a broadcast storm. The Spanning Tree Protocol (IEEE 802.1D, Radia Perlman, 1985) lets the switches agree on a subset of the links that reaches everything without loops, a spanning tree, and block the rest; a blocked link is kept as a spare and used again when the tree breaks.\n"
 "\n"
 "Every bridge has an identifier made of a configurable priority followed by its MAC address. Bridges send configuration BPDUs that say: who I think the root is, how far I am from it (the root path cost, the sum of the costs of the ports crossed, lower for faster links), who I am, and from which port I am speaking. At first every bridge claims to be the root; as soon as it hears a better (lower) root identifier it adopts it. Three choices follow, all made by comparing these four fields in order. The bridge with the lowest identifier is the root. Each other bridge picks as root port the port with the cheapest path to the root. On each link, the bridge offering the cheapest path to the root owns the designated port. Ports that are neither root nor designated are blocked: they still listen to BPDUs but carry no data.\n"
 "\n"
-"A port must not start forwarding while the rest of the network may still hold an old view, or a temporary loop would form. So a port that becomes root or designated waits in the listening state and then in the learning state, one forward delay each, before forwarding: with the standard timers that is 30 seconds, the reason a PC plugged into a switch port once had to wait for the network (and the reason for portfast on ports that face hosts). Information is refreshed by the hello BPDUs and carries an age; when nothing has been heard on a port for max age, the information is discarded and the election is repeated. A failed link is noticed at once by the bridges attached to it, a failed bridge only through this timeout, so recovery takes between two forward delays and max age plus two forward delays. After a change, bridges are told to flush their forwarding tables (topology change notification), because stations may now be reached through a different port. Rapid STP (802.1w) replaces the timers with an explicit handshake between neighbours and converges in well under a second; today data centres often avoid spanning tree altogether with routed fabrics and ECMP."
+"A port must not start forwarding while the rest of the network may still hold an old view, or a temporary loop would form. So a port that becomes root or designated waits in the listening state and then in the learning state, one forward delay each, before forwarding: with the standard timers that is 30 seconds, the reason a PC plugged into a switch port once had to wait for the network (and the reason for portfast on ports that face hosts). Information is refreshed by the hello BPDUs and carries an age; when nothing has been heard on a port for max age, the information is discarded and the election is repeated. A failed link is noticed at once by the bridges attached to it, a failed bridge only through this timeout, so recovery takes between two forward delays and max age plus two forward delays. After a change, bridges are told to flush their forwarding tables (topology change notification), because stations may now be reached through a different port.\n"
+"\n"
+"Rapid Spanning Tree (802.1w, rapid=1 here) keeps the same tree and replaces the timers with a conversation. A designated port that is not yet forwarding says so in its BPDU: a proposal. The bridge on the other end, for which that port leads to the root, makes sure that none of its own ports could close a loop, by putting its designated ports back to discarding (sync), then forwards on its root port and answers with an agreement; the proposer forwards the moment it hears it. The ports just discarded propose in turn, so the handshake travels down the tree one link at a time and the whole network converges in the time the BPDUs take to cross it. A blocked port is kept as an alternate root port and takes over at once when the root port fails. Ports where no BPDU is ever heard are edge ports: they face hosts, forward at once and take no part in the handshake. And since every bridge now sends a BPDU at each hello, three missing hellos are enough to declare a neighbour gone, instead of max age. Today data centres often avoid spanning tree altogether with routed fabrics and ECMP."
 msgstr ""
 
 #: src/tcp.c:623

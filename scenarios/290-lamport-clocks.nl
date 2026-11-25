@@ -11,8 +11,8 @@ about[it] Osserva il registro: ogni evento mostra l'orologio dopo l'evento. Una 
 about[it] Prova: imposta mode a vector e guarda il registro indicare quali eventi sono concorrenti; aumenta il ritardo di n3 e verifica che i timestamp rispettino ancora la causalità.
 param mode lamport Clock: lamport or vector
 param[it] mode Orologio: lamport o vector
-param+ slow 80ms Delay of the link of n3
-param[it] slow Ritardo del collegamento di n3
+param+ slow 80ms Delay of the link of n3 (up to 1s fits the run)
+param[it] slow Ritardo del collegamento di n3 (fino a 1s sta nell'esecuzione)
 
 node n1 host
 node n2 host
@@ -49,6 +49,11 @@ duration 8s
 expect n1 clock.received == 1
 expect n2 clock.received == 1
 expect n3 clock.received == 1
-expect n2 clock.lamport >= 5
-expect n3 clock.lamport >= 8
-expect n1 clock.lamport >= 10
+# n2 always ends at 7 (5 on receiving a, then an event and a send). If b reaches n3 before n3 sends c
+# (the default), the whole chain n1 -> n2 -> n3 -> n1 is causal and the clocks only grow along it
+# (n3 ends at 10, n1 at 11); with a very slow link c leaves first, stamped 1, and n1 ends at 6, n3 at 9
+at 7900ms run n1 check clocks "n2:clock.lamport == 7 && ((n3:clock.lamport == 10 && n1:clock.lamport == 11) || (n3:clock.lamport == 9 && n1:clock.lamport == 6))"
+expect n1 check.clocks == 1
+# only vector clocks can say that the two events at 6 s are concurrent
+at 7900ms run n1 check concurrent "(is_$mode == is_vector && n3:clock.concurrent >= 1) || (is_$mode == is_lamport && n1:clock.concurrent + n2:clock.concurrent + n3:clock.concurrent == 0)"
+expect n1 check.concurrent == 1

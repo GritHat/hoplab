@@ -1,0 +1,79 @@
+# Parameter variants verified by tests/run-variants.sh: each line is run with
+# seeds 1..5 and must give this result every time.
+#   PASS  scenario  key=value ...
+PASS  272-priority-queueing
+PASS  272-priority-queueing  bulk=2M
+PASS  272-priority-queueing  bulk=300k
+PASS  272-priority-queueing  bw=1M
+PASS  272-priority-queueing  bw=250k
+PASS  272-priority-queueing  bw=2M
+PASS  272-priority-queueing  qdisc=droptail
+PASS  272-priority-queueing  qdisc=droptail bulk=300k
+PASS  272-priority-queueing  qdisc=droptail bw=1M
+PASS  272-priority-queueing  qdisc=droptail queue=200
+PASS  272-priority-queueing  qdisc=fifo
+PASS  272-priority-queueing  qdisc=fq
+PASS  272-priority-queueing  qdisc=fq bw=250k
+PASS  272-priority-queueing  queue=200
+PASS  272-priority-queueing  queue=5
+PASS  371-bufferbloat-codel
+PASS  371-bufferbloat-codel  aqm=droptail
+PASS  371-bufferbloat-codel  aqm=fifo
+PASS  371-bufferbloat-codel  aqm=pie
+PASS  371-bufferbloat-codel  aqm=pie load=3M
+PASS  371-bufferbloat-codel  aqm=pie target=50ms
+PASS  371-bufferbloat-codel  aqm=red
+PASS  371-bufferbloat-codel  aqm=red buffer=20
+PASS  371-bufferbloat-codel  aqm=red load=900k
+PASS  371-bufferbloat-codel  buffer=1000
+PASS  371-bufferbloat-codel  buffer=20
+PASS  371-bufferbloat-codel  interval=20ms
+PASS  371-bufferbloat-codel  interval=500ms
+PASS  371-bufferbloat-codel  load=1M
+PASS  371-bufferbloat-codel  load=3M
+PASS  371-bufferbloat-codel  load=900k
+PASS  371-bufferbloat-codel  target=50ms
+PASS  371-bufferbloat-codel  target=5ms
+PASS  372-red-ecn
+PASS  372-red-ecn  ecn=0
+PASS  372-red-ecn  ecn=0 gentle=0
+PASS  372-red-ecn  gentle=0
+PASS  372-red-ecn  max=30
+PASS  372-red-ecn  max=8
+PASS  372-red-ecn  maxp=0.02
+PASS  372-red-ecn  maxp=0.5
+PASS  372-red-ecn  min=10
+PASS  372-red-ecn  min=2
+PASS  372-red-ecn  queue=20
+PASS  372-red-ecn  queue=200
+PASS  372-red-ecn  wq=0.002
+PASS  372-red-ecn  wq=0.5
+PASS  373-fair-queueing
+PASS  373-fair-queueing  hog=10M
+PASS  373-fair-queueing  hog=1500k
+PASS  373-fair-queueing  hog=600k
+PASS  373-fair-queueing  mouse=20k
+PASS  373-fair-queueing  mouse=400k
+PASS  373-fair-queueing  mouse=600k
+PASS  373-fair-queueing  mouse=600k hog=600k
+PASS  373-fair-queueing  mouse=800k
+PASS  373-fair-queueing  qdisc=droptail
+PASS  373-fair-queueing  qdisc=droptail hog=600k
+PASS  373-fair-queueing  qdisc=droptail mouse=600k
+PASS  373-fair-queueing  qdisc=fifo
+PASS  373-fair-queueing  qdisc=prio
+PASS  373-fair-queueing  quantum=300
+PASS  373-fair-queueing  quantum=9000
+PASS  373-fair-queueing  queue=10
+PASS  373-fair-queueing  queue=200
+PASS  374-token-bucket
+PASS  374-token-bucket  bucket=100000
+PASS  374-token-bucket  bucket=1600
+PASS  374-token-bucket  queue=10
+PASS  374-token-bucket  queue=1000
+PASS  374-token-bucket  queue=500
+PASS  374-token-bucket  shape=1500k
+PASS  374-token-bucket  shape=1500k queue=1000
+PASS  374-token-bucket  shape=1M
+PASS  374-token-bucket  shape=200k
+PASS  374-token-bucket  shape=3M

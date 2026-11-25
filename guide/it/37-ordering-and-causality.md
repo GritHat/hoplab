@@ -87,7 +87,7 @@ totale   round aggiuntivi o un leader; equivalente al consenso
 
 **Secondo round (4 s), ordine causale.** Stesso scambio. In n3 il log mostra "trattenuto «ten o'clock» da n2: un messaggio da cui dipende non è ancora arrivato", poi la domanda viene consegnata e segue subito "esce dalla coda di attesa". Misurare il tempo che la risposta trascorre in coda (circa 40 ms: la differenza fra i due percorsi) e notare `clock.heldback` = 1.
 
-**Esperimento 1: FIFO non basta.** `./netlab run 390-causal-broadcast order2=fifo`. Prevedere l'esito prima di eseguire: i due messaggi hanno mittenti diversi, quindi FIFO non impone nulla fra loro e n3 viola di nuovo la causalità (`clock.violations` = 2; le verifiche dello scenario falliscono, come devono).
+**Esperimento 1: FIFO non basta.** `./netlab run 390-causal-broadcast order2=fifo`. Prevedere l'esito prima di eseguire: i due messaggi hanno mittenti diversi, quindi FIFO non impone nulla fra loro e n3 viola di nuovo la causalità (`clock.violations` = 2: la verifica `causality` del laboratorio si aspetta proprio questo per `none` e `fifo`, e 1 per `causal` e `total`).
 
 **Esperimento 2: il prezzo dell'ordine totale.** `order2=total`. Ora ogni processo accoda ciascun messaggio ("in coda … in attesa del riscontro di tutti i processi") e lo consegna solo quando tutti l'hanno riscontrato. Misurare quando n1 consegna la propria domanda: circa 300 ms dopo l'invio, un'andata e ritorno sul collegamento lento, contro 0 ms di prima. Tutti e tre consegnano nello stesso ordine. Poi aumentare `slow=500ms` e prevedere i nuovi tempi di consegna per l'ordine causale e per quello totale.
 

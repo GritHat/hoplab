@@ -74,12 +74,12 @@ Per saperne di più: Kurose e Ross, capitolo 6, paragrafo "Collegamenti broadcas
 - Seleziona `pure` con `n` e spostati sulla scheda `mac` con i tasti freccia (premi Tab finché il pannello del nodo ha il focus; `z` lo ingrandisce). C'è una riga per stazione: verde è un frame consegnato, rosso una collisione, i puntini gialli una stazione in attesa di riprovare.
 - Metti in pausa con spazio e cerca una coppia rossa che si sovrappone solo per un pezzetto: entrambi i frame sono persi per intero.
 - Seleziona `slotted` e apri la stessa scheda: tutti i frame partono allineati. Riesci a trovare una sovrapposizione parziale?
-- Sotto le righe leggi G e S per entrambi; accanto, `teoria` è l'S che la formula dà per il G misurato. Lascia girare il laboratorio fino a 60 s e confronta: fra 0,13 e 0,15 per pure, circa 0,36 per slotted.
+- Sotto le righe leggi G e S per entrambi; accanto, `teoria` è l'S che la formula dà per il G misurato. Lascia girare il laboratorio fino a 60 s e confronta: fra 0,13 e 0,15 per pure, circa 0,36 per slotted. Nota che in `pure` G è molto maggiore del carico 0.4 richiesto: il carico è solo il traffico nuovo, ogni collisione aggiunge ritrasmissioni, e ALOHA puro, il cui tetto è 0,18, ha già superato il punto in cui i tentativi si accumulano.
 
 **Cambia e prevedi.** Per ogni esecuzione calcola prima S con le due formule.
 
 - `./netlab run 162-aloha load=0.1`: i due protocolli saranno molto diversi?
-- `./netlab run 162-aloha load=0.2`: siamo vicini al limite di ALOHA puro.
+- `./netlab run 162-aloha load=0.2`: siamo vicini al limite di ALOHA puro. Trasporta ancora tutto? Poi `load=0.25`.
 - `./netlab run 162-aloha load=1`: quale frazione degli slot porta un frame buono in slotted ALOHA? Che cosa succede alle code delle stazioni?
 - `./netlab run 162-aloha stations=3`: con poche stazioni le formule sono ancora una buona guida?
 - `./netlab run 162-aloha frame=500ms` rallenta la linea del tempo, così puoi seguire i singoli frame.

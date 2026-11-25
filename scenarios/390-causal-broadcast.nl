@@ -11,8 +11,8 @@ about[it] La scena viene recitata due volte. Prima con il broadcast semplice (or
 about[it] Prova: order2=fifo (qui non aiuta: i due messaggi hanno mittenti diversi) e order2=total (tutti i processi consegnano nello stesso ordine, al prezzo di attendere i riscontri sul collegamento lento).
 param order2 causal Broadcast order in the second round: none, fifo, causal, total
 param[it] order2 Ordine del broadcast nel secondo giro: none, fifo, causal, total
-param+ slow 150ms Delay of the slow link n1 — n3
-param[it] slow Ritardo del collegamento lento n1 — n3
+param+ slow 150ms Delay of the slow link n1 — n3 (the answer overtakes the question above about 110 ms)
+param[it] slow Ritardo del collegamento lento n1 — n3 (la risposta supera la domanda oltre circa 110 ms)
 
 node n1 host x=15 y=75
 node n2 host x=50 y=20
@@ -26,6 +26,10 @@ run n1 clock peers=n1,n2,n3 mode=vector order=none
 run n2 clock peers=n1,n2,n3 mode=vector order=none
 run n3 clock peers=n1,n2,n3 mode=vector order=none
 
+# resolve the addresses first, so that ARP does not add its own delay to the first round
+at 100ms run n1 ping n3:eth1 count=1
+at 100ms run n2 ping n3 count=1
+at 100ms run n1 ping n2 count=1
 note 1s Round 1, no ordering. n1 broadcasts the question; it reaches n2 quickly, n3 slowly.
 note[it] 1s Primo giro, nessun ordinamento. n1 diffonde la domanda; arriva presto a n2, lentamente a n3.
 at 1s    run n1 clock bcast text="what time is it?"
@@ -42,8 +46,11 @@ at 4s    run n1 clock bcast text="and now?"
 at 4.1s  run n2 clock bcast text="ten o'clock"
 duration 7s
 
-expect n3 clock.violations == 1
-expect n3 clock.heldback == 1
-expect n3 clock.delivered == 4
-expect n2 clock.violations == 0
-expect n1 clock.delivered == 4
+at 6900ms run n3 check delivered "n1:clock.delivered == 4 && n2:clock.delivered == 4 && n3:clock.delivered == 4 && n2:clock.violations == 0"
+# the answer leaves 100 ms after the question and travels over fast links: it overtakes the question
+# on its way to n3 only if the slow link takes longer than that
+at 6900ms run n3 check overtaken "$slow >= 130ms"
+# round 1 (no ordering) breaks causality once; round 2 does it again unless the order is causal or total
+at 6900ms run n3 check causality "($slow > 90ms && $slow < 130ms) || (n3:check.overtaken == 0 && n3:clock.violations == 0 && n3:clock.heldback == 0) || (n3:check.overtaken == 1 && (((is_$order2 == is_none || is_$order2 == is_fifo) && n3:clock.violations == 2) || ((is_$order2 == is_causal || is_$order2 == is_total) && n3:clock.violations == 1)) && (is_$order2 != is_causal || n3:clock.heldback == 1))"
+expect n3 check.delivered == 1
+expect n3 check.causality == 1

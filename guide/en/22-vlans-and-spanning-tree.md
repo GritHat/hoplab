@@ -41,14 +41,14 @@ Worked example (lab 271, all links cost 100): s1 has the lowest MAC and is root.
 
 A port that should forward goes through **blocking → listening → learning → forwarding**, staying one *forward delay* in listening (no data, no learning) and one in learning (learning, no data). The root sends a BPDU every *hello time*; stored information expires after *max age*. Standard values are 2 s, 20 s and 15 s; netlab uses 1 s, 6 s and 3 s.
 
-When the link s1-s2 fails at 15 s, s2 loses its root port. s3 turns its blocked port into a designated one, which becomes forwarding after 2 × 3 s: the outage is two forward delays (30 s with standard timers). A failure that is not directly visible, such as a crashed root, is detected only when max age expires: up to 20 + 30 = 50 s.
+When the link s1-s2 fails at 18 s, s2 loses its root port. s3 turns its blocked port into a designated one, which becomes forwarding after 2 × 3 s: the outage is two forward delays (30 s with standard timers). A failure that is not directly visible, such as a crashed root, is detected only when max age expires: up to 20 + 30 = 50 s.
 
 <!-- detail: 3 -->
 ## In depth
 
 **Topology changes.** After the tree changes, stations may be reached through different ports, and stale table entries would black-hole traffic for the 300 s of normal ageing. A bridge that detects a change sends a topology change notification towards the root; the root sets a flag in its BPDUs and all bridges shorten the ageing time to the forward delay. netlab simply flushes the tables, which is what RSTP does.
 
-**Rapid spanning tree** (802.1w, merged into 802.1D-2004) replaces the timers with a proposal/agreement handshake on point-to-point links, defines alternate and backup port roles so that a spare root port can take over at once, and treats ports towards hosts as edge ports. Convergence takes well under a second. netlab's `rapid=1` models only one piece: a new *root* port forwards at once. `portfast=1` models edge ports.
+**Rapid spanning tree** (802.1w, merged into 802.1D-2004) replaces the timers with a proposal/agreement handshake on point-to-point links, defines alternate and backup port roles so that a spare root port can take over at once, and treats ports towards hosts as edge ports. Convergence takes well under a second. netlab's `rapid=1` implements this: RST BPDUs with proposal and agreement flags, the sync of the bridge that agrees, alternate ports that become root ports at once, automatic edge ports (no BPDU heard for three hellos), and information dropped after three missing hellos instead of max age. Backup ports and 802.1w's own topology-change rules are not modelled. `portfast=1` makes host-facing ports edge ports from the start.
 
 **Choosing the root.** With default priorities the root is the bridge with the lowest MAC address, usually the oldest one. Operators set the priority of the intended root (and of a backup) explicitly, and protect the design with root guard and BPDU guard on access ports. Port cost steers which links are used: classic values are 100 for 10 Mbit/s, 19 for 100 Mbit/s and 4 for 1 Gbit/s; netlab computes 10⁹ / bandwidth, which gives 100 for its default 10 Mbit/s links.
 
@@ -77,9 +77,9 @@ When the link s1-s2 fails at 15 s, s2 loses its root port. s3 turns its blocked 
 **Lab 271: `./netlab run 271-spanning-tree`**
 
 - Select each switch and open its `stp` tab: role and state of every port. Follow blocking, listening (0 s), learning (3 s), forwarding (6 s). s3 blocks port p0.
-- At 15 s the link s1-s2 fails. s3's p0 becomes designated; s2's new root port has cost 200. Forwarding resumes at 21 s.
-- Predict, then try: `./netlab run 271-spanning-tree rapid=1`. Which transitions get faster? Is the outage after 15 s shorter? (Look at the role of the port that must open.)
-- Predict, then try: restart, and at about 12 s type `:node s1 down`. Who becomes root, and how long is the outage compared with the link failure? Relate it to `maxage` and `fwd`.
+- At 14 s h2 pings h1, then two steady streams start between them (50 datagrams per second each way). At 18 s the link s1-s2 fails. s3's p0 becomes designated; s2's new root port has cost 200. Forwarding resumes at 24 s: two forward delays. The lab counts the datagrams of h2 that never reached h1 (the last lines of the log, `check outage`): about 300, that is 6 s.
+- Predict, then try: `./netlab run 271-spanning-tree rapid=1`. At detail 2 follow the handshake in the log: s3 proposes on p0, s2 answers with an agreement, s3 forwards. How many datagrams are lost now? (One or none: the outage is the time two BPDUs take to cross a link.) Open a BPDU in the Packets view and read the flags: role, proposal, agreement. Why did the host ports wait 3 s at the start, and what changes with `portfast=1`?
+- Predict, then try: restart, and at about 22 s type `:node s1 down`. Who becomes root, and how long is the outage compared with the link failure? Relate it to `maxage` and `fwd`.
 
 ## Check yourself
 

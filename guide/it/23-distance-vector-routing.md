@@ -81,7 +81,7 @@ Per tredici secondi i pacchetti per h3 rimbalzano fra r1 e r2 finché il loro TT
 
 - Imposta il dettaglio 2 e segui il registro dai 12 s: la metrica di 10.0.4.0/24 sale alternatamente su r1 e r2. Tieni aperta la scheda Rotte di r1 per vedere cambiare next hop e metrica.
 - A 17 s il ping di h1 segnala `tempo di vita (TTL) esaurito` da 10.0.2.2: apri la vista Pacchetti per vedere la echo request che rimbalza.
-- Prevedi, poi prova: `./netlab run 231-rip-count-to-infinity split=1`. Che cosa annuncia r1 a r2 a 12,5 s? Che cosa segnala il ping, e chi invia l'errore? (Le verifiche dello scenario sono scritte per il caso di default e risulteranno fallite: è normale.)
+- Prevedi, poi prova: `./netlab run 231-rip-count-to-infinity split=1`. Che cosa annuncia r1 a r2 a 12,5 s? Che cosa segnala il ping, e chi invia l'errore? (Le verifiche del laboratorio conoscono l'impostazione: con una protezione attiva controllano che nessuno conti e che nessun pacchetto giri in tondo.) Poi prova `triggered=1` da solo: perché in questa piccola rete basta già, e perché non ci faresti affidamento?
 - Prevedi, poi prova: `split=1 poison=1` e apri una risposta RIP da r1 a r2: quali voci hanno metrica 16? Poi `split=0 triggered=1`: il ciclo si forma ancora? Perché è una gara e non una garanzia?
 
 ## Verifica

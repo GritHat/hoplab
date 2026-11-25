@@ -73,7 +73,9 @@ note 7s The burst ends: the queue drains in a moment, the average decays slowly 
 note[it] 7s La raffica finisce: la coda si svuota in un attimo, la media decade lentamente e RED torna a tacere.
 
 duration 16s
-expect r1 red.marks > 0
+# marks replace drops for the ECN-capable flow only when ecn=1
+at 15900ms run r1 check marks "($ecn == 1 && r1:red.marks > 0) || ($ecn == 0 && r1:red.marks == 0)"
+expect r1 check.marks == 1
 expect r1 red.early > 0
 expect r1 red.drops > 50
 expect h2 sink.delay_ms < 120

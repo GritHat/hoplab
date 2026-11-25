@@ -52,6 +52,13 @@ note 11s Back under the rate: no waiting again.
 note[it] 11s Di nuovo sotto la velocità: nessuna attesa.
 
 duration 15s
-expect h2 sink.received > 950
-expect h2 sink.received < 1150
-expect h2 sink.lost > 1000
+# a 500-byte datagram is 546 bytes (4368 bits) on the wire. During the 4 s of overload the shaper
+# lets through what the rate allows, plus one bucket of burst: never more, whatever is offered
+at 5s run r1 check before "h2:sink.received"
+at 9s run r1 check during "h2:sink.received - r1:check.before"
+at 14900ms run r1 check allowed "min(2000, $shape * 4 / 4368 + $bucket / 546)"
+at 14900ms run r1 check clamp "abs(r1:check.during - r1:check.allowed) <= 0.08 * r1:check.allowed + 15"
+# what exceeds rate and bucket waits in the queue, and is lost only beyond its capacity
+at 14900ms run r1 check overflow "(2000 - r1:check.allowed > $queue + 60 && h1:cbr.sent - h2:sink.received >= 2000 - r1:check.allowed - $queue - 60) || (2000 - r1:check.allowed <= $queue + 60 && h1:cbr.sent - h2:sink.received <= 130 + 2 * $queue)"
+expect r1 check.clamp == 1
+expect r1 check.overflow == 1

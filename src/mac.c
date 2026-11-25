@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAC_MAXS   24                   /* stations */
+#define MAC_MAXS   64                   /* stations */
 #define MAC_QCAP   16                   /* frames queued per station */
 #define MAC_HIST   256                  /* timeline cells kept per station */
 #define MAC_CELLS  4                    /* timeline cells per frame time */
@@ -59,7 +59,10 @@ typedef struct {
     nl_ev    timer;
     long     win_success, win_frames;
     /* last sweep */
-    int      have_sweep, sweep_proto;
+    int      have_sweep, sweep_proto, sweep_pts;     /* points computed so far */
+    int      sw_proto, sw_n, sw_F, sw_hidden, sw_rts, sw_k;
+    double   sw_p;
+    nl_ev    sw_timer;
     struct { double load, g, s, theory; } pt[SWEEP_PTS];
 } mac_state;
 
@@ -381,43 +384,66 @@ static void mac_tick(void *ctx)
     m->timer = nl_after(m->n, m->frame, mac_tick, m);
 }
 
-static int mac_sweep(mac_state *m, int proto, int n, int F, double p, int hidden, int rts)
+/* A sweep simulates nine offered loads. Each one is a separate short
+ * simulation; they are computed one per timer event, 150 ms of virtual time
+ * apart, so that the interface keeps drawing while the table fills. */
+static const double SWEEP_LOADS[SWEEP_PTS] = { 0.1, 0.2, 0.35, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0 };
+
+static void sweep_step(void *ctx)
 {
-    static const double LOADS[SWEEP_PTS] = { 0.1, 0.2, 0.35, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0 };
+    mac_state *m = ctx;
     sim *s = malloc(sizeof(*s));
+    char tbuf[40] = "", name[28];
+    int k = m->sw_k, j;
+    long i, steps = 2000L * m->sw_F;
     double peak = 0;
-    char name[28];
-    int k;
-    long i, steps = 2000L * F;
 
+    m->sw_timer = 0;
     if (!s)
-        return -1;
-    nl_log(m->n, NL_L_LINK, 1, 0, T_INFO "mac sweep" T_RESET " %s (%s), %d %s, a=%.3f", PROTO_NAME[proto],
-           _(PROTO_TITLE[proto]), n, _("stations"), 1.0 / F);
-    for (k = 0; k < SWEEP_PTS; k++) {
-        char tbuf[40] = "";
-
-        sim_reset(s, proto, n, F, LOADS[k], p, hidden, rts);
-        for (i = 0; i < steps; i++)
-            sim_tick(s);
-        m->pt[k].load = LOADS[k];
-        m->pt[k].g = sim_G(s);
-        m->pt[k].s = sim_S(s);
-        m->pt[k].theory = theory(proto, m->pt[k].g, 1.0 / F);
-        if (m->pt[k].s > peak)
-            peak = m->pt[k].s;
-        if (m->pt[k].theory >= 0)
-            snprintf(tbuf, sizeof(tbuf), "  %s %.3f", _("theory"), m->pt[k].theory);
-        nl_log(m->n, NL_L_LINK, 1, 0, "  %s %.2f  G=%5.2f  " T_BOLD "S=%.3f" T_RESET T_DIM "%s", _("load"),
-               LOADS[k], m->pt[k].g, m->pt[k].s, tbuf);
-    }
+        return;
+    sim_reset(s, m->sw_proto, m->sw_n, m->sw_F, SWEEP_LOADS[k], m->sw_p, m->sw_hidden, m->sw_rts);
+    for (i = 0; i < steps; i++)
+        sim_tick(s);
+    m->pt[k].load = SWEEP_LOADS[k];
+    m->pt[k].g = sim_G(s);
+    m->pt[k].s = sim_S(s);
+    m->pt[k].theory = theory(m->sw_proto, m->pt[k].g, 1.0 / m->sw_F);
     free(s);
-    m->have_sweep = 1;
-    m->sweep_proto = proto;
+    if (m->pt[k].theory >= 0)
+        snprintf(tbuf, sizeof(tbuf), "  %s %.3f", _("theory"), m->pt[k].theory);
+    nl_log(m->n, NL_L_LINK, 1, 0, "  %s %.2f  G=%5.2f  " T_BOLD "S=%.3f" T_RESET T_DIM "%s", _("load"),
+           SWEEP_LOADS[k], m->pt[k].g, m->pt[k].s, tbuf);
+    m->sweep_pts = k + 1;
+    if (++m->sw_k < SWEEP_PTS) {
+        m->sw_timer = nl_after(m->n, NL_MS(150), sweep_step, m);
+        return;
+    }
+    for (j = 0; j < SWEEP_PTS; j++)
+        if (m->pt[j].s > peak)
+            peak = m->pt[j].s;
     nl_log(m->n, NL_L_LINK, 1, 0, T_OK "  %s S=%.3f", _("best throughput"), peak);
-    snprintf(name, sizeof(name), "mac.%s.peak", PROTO_NAME[proto]);
+    snprintf(name, sizeof(name), "mac.%s.peak", PROTO_NAME[m->sw_proto]);
     nl_count_set(m->n, name, 100.0 * peak);
     nl_count_set(m->n, "mac.sweep_peak_pct", 100.0 * peak);
+    nl_count(m->n, "mac.sweeps", 1);
+}
+
+static int mac_sweep(mac_state *m, int proto, int n, int F, double p, int hidden, int rts)
+{
+    nl_cancel(&m->sw_timer);
+    nl_log(m->n, NL_L_LINK, 1, 0, T_INFO "mac sweep" T_RESET " %s (%s), %d %s, a=%.3f", PROTO_NAME[proto],
+           _(PROTO_TITLE[proto]), n, _("stations"), 1.0 / F);
+    m->sw_proto = proto;
+    m->sw_n = n;
+    m->sw_F = F;
+    m->sw_p = p;
+    m->sw_hidden = hidden;
+    m->sw_rts = rts;
+    m->sw_k = 0;
+    m->have_sweep = 1;
+    m->sweep_proto = proto;
+    m->sweep_pts = 0;
+    m->sw_timer = nl_after(m->n, 0, sweep_step, m);
     return 0;
 }
 
@@ -450,7 +476,10 @@ static int mac_run(nl_node *n, const nl_args *a)
         return -1;
     }
     if (ns < 2) ns = 2;
-    if (ns > MAC_MAXS) ns = MAC_MAXS;
+    if (ns > MAC_MAXS) {
+        nl_log(n, NL_L_LINK, 1, 0, T_WARN "mac: %s %d", _("too many stations: using the maximum,"), MAC_MAXS);
+        ns = MAC_MAXS;
+    }
     if (frame < 100) frame = 100;
     prop = nl_arg_time(a, "prop", frame / 100);
     F = prop > 0 ? (int)((frame + prop / 2) / prop) : 400;
@@ -482,6 +511,7 @@ static void mac_stop(nl_node *n)
     if (!m)
         return;
     nl_cancel(&m->timer);
+    nl_cancel(&m->sw_timer);
     nl_mod_set(n, &mac_mod, NULL);
     free(m);
 }
@@ -491,7 +521,7 @@ static void mac_crash(nl_node *n)
     mac_state *m = nl_mod_get(n, &mac_mod);
 
     if (m)
-        m->timer = 0;
+        m->timer = m->sw_timer = 0;
 }
 
 static void mac_recover(nl_node *n)
@@ -500,6 +530,8 @@ static void mac_recover(nl_node *n)
 
     if (m && m->running && !m->timer)
         m->timer = nl_after(n, m->frame, mac_tick, m);
+    if (m && m->have_sweep && m->sw_k < SWEEP_PTS && !m->sw_timer)
+        m->sw_timer = nl_after(n, NL_MS(150), sweep_step, m);
 }
 
 static int mac_panel(nl_node *n, int x, int y, int w, int h, int detail)
@@ -554,7 +586,7 @@ static int mac_panel(nl_node *n, int x, int y, int w, int h, int detail)
         int bw = w - 34;
 
         tui_print(x, y + row++, w, txt, T_BOLD "S(G)" T_RESET " %s", _(PROTO_TITLE[m->sweep_proto]));
-        for (k = 0; k < SWEEP_PTS && row < h; k++) {
+        for (k = 0; k < m->sweep_pts && row < h; k++) {
             tui_print(x, y + row, 8, dim, "G=%-5.2f", m->pt[k].g);
             if (bw > 4) {
                 tui_bar(x + 8, y + row, bw, m->pt[k].s, C_OK);

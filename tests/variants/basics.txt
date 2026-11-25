@@ -1,0 +1,25 @@
+# Parameter variants verified by tests/run-variants.sh: each line is run with
+# seeds 1..5 and must give this result every time.
+#   PASS  scenario  key=value ...
+PASS  100-two-hosts
+PASS  100-two-hosts  bw=100k
+PASS  100-two-hosts  delay=1ms
+PASS  100-two-hosts  delay=200ms
+PASS  101-ping
+PASS  101-ping  loss=0.05
+PASS  101-ping  loss=0.3
+PASS  101-ping  loss=0.9
+PASS  102-link-properties
+PASS  102-link-properties  bw=1500k
+PASS  102-link-properties  bw=3M
+PASS  102-link-properties  bw=500k
+PASS  102-link-properties  delay=100ms
+PASS  102-link-properties  delay=1ms
+PASS  102-link-properties  loss=0.1
+PASS  102-link-properties  queue=100
+PASS  102-link-properties  queue=5
+PASS  102-link-properties  queue=5 bw=500k
+PASS  200-static-routing
+PASS  201-mtu-fragmentation
+PASS  202-routing-loop
+PASS  203-vlans

@@ -391,12 +391,25 @@ static void server_stop(nl_node *n)
     free(s);
 }
 
+/* A crash stops the server; its configuration and the lease table are on
+ * stable storage (as the lease file of a real server is), so that after a
+ * reboot it does not hand out addresses that are still in use. */
+static void server_crash(nl_node *n)
+{
+    dhcp_server *s = nl_mod_get(n, &dhcps_mod);
+
+    if (s)
+        s->timer = 0;
+}
+
 static void server_recover(nl_node *n)
 {
     dhcp_server *s = nl_mod_get(n, &dhcps_mod);
 
-    if (s)                              /* leases are soft state: a reboot forgets them */
+    if (s && !s->timer) {
+        nl_log(n, NL_L_APP, 1, 0, T_WARN "DHCP" T_RESET " %s", _("server restarted: lease table read back from disk"));
         s->timer = nl_after(n, NL_SEC(1), server_sweep, s);
+    }
 }
 
 static int server_panel(nl_node *n, int x, int y, int w, int h, int detail)
@@ -428,7 +441,7 @@ static const nl_module dhcps_mod = {
                 "run NODE dhcp release               give the address back\n"
                 "  Hosts in a DHCP scenario start with no address; give the server a static ip."),
     .theory = NULL,                     /* the theory is on the registered front module below */
-    .run = server_run, .stop = server_stop, .recover = server_recover, .crash = server_stop, .panel = server_panel,
+    .run = server_run, .stop = server_stop, .recover = server_recover, .crash = server_crash, .panel = server_panel,
 };
 /* not registered: the `dhcp` name is owned by the front dispatcher below */
 
@@ -742,7 +755,7 @@ static const nl_module dhcp_mod = {
                  "address, followed by a list of typed options, of which option 53 (the message "
                  "type) turns BOOTP into DHCP. Here one server serves its own subnet directly; real "
                  "networks reach a central server through relay agents."),
-    .run = dhcp_front, .stop = server_stop, .recover = server_recover, .crash = server_stop,
+    .run = dhcp_front, .stop = server_stop, .recover = server_recover, .crash = server_crash,
     .panel = server_panel,
 };
 NL_MODULE(dhcp_mod)

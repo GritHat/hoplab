@@ -1,0 +1,45 @@
+# Parameter variants verified by tests/run-variants.sh: each line is run with
+# seeds 1..5 and must give this result every time.
+#   PASS  scenario  key=value ...
+PASS  170-switch-learning
+PASS  170-switch-learning  delay=1ms
+PASS  170-switch-learning  delay=50ms
+PASS  270-broadcast-storm
+PASS  270-broadcast-storm  delay=1ms
+PASS  270-broadcast-storm  delay=200ms
+PASS  270-broadcast-storm  delay=20ms
+PASS  270-broadcast-storm  delay=50ms
+PASS  271-spanning-tree
+PASS  271-spanning-tree  fwd=1s
+PASS  271-spanning-tree  fwd=6s
+PASS  271-spanning-tree  hello=2s
+PASS  271-spanning-tree  hello=3s
+PASS  271-spanning-tree  hello=500ms
+PASS  271-spanning-tree  maxage=12s
+PASS  271-spanning-tree  maxage=3s
+PASS  271-spanning-tree  portfast=1
+PASS  271-spanning-tree  rapid=1
+PASS  271-spanning-tree  rapid=1 fwd=1s
+PASS  271-spanning-tree  rapid=1 fwd=6s
+PASS  271-spanning-tree  rapid=1 hello=2s
+PASS  271-spanning-tree  rapid=1 hello=3s
+PASS  271-spanning-tree  rapid=1 portfast=1
+PASS  370-stp-tuning
+PASS  370-stp-tuning  fast=10M
+PASS  370-stp-tuning  fast=10M rapid=1
+PASS  370-stp-tuning  fast=1G
+PASS  370-stp-tuning  fast=1M
+PASS  370-stp-tuning  fwd=1s
+PASS  370-stp-tuning  fwd=6s
+PASS  370-stp-tuning  fwd=6s rapid=1
+PASS  370-stp-tuning  hello=500ms
+PASS  370-stp-tuning  maxage=12s
+PASS  370-stp-tuning  maxage=3s
+PASS  370-stp-tuning  rapid=1
+PASS  370-stp-tuning  rapid=1 hello=500ms
+PASS  370-stp-tuning  root=s1
+PASS  370-stp-tuning  root=s1 rapid=1
+PASS  370-stp-tuning  root=s2
+PASS  370-stp-tuning  root=s2 rapid=1
+PASS  370-stp-tuning  root=s4
+PASS  370-stp-tuning  root=s4 rapid=1

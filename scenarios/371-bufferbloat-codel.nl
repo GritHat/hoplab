@@ -13,8 +13,11 @@ about  waiting longer than the target for a whole interval, and keeps the queue 
 about
 about  Watch: the ping rtt graphs of a1 and b1; mean delay in the sinks a2 and b2; the queue and
 about  wait graphs and the qdisc panels of ra and rb. Try: buffer=20 (a small buffer hides the
-about  problem and costs nothing here); aqm=pie or aqm=red; target and interval; load=900k (no
-about  overload: both behave the same, CoDel never drops).
+about  problem and costs nothing here); aqm=pie or aqm=red; aqm=fifo (path B becomes path A); target
+about  and interval; load=900k (no overload: both behave the same, CoDel never drops). One caution
+about  about what you see: CoDel was designed for senders that slow down when a packet is dropped. This
+about  UDP source is deaf, so CoDel has to raise its drop rate step by step until it matches the
+about  overload: with interval=500ms or load=3M that takes most of the run and the queue stays long.
 about[it]  Due percorsi identici, ciascuno con una strozzatura da 1 Mbit/s che riceve più traffico di
 about[it]  quanto possa trasportare. Il percorso A (in alto) ha un semplice buffer drop-tail di `buffer`
 about[it]  pacchetti; il percorso B (in basso) gestisce lo stesso buffer con un AQM (CoDel di default).
@@ -25,8 +28,12 @@ about[it]  dalla testa appena i pacchetti aspettano più del target per un inter
 about[it]
 about[it]  Osserva: i grafici ping rtt di a1 e b1; il ritardo medio nei sink a2 e b2; i grafici di coda
 about[it]  e attesa e i pannelli qdisc di ra e rb. Prova: buffer=20 (un buffer piccolo nasconde il
-about[it]  problema e qui non costa nulla); aqm=pie o aqm=red; target e interval; load=900k (nessun
-about[it]  sovraccarico: i due si comportano allo stesso modo, CoDel non scarta mai).
+about[it]  problema e qui non costa nulla); aqm=pie o aqm=red; aqm=fifo (il percorso B diventa il percorso
+about[it]  A); target e interval; load=900k (nessun sovraccarico: i due si comportano allo stesso modo,
+about[it]  CoDel non scarta mai). Un'avvertenza su ciò che vedi: CoDel è stato progettato per mittenti che
+about[it]  rallentano quando un pacchetto viene scartato. Questa sorgente UDP è sorda, quindi CoDel deve
+about[it]  alzare il proprio ritmo di scarto passo dopo passo finché eguaglia il sovraccarico: con
+about[it]  interval=500ms o load=3M ci vuole gran parte dell'esecuzione e la coda resta lunga.
 param      buffer 200 Buffer of both bottlenecks (packets)
 param[it]  buffer Buffer di entrambe le strozzature (pacchetti)
 param      load 1300k Offered load on each 1 Mbit/s bottleneck
@@ -71,8 +78,18 @@ note 18s The sources stop; the full buffer of path A still needs most of a secon
 note[it] 18s Le sorgenti si fermano; il buffer pieno del percorso A ha ancora bisogno di quasi un secondo per svuotarsi.
 
 duration 21s
-expect a2 sink.delay_ms > 400
-expect b2 sink.delay_ms < 150
-expect rb codel.drops > 100
-expect a2 sink.received > 3000
-expect b2 sink.received > 3000
+# on the wire each 500-byte datagram is 546 bytes: the 1 Mbit/s bottleneck is overloaded above about 915k
+at 20900ms run ra check overload "$load * 1.092 > 1M"
+at 20900ms run ra check aqm "is_$aqm == is_codel || is_$aqm == is_pie || is_$aqm == is_red"
+at 20900ms run ra check drops "rb:codel.drops + rb:pie.drops + rb:red.drops"
+# path A: a full drop-tail buffer makes everybody wait buffer x 4.4 ms
+at 20900ms run ra check bloat "(ra:check.overload == 1 && a2:sink.delay_ms >= 0.6 * $buffer * 4.37) || (ra:check.overload == 0 && a2:sink.delay_ms < 30)"
+# path B without an AQM is path A; with one it waits less and delivers about as much
+at 20900ms run ra check same "ra:check.aqm == 1 || abs(a2:sink.delay_ms - b2:sink.delay_ms) < 20"
+at 20900ms run ra check managed "ra:check.aqm == 0 || (ra:check.overload == 0 && ra:check.drops == 0 && b2:sink.delay_ms < 30) || (ra:check.overload == 1 && ra:check.drops > 50 && b2:sink.delay_ms <= a2:sink.delay_ms + 5 && b2:sink.received >= 0.8 * a2:sink.received)"
+# CoDel and PIE near their usual settings, against a moderate overload: far below the bloated path
+at 20900ms run ra check short "ra:check.overload == 0 || $buffer < 100 || (is_$aqm != is_codel && is_$aqm != is_pie) || $interval > 200ms || $load > 2M || b2:sink.delay_ms < 0.5 * a2:sink.delay_ms"
+expect ra check.bloat == 1
+expect ra check.same == 1
+expect ra check.managed == 1
+expect ra check.short == 1

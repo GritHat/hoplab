@@ -72,7 +72,7 @@ With the defaults expect roughly 58% in `open`, 14% in `hidden` and 58% in `rtsc
 ./netlab run 460-hidden-terminal frame=10ms --seed 1 --headless
 ```
 
-**Experiment 1 — throughput is the wrong metric at low load.** Hypothesis: hidden terminals cause collisions at any load, but lose throughput only when retransmissions can no longer be absorbed. Manipulation: `load=0.05`, `0.2`, `0.6`, `1.0`. Metric: `mac.throughput_pct`, and the collision ratio `mac.collisions / mac.sent`, in `hidden` against `open`. Expected: at 0.2 all three cells carry about 20% (so the scenario's expectations for `open` and `rtscts`, calibrated for 0.6, fail), while `hidden` already shows one to two orders of magnitude more collisions; from 0.6 upwards `hidden` saturates near 14% and starts dropping frames.
+**Experiment 1 — throughput is the wrong metric at low load.** Hypothesis: hidden terminals cause collisions at any load, but lose throughput only when retransmissions can no longer be absorbed. Manipulation: `load=0.05`, `0.2`, `0.6`, `1.0`. Metric: `mac.throughput_pct`, and the collision ratio `mac.collisions / mac.sent`, in `hidden` against `open`. Expected: at 0.2 all three cells carry about 20% (the lab's check `light` verifies it), while `hidden` already shows one to two orders of magnitude more collisions; from 0.6 upwards `hidden` saturates near 14% and starts dropping frames.
 
 **Experiment 2 — size of the hidden population.** Hypothesis: the damage grows with the number of stations hidden from each other, not merely with the load. Manipulation: `stations=2`, `4`, `10` at `load=0.6`. Metric: throughput of `hidden` relative to `open`. Expected: about 42%, 33% and 14% against a nearly constant 58% in `open`.
 

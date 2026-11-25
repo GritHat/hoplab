@@ -81,7 +81,7 @@ For thirteen seconds packets to h3 bounce between r1 and r2 until their TTL expi
 
 - Set detail 2 and follow the log from 12 s: the metric of 10.0.4.0/24 climbs alternately on r1 and r2. Keep the Routes tab of r1 open to see next hop and metric change.
 - At 17 s the ping from h1 reports `time to live exceeded` from 10.0.2.2: open the packets view to see the echo request bouncing.
-- Predict, then try: `./netlab run 231-rip-count-to-infinity split=1`. What does r1 advertise to r2 at 12.5 s? What does the ping report, and who sends the error? (The scenario's expectations are written for the default and will be reported as failed: that is normal.)
+- Predict, then try: `./netlab run 231-rip-count-to-infinity split=1`. What does r1 advertise to r2 at 12.5 s? What does the ping report, and who sends the error? (The lab's checks know the setting: with any protection on they verify that nobody counts and no packet loops.) Then try `triggered=1` alone: why is that already enough in this small network, and why would you not rely on it?
 - Predict, then try: `split=1 poison=1` and open a RIP response from r1 to r2: which entries have metric 16? Then `split=0 triggered=1`: does the loop still form? Why is this a race and not a guarantee?
 
 ## Check yourself

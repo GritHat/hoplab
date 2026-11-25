@@ -74,12 +74,12 @@ To read more: Kurose and Ross, chapter 6, section "Multiple Access Links and Pro
 - Select `pure` with `n` and move to its `mac` tab with the arrow keys (press Tab until the node panel has the focus; `z` enlarges it). There is one row per station: green is a delivered frame, red a collision, yellow dots a station waiting to retry.
 - Pause with space and look for a red pair that overlaps only by a small piece: both frames are lost entirely.
 - Select `slotted` and open the same tab: all frames start aligned. Can you find a partial overlap?
-- Below the rows read G and S for both; next to them `theory` is the S that the formula gives for the measured G. Let the lab run to 60 s and compare: about 0.13 to 0.15 for pure, about 0.36 for slotted.
+- Below the rows read G and S for both; next to them `theory` is the S that the formula gives for the measured G. Let the lab run to 60 s and compare: about 0.13 to 0.15 for pure, about 0.36 for slotted. Notice that G is much larger than the load of 0.4 you asked for in `pure`: the load is only the new traffic, every collision adds retransmissions, and pure ALOHA, whose ceiling is 0.18, is already past the point where the retries pile up.
 
 **Change this and predict.** For each run compute S from the two formulas first.
 
 - `./netlab run 162-aloha load=0.1`: will the two protocols differ much?
-- `./netlab run 162-aloha load=0.2`: this is close to the limit of pure ALOHA.
+- `./netlab run 162-aloha load=0.2`: this is close to the limit of pure ALOHA. Does it still carry everything? Then `load=0.25`.
 - `./netlab run 162-aloha load=1`: what fraction of slots carries a good frame in slotted ALOHA? What happens to the queues of the stations?
 - `./netlab run 162-aloha stations=3`: with few stations, are the formulas still a good guide?
 - `./netlab run 162-aloha frame=500ms` slows the timeline down so that you can follow single frames.

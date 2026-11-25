@@ -1,0 +1,36 @@
+# Parameter variants verified by tests/run-variants.sh: each line is run with
+# seeds 1..5 and must give this result every time.
+#   PASS  scenario  key=value ...
+PASS  230-rip-convergence
+PASS  230-rip-convergence  poison=1
+PASS  230-rip-convergence  triggered=0
+PASS  230-rip-convergence  update=10s
+PASS  230-rip-convergence  update=2s
+PASS  231-rip-count-to-infinity
+PASS  231-rip-count-to-infinity  poison=1
+PASS  231-rip-count-to-infinity  split=1
+PASS  231-rip-count-to-infinity  split=1 poison=1
+PASS  231-rip-count-to-infinity  split=1 triggered=1
+PASS  231-rip-count-to-infinity  split=1 triggered=1 poison=1
+PASS  231-rip-count-to-infinity  triggered=1
+PASS  232-ospf-costs
+PASS  232-ospf-costs  hello=1s
+PASS  232-ospf-costs  hello=5s
+PASS  232-ospf-costs  newcost=1
+PASS  232-ospf-costs  newcost=19
+PASS  232-ospf-costs  newcost=20
+PASS  232-ospf-costs  newcost=200
+PASS  232-ospf-costs  newcost=5
+PASS  330-ospf-vs-rip
+PASS  330-ospf-vs-rip  carrier=0
+PASS  330-ospf-vs-rip  carrier=0 hello=3s
+PASS  330-ospf-vs-rip  carrier=0 hello=500ms
+PASS  330-ospf-vs-rip  hello=3s
+PASS  330-ospf-vs-rip  hello=500ms
+PASS  330-ospf-vs-rip  proto=rip
+PASS  330-ospf-vs-rip  proto=rip carrier=0
+PASS  330-ospf-vs-rip  proto=rip update=10s
+PASS  330-ospf-vs-rip  proto=rip update=20s
+PASS  330-ospf-vs-rip  proto=rip update=2s
+PASS  330-ospf-vs-rip  spf=1s
+PASS  330-ospf-vs-rip  spf=2s

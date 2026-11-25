@@ -73,7 +73,7 @@ With `λ` = 1/s, `T` = 60 s gives a 98.4% hit ratio and `T` = 5 s gives 83%. A C
 
 **DNS.** Measurements (Jung et al.) show that, because name popularity is heavy-tailed, A-record TTLs of a few minutes cost little hit ratio; what matters is caching the NS records of the delegation chain. Short TTLs enable load balancing and failover but expose users to an authoritative outage; resolvers clamp extreme TTLs and may serve stale data (RFC 8767).
 
-**In netlab.** Coding: frames are coded whole, the interleaver spans one frame, RS uses fixed (255,223) blocks. MAC: time advances in ticks of one propagation delay, every station is one tick from every other, ten stations with finite queues, so agreement with theory is in shape. STP: timers shortened (1/6/3 s); `rapid=1` only lets a new root port forward at once. DNS: no TCP, EDNS or DNSSEC.
+**In netlab.** Coding: frames are coded whole, the interleaver spans one frame, RS uses fixed (255,223) blocks. MAC: time advances in ticks of one propagation delay, every station is one tick from every other, ten stations with finite queues, so agreement with theory is in shape. STP: timers shortened (1/6/3 s); `rapid=1` is Rapid Spanning Tree with proposal/agreement, sync, alternate and automatic edge ports and three-hello ageing (no backup ports, 802.1D topology-change rules). DNS: no TCP, EDNS or DNSSEC.
 
 **Primary literature.**
 
@@ -93,11 +93,13 @@ With `λ` = 1/s, `T` = 60 s gives a 98.4% hit ratio and `T` = 5 s gives 83%. A C
 
 **361-mac-curves.** `./netlab run 361-mac-curves`. The node bench runs seven sweeps; open its `mac` tab (bars, the yellow mark is the theory) or read the tables in the log: `load`, measured `G`, `S`, `theory`. Check by hand one row of ALOHA and one of non-persistent CSMA with the formulas above. Experiments: `prop=10ms` (so `a` = 0.1: predict that the ALOHA peaks do not move and every CSMA peak falls, roughly from 0.84 to 0.6 for non-persistent); `stations=3` and `stations=24` (distance from the infinite-population model); `:` then `bench mac sweep proto=csmap p=0.01`.
 
-**370-stp-tuning.** `./netlab run 370-stp-tuning`. Four switches in a ring, s3 forced root by priority 4096. In the `stp` tab of each switch read role, state and cost of every port. Verify the costs: s1 reaches the root with cost 110 through s4 (100 + 10) and 200 through s2, so p1 is its root port and p0 is blocked. At 14 s the root crashes: measure the time until "learning → forwarding" on s1 (counter `stp.last_change_ms`). Expected about 10.8 s: the remaining age of the information plus two forward delays. Experiments:
+**370-stp-tuning.** `./netlab run 370-stp-tuning`. Four switches in a ring, s3 forced root by priority 4096. In the `stp` tab of each switch read role, state and cost of every port. Verify the costs: s1 reaches the root with cost 110 through s4 (100 + 10) and 200 through s2, so p1 is its root port and p0 is blocked. Two streams of 50 datagrams per second run between h1 and h2. At 20 s the root crashes: measure the outage as the datagrams of h1 missing at h2 (the last lines of the log, `check outage`, 20 ms each), or as the time until "learning → forwarding" on s1. Expected about 10.8 s: the remaining age of the information plus two forward delays. Experiments:
 
 - `hello=200ms maxage=1s fwd=500ms`: predict the outage (under 2 s). Then, in the lab, `:` and `link s1 s4 loss=0.3`: with what probability are five consecutive BPDUs lost, and what happens when they are?
 - `:` then `s1 stp cost p1 500`: predict the new root port of s1 and which port of the ring blocks.
-- `rapid=1`: predict the gain. Here there is none, because the port that must open after the crash is a designated port of the new root, not a root port.
+- `rapid=1`: predict the gain. The dead root is given up after three missing hellos (3 s at most, instead of max age), the survivors elect s1, and its port towards s2 opens with a proposal/agreement handshake instead of two forward delays: about 2 s of outage instead of about 11. Which part of the remaining 2 s could `hello=500ms` remove?
+- `root=s1` or `root=s2`: the root is now a switch with a host attached. What can no protocol repair?
+- `fast=10M`: all costs are equal. Predict the root port of s1, and why the death of the root no longer interrupts the streams.
 
 **340-dns-ttl.** `./netlab run 340-dns-ttl`. In the log: the first `dig shop.example.com` costs one upstream query and about 68 ms and returns the chain shop → www → host → A; the second lookup of `ghost` is answered from the negative cache in 4 ms; `www` at 7 s is answered from the cache with the TTL decremented to 55. Experiments: `ttl=3` (the entry has expired at 7 s: one more upstream query); `negttl=1` (the second NXDOMAIN goes upstream); in the lab, `:` then `r dns flush` and `h1 dig www.example.com server=r`.
 

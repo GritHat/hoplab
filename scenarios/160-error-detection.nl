@@ -40,8 +40,12 @@ note 20s     All three lose data: detection only tells you a frame is bad. Getti
 note[it] 20s Tutti e tre perdono dati: rilevare dice solo che il frame è rovinato. Per consegnarlo serve ritrasmettere o correggere (prossimo laboratorio).
 
 duration 22s
-expect a2 udp.bad_checksum >= 5
-expect b2 udp.bad_checksum >= 1
-expect c2 udp.bad_checksum == 0
-expect c2 ip.bad_checksum == 0
-expect c2 sink.received >= 90
+# the CRC lets nothing damaged through, whatever the noise
+at 21900ms run c2 check crc "c2:udp.bad_checksum == 0 && c2:ip.bad_checksum == 0"
+# parity stops the odd numbers of flips: fewer damaged datagrams get past it than past no check at all
+at 21900ms run c2 check parity "b2:udp.bad_checksum <= a2:udp.bad_checksum + a2:ip.bad_checksum"
+# detection does not deliver: only the frames the noise spared arrive, about N*exp(-ber*bits)
+at 21900ms run c2 check survivors "abs(c2:sink.received - 100000 / $size * exp(-$ber * ($size + 46) * 8)) <= 25000 / $size + 5"
+expect c2 check.crc == 1
+expect c2 check.parity == 1
+expect c2 check.survivors == 1

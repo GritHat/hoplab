@@ -78,7 +78,10 @@ note 3s The first PUNCH that arrives too early is filtered, yet it opened its ow
 note[it] 3s Il primo PUNCH che arriva troppo presto viene filtrato, ma ha aperto il proprio NAT al peer: i successivi passano.
 duration 8s
 
-expect a punch.ok == 1
-expect b punch.ok == 1
-expect rv rendezvous.introductions >= 1
-expect nb nat.blocked >= 1
+# the pairs that cannot be punched: symmetric against port-restricted or symmetric
+at 7900ms run rv check hopeless "(is_$typea == is_symmetric && (is_$typeb == is_port || is_$typeb == is_symmetric)) || (is_$typeb == is_symmetric && is_$typea == is_port)"
+at 7900ms run rv check punched "rv:rendezvous.introductions >= 1 && ((rv:check.hopeless == 0 && a:punch.ok == 1 && b:punch.ok == 1) || (rv:check.hopeless == 1 && a:punch.ok == 0 && b:punch.ok == 0 && na:nat.blocked >= 1 && nb:nat.blocked >= 1))"
+# with the default timing the early PUNCH of a meets a filtering NAT on b's side
+at 7900ms run rv check early "is_$typeb == is_full || $waitb < 50ms || nb:nat.blocked >= 1"
+expect rv check.punched == 1
+expect rv check.early == 1

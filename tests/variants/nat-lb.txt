@@ -1,0 +1,89 @@
+# Parameter variants verified by tests/run-variants.sh: each line is run with
+# seeds 1..5 and must give this result every time.
+#   PASS  scenario  key=value ...
+PASS  250-nat-basics
+PASS  250-nat-basics  preserve=1
+PASS  250-nat-basics  timeout=5s
+PASS  250-nat-basics  type=full
+PASS  250-nat-basics  type=restricted
+PASS  250-nat-basics  type=symmetric
+PASS  251-port-forwarding
+PASS  251-port-forwarding  hairpin=1
+PASS  251-port-forwarding  port=80
+PASS  252-load-balancer
+PASS  252-load-balancer  algo=consistent
+PASS  252-load-balancer  algo=hash
+PASS  252-load-balancer  algo=leastconn
+PASS  252-load-balancer  algo=maglev
+PASS  252-load-balancer  algo=p2c
+PASS  252-load-balancer  algo=wrr
+PASS  252-load-balancer  check=250ms
+PASS  252-load-balancer  check=3s
+PASS  252-load-balancer  check=3s fall=4
+PASS  252-load-balancer  check=500ms
+PASS  252-load-balancer  fall=1
+PASS  252-load-balancer  fall=4
+PASS  252-load-balancer  flows=40
+PASS  252-load-balancer  flows=5
+PASS  252-load-balancer  life=0
+PASS  252-load-balancer  life=1
+PASS  252-load-balancer  life=20
+PASS  350-nat-hole-punching
+PASS  350-nat-hole-punching  typea=full typeb=full
+PASS  350-nat-hole-punching  typea=full typeb=port
+PASS  350-nat-hole-punching  typea=full typeb=restricted
+PASS  350-nat-hole-punching  typea=full typeb=symmetric
+PASS  350-nat-hole-punching  typea=port typeb=full
+PASS  350-nat-hole-punching  typea=port typeb=restricted
+PASS  350-nat-hole-punching  typea=port typeb=symmetric
+PASS  350-nat-hole-punching  typea=restricted typeb=full
+PASS  350-nat-hole-punching  typea=restricted typeb=port
+PASS  350-nat-hole-punching  typea=restricted typeb=restricted
+PASS  350-nat-hole-punching  typea=restricted typeb=symmetric
+PASS  350-nat-hole-punching  typea=symmetric typeb=full
+PASS  350-nat-hole-punching  typea=symmetric typeb=port
+PASS  350-nat-hole-punching  typea=symmetric typeb=restricted
+PASS  350-nat-hole-punching  typea=symmetric typeb=symmetric
+PASS  350-nat-hole-punching  waitb=0ms
+PASS  350-nat-hole-punching  waitb=1s
+PASS  351-lb-algorithms
+PASS  351-lb-algorithms  affinity=0
+PASS  351-lb-algorithms  algo=consistent
+PASS  351-lb-algorithms  algo=consistent key=src
+PASS  351-lb-algorithms  algo=consistent w1=1
+PASS  351-lb-algorithms  algo=consistent w1=5 w2=2
+PASS  351-lb-algorithms  algo=hash
+PASS  351-lb-algorithms  algo=hash key=src
+PASS  351-lb-algorithms  algo=leastconn
+PASS  351-lb-algorithms  algo=leastconn affinity=0
+PASS  351-lb-algorithms  algo=leastconn w1=5 w2=2
+PASS  351-lb-algorithms  algo=maglev
+PASS  351-lb-algorithms  algo=maglev key=src
+PASS  351-lb-algorithms  algo=p2c
+PASS  351-lb-algorithms  algo=p2c affinity=0
+PASS  351-lb-algorithms  algo=p2c w1=5 w2=2
+PASS  351-lb-algorithms  algo=rr
+PASS  351-lb-algorithms  algo=rr affinity=0
+PASS  351-lb-algorithms  key=src
+PASS  351-lb-algorithms  life=1
+PASS  351-lb-algorithms  life=10
+PASS  351-lb-algorithms  w1=1
+PASS  351-lb-algorithms  w1=1 w3=4
+PASS  351-lb-algorithms  w1=10
+PASS  351-lb-algorithms  w1=5 w2=2
+PASS  450-consistent-hashing
+PASS  450-consistent-hashing  affinity=1
+PASS  450-consistent-hashing  affinity=1 algo=hash
+PASS  450-consistent-hashing  affinity=1 algo=maglev
+PASS  450-consistent-hashing  affinity=1 algo=rr
+PASS  450-consistent-hashing  algo=hash
+PASS  450-consistent-hashing  algo=leastconn
+PASS  450-consistent-hashing  algo=maglev
+PASS  450-consistent-hashing  algo=p2c
+PASS  450-consistent-hashing  algo=rr
+PASS  450-consistent-hashing  algo=wrr
+PASS  450-consistent-hashing  flows=10
+PASS  450-consistent-hashing  flows=10 algo=hash
+PASS  450-consistent-hashing  flows=10 algo=maglev
+PASS  450-consistent-hashing  flows=20
+PASS  450-consistent-hashing  flows=40

@@ -15,7 +15,10 @@ about  bad news reach r1. Here the update timers are phased so that it always ha
 about
 about  Now rerun with split=1 (never advertise a route back where you learned it): r1 stays silent
 about  about that network and the loop never forms. Add triggered=1 and the bad news reach r1 in
-about  milliseconds instead of waiting for the next periodic update.
+about  milliseconds instead of waiting for the next periodic update. In this small network
+about  triggered=1 alone is already enough: the bad news win the race and nobody counts. In a larger
+about  one, with loss or with several paths, it only makes the race harder to lose; poisoned
+about  reverse (poison=1, which only acts together with split=1) says "unreachable" out loud instead of staying silent.
 about[it]  Tre router in fila: h1 - r1 - r2 - r3 - h3. A 12 s il collegamento r2-r3 si guasta e la rete
 about[it]  di h3 sparisce. Di default questo laboratorio usa RIP SENZA le sue protezioni: r2 elimina la
 about[it]  rotta, ma r1 continua ad annunciare "la raggiungo in 2 salti" (una rotta che passava proprio
@@ -30,6 +33,10 @@ about[it]
 about[it]  Riprova con split=1 (mai annunciare una rotta verso chi te l'ha insegnata): r1 tace su
 about[it]  quella rete e il ciclo non si forma. Aggiungi triggered=1 e le cattive notizie arrivano a
 about[it]  r1 in millisecondi invece di aspettare il prossimo aggiornamento periodico.
+about[it]  In questa piccola rete triggered=1 da solo basta già: le cattive notizie vincono la gara e
+about[it]  nessuno conta. In una rete più grande, con perdite o più percorsi, rende solo la gara più
+about[it]  difficile da perdere; poisoned reverse (poison=1, che agisce solo insieme a split=1) dice
+about[it]  "irraggiungibile" ad alta voce invece di tacere.
 param  split 0 Split horizon (0 = off: count to infinity)
 param[it] split Split horizon (0 = spento: conteggio all'infinito)
 param  triggered 0 Triggered updates (1 = on)
@@ -65,8 +72,9 @@ at 8s  run h1 ping h3 count=2
 at 12s link r2 r3 down
 at 17s run h1 ping h3 count=2 interval=2s
 duration 60s
-expect h1 ping.reply == 2
-expect r2 rip.counting >= 3
-expect r1 rip.counting >= 3
-expect h1 ping.error >= 1
-expect r1 rip.routes == 2
+# before the failure h3 answers; afterwards it never does
+at 59s run h1 check reach "h1:ping.reply == 2 && h1:ping.error >= 1 && r1:rip.routes == 2"
+# the loop and the count to infinity appear only with no protection at all
+at 59s run h1 check loop "(is$split$triggered == is00 && r1:rip.counting >= 3 && r2:rip.counting >= 3 && r1:ip.ttl_expired + r2:ip.ttl_expired >= 1) || (is$split$triggered != is00 && r1:rip.counting == 0 && r2:rip.counting == 0 && r1:ip.ttl_expired + r2:ip.ttl_expired == 0)"
+expect h1 check.reach == 1
+expect h1 check.loop == 1

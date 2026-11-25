@@ -65,8 +65,9 @@ To read more: Kurose and Ross, chapter 2 ("Application Layer": the Web and HTTP,
 
 - Start it with `./netlab run 141-dhcp-join`. Select h1 (`n`): its interface has no address.
 - At 1 s read the four messages in the log (`l`) and then the line `DHCP bound`. Open the Packets view (`p`) and check the destination MAC of the DISCOVER.
-- Open the Routes tab of h1: a default route marked `dhcp` has appeared. In this lab the server announces no name server (the line says `dns —`).
+- Open the Routes tab of h1: a default route marked `dhcp` has appeared. The same ACK also carried the address of a name server (option 6: the line says `dns 10.0.1.1`).
 - At 4 s h1 pings h2, which is on another network: it works only thanks to the gateway learned from DHCP.
+- At 7 s h1 runs `dig h2.lab.example` without naming a server: the question goes to the name server learned from DHCP. One exchange gave the host everything it needs to use the network.
 
 **Lab 140-dns-first**: h1 asks the name server ns three questions.
 

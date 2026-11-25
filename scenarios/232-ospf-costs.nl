@@ -9,8 +9,10 @@ about  Hello packets, then flood their link-state advertisements until all four 
 about  database (open the OSPF tab of any two routers: same LSAs, same sequence numbers), and each
 about  runs Dijkstra on it. Traffic from h1 to h4 takes the upper path: total cost 3 against 21.
 about
-about  At 20 s the administrator raises the cost of r1's interface towards r2 to 50: r1 floods a new
-about  LSA, everyone recomputes, and r1 now sends through r3. Note that r4 still answers through r2:
+about  At 20 s the administrator sets the cost of r1's interface towards r2 to `newcost` (50 by
+about  default): r1 floods a new LSA and everyone recomputes. The upper path now costs newcost + 1
+about  against 20 for the lower one, so with any value above 19 r1 sends through r3, and with a
+about  smaller one nothing moves. Note that r4 still answers through r2:
 about  costs are per direction, so the two directions of a conversation may take different paths.
 about  At 32 s the link r1-r2 fails for good and both directions move to the lower path within a
 about  fraction of a second.
@@ -24,8 +26,10 @@ about[it]  finché tutti e quattro hanno lo stesso database (apri la scheda OSPF
 about[it]  LSA, stessi numeri di sequenza), e ognuno vi esegue Dijkstra. Il traffico da h1 a h4 prende
 about[it]  il percorso alto: costo totale 3 contro 21.
 about[it]
-about[it]  A 20 s l'amministratore alza a 50 il costo dell'interfaccia di r1 verso r2: r1 diffonde un
-about[it]  nuovo LSA, tutti ricalcolano, e r1 ora inoltra tramite r3. Nota che r4 risponde ancora via
+about[it]  A 20 s l'amministratore imposta a `newcost` (50 di default) il costo dell'interfaccia di r1
+about[it]  verso r2: r1 diffonde un nuovo LSA e tutti ricalcolano. Il percorso alto ora costa newcost + 1
+about[it]  contro 20 di quello basso, quindi con un valore sopra 19 r1 inoltra tramite r3, e con uno
+about[it]  più piccolo non cambia nulla. Nota che r4 risponde ancora via
 about[it]  r2: i costi valgono per direzione, quindi andata e ritorno possono seguire percorsi diversi.
 about[it]  A 32 s il collegamento r1-r2 si guasta del tutto e in una frazione di secondo entrambe le
 about[it]  direzioni passano dal percorso basso.
@@ -62,8 +66,8 @@ note 3s  Adjacencies are Full: LSAs flood, every router runs SPF on the same dat
 note[it] 3s  Le adiacenze sono Full: gli LSA si propagano, ogni router esegue SPF sullo stesso database.
 note 10s h1 pings h4: the packets take the fast upper path through r2.
 note[it] 10s h1 fa ping a h4: i pacchetti prendono il percorso veloce in alto, via r2.
-note 20s Cost of r1→r2 raised: a new LSA is flooded and r1 switches to r3 (r4 still answers via r2).
-note[it] 20s Alzato il costo r1→r2: un nuovo LSA viene diffuso e r1 passa a r3 (r4 risponde ancora via r2).
+note 20s Cost of r1→r2 set to $newcost: a new LSA is flooded; r1 moves to r3 if $newcost + 1 is more than 20 (r4 still answers via r2).
+note[it] 20s Costo r1→r2 impostato a $newcost: un nuovo LSA viene diffuso; r1 passa a r3 se $newcost + 1 supera 20 (r4 risponde ancora via r2).
 note 32s Link r1-r2 fails: the neighbors are declared down at once, new LSAs, new SPF.
 note[it] 32s Il collegamento r1-r2 si guasta: i vicini sono dichiarati caduti subito, nuovi LSA, nuovo SPF.
 
@@ -74,10 +78,13 @@ at 24s run h1 ping h4 count=3
 at 32s link r1 r2 down
 at 36s run h4 ping h1 count=3
 duration 42s
-expect h1 ping.reply == 6
-expect h4 ping.reply == 3
-expect h1 traceroute.hops == 4
-expect r1 ospf.neighbors == 1
-expect r4 ospf.neighbors == 2
-expect r3 ip.forwarded >= 9
-expect r2 ospf.lsdb == 4
+at 41s run h1 check reach "h1:ping.reply == 6 && h4:ping.reply == 3 && h1:traceroute.hops == 4"
+at 41s run h1 check database "r1:ospf.neighbors == 1 && r4:ospf.neighbors == 2 && r2:ospf.lsdb == 4"
+# r3 carries the 3 requests of the second ping only if the new cost made the upper path dearer
+# (cost + 1 against 20), then both directions after the failure
+at 41s run h1 check steer "($newcost > 19 && r3:ip.forwarded >= 9) || ($newcost < 19 && r3:ip.forwarded == 6) || $newcost == 19"
+at 41s run h1 check quiet "r1:ospf.retransmits + r2:ospf.retransmits + r3:ospf.retransmits + r4:ospf.retransmits <= 2"
+expect h1 check.reach == 1
+expect h1 check.database == 1
+expect h1 check.steer == 1
+expect h1 check.quiet == 1

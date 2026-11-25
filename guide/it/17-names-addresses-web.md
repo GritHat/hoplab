@@ -65,8 +65,9 @@ Per saperne di più: Kurose e Ross, capitolo 2 ("Livello di applicazione": Web e
 
 - Avvialo con `./netlab run 141-dhcp-join`. Seleziona h1 (`n`): la sua interfaccia non ha indirizzo.
 - A 1 s leggi i quattro messaggi nel Registro (`l`) e poi la riga `DHCP assegnato`. Apri la vista Pacchetti (`p`) e controlla il MAC di destinazione del DISCOVER.
-- Apri la scheda Rotte di h1: è comparsa una rotta predefinita marcata `dhcp`. In questo laboratorio il server non annuncia alcun name server (la riga dice `dns —`).
+- Apri la scheda Rotte di h1: è comparsa una rotta predefinita marcata `dhcp`. Lo stesso ACK portava anche l'indirizzo di un name server (opzione 6: la riga dice `dns 10.0.1.1`).
 - A 4 s h1 fa ping verso h2, che sta su un'altra rete: funziona solo grazie al gateway imparato da DHCP.
+- A 7 s h1 esegue `dig h2.lab.example` senza indicare un server: la domanda va al name server imparato da DHCP. Un solo scambio ha dato all'host tutto ciò che gli serve per usare la rete.
 
 **Laboratorio 140-dns-first**: h1 fa tre domande al name server ns.
 

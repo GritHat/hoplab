@@ -50,6 +50,6 @@ note 6s Each lap the hosts receive another useless copy. With more broadcasts (e
 note[it] 6s A ogni giro gli host ricevono un'altra copia inutile. Con altri broadcast (ogni ARP aggiunge due frame eterni) i collegamenti si saturano e la rete muore.
 
 duration 10s
-expect s1 bridge.flood > 300
-expect s2 bridge.flood > 300
-expect s3 bridge.flood > 300
+# one broadcast, two directions, a lap every 3 x delay, for 9 seconds: every switch floods 6000/delay(ms) copies
+at 9990ms run s1 check storm "s1:bridge.flood >= 0.9 * 6s / $delay - 5 && s2:bridge.flood >= 0.9 * 6s / $delay - 5 && s3:bridge.flood >= 0.9 * 6s / $delay - 5"
+expect s1 check.storm == 1

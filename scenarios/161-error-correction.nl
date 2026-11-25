@@ -38,6 +38,9 @@ note 20s     c2 received a fraction of the datagrams; h2 and r2 nearly all of th
 note[it] 20s c2 ha ricevuto una frazione dei datagrammi; h2 e r2 quasi tutti, senza alcuna ritrasmissione.
 
 duration 22s
-expect c2 sink.received <= 120
-expect h2 sink.received >= 185
-expect r2 sink.received >= 185
+# the CRC link delivers only the frames the noise spared: about 200*exp(-ber*bits)
+at 21900ms run c2 check discard "abs(c2:sink.received - 200 * exp(-$ber * 4400)) <= 45"
+# correcting delivers at least as much as discarding, and nearly everything up to ber 1e-3
+at 21900ms run c2 check correct "h2:sink.received >= c2:sink.received && r2:sink.received >= c2:sink.received && ($ber > 1e-3 || (h2:sink.received >= 185 && r2:sink.received >= 185))"
+expect c2 check.discard == 1
+expect c2 check.correct == 1

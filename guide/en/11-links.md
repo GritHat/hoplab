@@ -53,14 +53,14 @@ To read more: Kurose and Ross, chapter 1, section "Delay, Loss, and Throughput i
 - Start it with `./netlab run 102-link-properties`.
 - From 0 to 1.5 s the link is idle and h1 pings h2 three times. Read the times in the log (`l`). The first is about 82 ms because it waits for ARP; the others are 41.63 ms. Check this against 2 x (20 + 0.816).
 - At 3 s h1 starts a 2 Mbit/s stream. Watch the queue number next to h1 on the map climb to 20, then the lines `queue full` appear in the log.
-- At 4 s the same ping is repeated. Two of the three requests find the queue full and are dropped; the one that gets in comes back after about 207 ms. Nothing changed in the cable: the extra time is all waiting.
+- At 4 s h1 pings again, eight times. About half of the requests find the queue full and are dropped like the packets of the stream; those that get in come back after about 207 ms. Nothing changed in the cable: the extra time is all waiting (20 packets of about 8.4 ms each).
 - Select h1 with `n` and open its Links tab; select h2 and press `g` for the Graphs view to see the delay measured by the sink.
 
 **Change this and predict.** Write your prediction before each run.
 
 - `./netlab run 102-link-properties delay=100ms`: what will the idle ping time be?
-- `./netlab run 102-link-properties bw=500k`: the idle ping time changes only slightly, why? What fraction of the stream will be lost?
-- `./netlab run 102-link-properties bw=4M`: will there be a queue at all?
+- `./netlab run 102-link-properties bw=500k`: the idle ping time changes only slightly, why? What fraction of the stream will be lost? (The pings at 4 s now almost never find room: the queue is full nearly all the time.)
+- `./netlab run 102-link-properties bw=4M`: will there be a queue at all? Will anything be lost? (The lab's check `stream` computes the loss to expect from `bw` and `queue`: compare it with your number.)
 - `./netlab run 102-link-properties queue=100`: does the sink lose fewer packets? What happens to the delay of the ping at 4 s?
 - `./netlab run 102-link-properties loss=0.2`: a ping needs both the request and the reply to survive. What fraction of pings do you expect to succeed?
 
