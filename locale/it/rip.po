@@ -1,0 +1,115 @@
+# Italian translation of the netlab rip module.
+msgid ""
+msgstr ""
+"Project-Id-Version: netlab\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "triggered update: only the routes that changed"
+msgstr "aggiornamento immediato: solo le rotte cambiate"
+
+msgid "periodic update: the whole table to every neighbor"
+msgstr "aggiornamento periodico: tutta la tabella a ogni vicino"
+
+msgid "is now unreachable: metric 16"
+msgstr "ora è irraggiungibile: metrica 16"
+
+msgid "interface down"
+msgstr "interfaccia non attiva"
+
+msgid "no update heard: timeout"
+msgstr "nessun aggiornamento ricevuto: timeout"
+
+msgid "the next hop says so"
+msgstr "lo dice il next hop"
+
+msgid "via"
+msgstr "via"
+
+msgid "reachable via"
+msgstr "raggiungibile tramite"
+
+msgid "hops"
+msgstr "salti"
+
+msgid "table requested by"
+msgstr "tabella richiesta da"
+
+msgid "from"
+msgstr "da"
+
+msgid "routes"
+msgstr "rotte"
+
+msgid "started: update every"
+msgstr "avviato: aggiornamento ogni"
+
+msgid "update / timeout / gc"
+msgstr "aggiornamento / timeout / gc"
+
+msgid "protections"
+msgstr "protezioni"
+
+msgid "updates sent / heard"
+msgstr "aggiornamenti inviati / ricevuti"
+
+msgid "network"
+msgstr "rete"
+
+msgid "metric"
+msgstr "metrica"
+
+msgid "next hop"
+msgstr "next hop"
+
+msgid "dev"
+msgstr "interf."
+
+msgid "age"
+msgstr "età"
+
+msgid "attached"
+msgstr "collegata"
+
+msgid "unreachable"
+msgstr "irraggiungibile"
+
+msgid "RIP — distance-vector routing (RFC 2453)"
+msgstr "RIP — routing distance vector (RFC 2453)"
+
+msgid ""
+"run ROUTER rip [update=30s] [timeout=6×update] [gc=4×update]\n"
+"               [split=1] [poison=0] [triggered=1] [redistribute=0]\n"
+"               [phase=TIME] [jitter=1]\n"
+"  split=0      disable split horizon (to reproduce count-to-infinity)\n"
+"  poison=1     split horizon with poisoned reverse\n"
+"  triggered=0  no triggered updates: news travel only with the periodic ones\n"
+"  redistribute=1  also advertise static routes\n"
+"  phase=T jitter=0  first periodic update at T and no random jitter: makes the\n"
+"               order of the updates of different routers repeatable"
+msgstr ""
+"run ROUTER rip [update=30s] [timeout=6×update] [gc=4×update]\n"
+"               [split=1] [poison=0] [triggered=1] [redistribute=0]\n"
+"               [phase=TEMPO] [jitter=1]\n"
+"  split=0      disattiva lo split horizon (per riprodurre il conteggio all'infinito)\n"
+"  poison=1     split horizon con poisoned reverse\n"
+"  triggered=0  niente aggiornamenti immediati: le notizie viaggiano solo con quelli periodici\n"
+"  redistribute=1  annuncia anche le rotte statiche\n"
+"  phase=T jitter=0  primo aggiornamento periodico a T e nessuna variazione casuale: rende\n"
+"               ripetibile l'ordine degli aggiornamenti dei vari router"
+
+msgid ""
+"RIP is the classic distance-vector protocol. Every router keeps, for each network, the distance in hops and the neighbor to go through, and every 30 seconds tells all its neighbors the whole table. A router that hears \"I reach X in 3 hops\" concludes that it reaches X in 4 through that neighbor, and keeps the shortest offer (Bellman-Ford, run by the network as a whole). Nobody knows the topology: only distances and directions.\n"
+"\n"
+"The weakness is bad news. When a network disappears, a router may hear from a neighbor a route that actually passed through itself, believe it, and advertise it back one hop longer: the two bounce the route between them while the metric climbs one step per update until it reaches 16, which means infinity. This is count-to-infinity, and it is why RIP networks cannot be more than 15 hops wide. Split horizon (do not advertise a route on the interface it was learned from), poisoned reverse (advertise it there with metric 16) and triggered updates (send changes immediately instead of waiting for the timer) remove the two-router loop and speed convergence up; loops among three or more routers remain possible. A route not refreshed for 180 seconds times out, is advertised as unreachable for a while (garbage collection) and then forgotten.\n"
+"\n"
+"Here: RIPv2 messages with the real format on UDP port 520, multicast to 224.0.0.9. Authentication and route tags are not implemented."
+msgstr ""
+"RIP è il classico protocollo distance vector. Ogni router tiene, per ciascuna rete, la distanza in salti e il vicino da cui passare, e ogni 30 secondi comunica a tutti i vicini l'intera tabella. Un router che sente \"raggiungo X in 3 salti\" conclude di raggiungere X in 4 tramite quel vicino, e tiene l'offerta più corta (Bellman-Ford, eseguito dalla rete nel suo insieme). Nessuno conosce la topologia: solo distanze e direzioni.\n"
+"\n"
+"Il punto debole sono le cattive notizie. Quando una rete sparisce, un router può sentire da un vicino una rotta che in realtà passava da lui stesso, crederci e riannunciarla più lunga di un salto: i due si rimbalzano la rotta mentre la metrica sale di un passo per aggiornamento fino a 16, che significa infinito. È il conteggio all'infinito, ed è il motivo per cui una rete RIP non può essere larga più di 15 salti. Lo split horizon (non annunciare una rotta sull'interfaccia da cui la si è imparata), il poisoned reverse (annunciarla lì con metrica 16) e gli aggiornamenti immediati (inviare i cambiamenti subito invece di aspettare il timer) eliminano il ciclo fra due router e accelerano la convergenza; restano possibili cicli fra tre o più router. Una rotta non rinfrescata per 180 secondi scade, viene annunciata come irraggiungibile per un po' (garbage collection) e poi dimenticata.\n"
+"\n"
+"Qui: messaggi RIPv2 con il formato reale sulla porta UDP 520, in multicast a 224.0.0.9. Autenticazione e route tag non sono implementati."
+

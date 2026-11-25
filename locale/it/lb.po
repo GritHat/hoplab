@@ -1,0 +1,134 @@
+# Italian translation of netlab: lb.c (lb, whoami, reqgen)
+msgid ""
+msgstr ""
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "flows lost their server"
+msgstr "flussi hanno perso il loro server"
+
+msgid "more now hash to a different server"
+msgstr "altri ora ricadono per hash su un server diverso"
+
+msgid " (the flow table keeps them where they are)"
+msgstr " (la tabella dei flussi li tiene dove sono)"
+
+msgid "flows lost their server and will be scheduled again"
+msgstr "flussi hanno perso il loro server e verranno riassegnati"
+
+msgid "flow"
+msgstr "flusso"
+
+msgid "new flow"
+msgstr "nuovo flusso"
+
+msgid "no healthy server: request dropped"
+msgstr "nessun server sano: richiesta scartata"
+
+msgid "server"
+msgstr "server"
+
+msgid "health check failed, taken out of the pool"
+msgstr "health check fallito, escluso dal pool"
+
+msgid "healthy again, back in the pool"
+msgstr "di nuovo sano, rientra nel pool"
+
+msgid "unknown server"
+msgstr "server sconosciuto"
+
+msgid "too many servers"
+msgstr "troppi server"
+
+msgid "server added to the pool:"
+msgstr "server aggiunto al pool:"
+
+msgid "server removed from the pool:"
+msgstr "server rimosso dal pool:"
+
+msgid "usage: lb [vip=ADDR[:PORT]] backends=s1,s2,..."
+msgstr "uso: lb [vip=INDIRIZZO[:PORTA]] backends=s1,s2,..."
+
+msgid "bad virtual address"
+msgstr "indirizzo virtuale non valido"
+
+msgid "unknown algorithm"
+msgstr "algoritmo sconosciuto"
+
+msgid "virtual address"
+msgstr "indirizzo virtuale"
+
+msgid "servers"
+msgstr "server"
+
+msgid ", no flow table"
+msgstr ", senza tabella dei flussi"
+
+msgid "algorithm"
+msgstr "algoritmo"
+
+msgid "requests / remapped flows"
+msgstr "richieste / flussi riassegnati"
+
+msgid "flows"
+msgstr "flussi"
+
+msgid "active flows"
+msgstr "flussi attivi"
+
+msgid "Load balancer: one address, many servers"
+msgstr "Load balancer: un indirizzo, molti server"
+
+msgid "run NODE lb backends=s1,s2,... [vip=ADDR[:PORT]] [port=N]\n            [algo=rr|wrr|leastconn|hash|consistent|p2c|maglev] [weights=3,1,1]\n            [key=flow|src] [affinity=1] [mode=nat|fullnat] [check=1s] [fall=2]\n            [flowtimeout=10s]\nrun NODE lb add SERVER [weight=N]   |   run NODE lb remove SERVER\n  vip defaults to the node's first address; port 0 balances every UDP/TCP port.\n  mode=nat rewrites only the destination: the servers must route their answers\n  back through the balancer. mode=fullnat also rewrites the source.\n  affinity=0 turns the flow table off: every packet is scheduled again.\n  key=src hashes the client address only (same client, same server).\n  check=0 disables health checks (ICMP echo; `fall` misses mark a server down)."
+msgstr "run NODO lb backends=s1,s2,... [vip=INDIRIZZO[:PORTA]] [port=N]\n            [algo=rr|wrr|leastconn|hash|consistent|p2c|maglev] [weights=3,1,1]\n            [key=flow|src] [affinity=1] [mode=nat|fullnat] [check=1s] [fall=2]\n            [flowtimeout=10s]\nrun NODO lb add SERVER [weight=N]   |   run NODO lb remove SERVER\n  vip è di default il primo indirizzo del nodo; port 0 bilancia ogni porta UDP/TCP.\n  mode=nat riscrive solo la destinazione: i server devono instradare le risposte\n  attraverso il bilanciatore. mode=fullnat riscrive anche la sorgente.\n  affinity=0 disattiva la tabella dei flussi: ogni pacchetto viene riassegnato.\n  key=src fa l'hash del solo indirizzo del client (stesso client, stesso server).\n  check=0 disattiva gli health check (ICMP echo; `fall` mancate risposte escludono un server)."
+
+msgid "A layer-4 load balancer owns a virtual IP address (VIP). Clients talk to the VIP; for the first packet of each flow the balancer picks a real server and rewrites the destination address, and for the answers it puts the VIP back as the source, so the client never learns which server it reached. A flow table (client address and port -> server) keeps every later packet of the connection on the same server: without it a TCP connection would break as soon as the choice changed. Health checks probe the servers and remove from the pool those that stop answering.\n\nHow to pick the server is the interesting part. Round robin cycles through the pool; the weighted variant gives bigger servers proportionally more; least connections sends the new flow to the server with fewest active ones, which adapts to long-lived or slow connections; power of two choices samples two servers at random and takes the less loaded one, which gets most of the benefit with almost no shared state. Hashing the flow (or the client address) needs no state at all and lets several balancers make the same choice independently, but hash mod N has a flaw: when N changes almost every flow maps to a different server. Consistent hashing places servers (as many virtual nodes) and flows on a ring and assigns each flow to the next server clockwise, so that adding or removing one server moves only about 1/N of the flows. Maglev hashing reaches the same goal with a precomputed lookup table filled from per-server permutations, giving very even load and O(1) lookups. The lab counts how many flows are remapped by each scheme when the pool changes."
+msgstr "Un load balancer di livello 4 possiede un indirizzo IP virtuale (VIP). I client parlano con il VIP; per il primo pacchetto di ogni flusso il bilanciatore sceglie un server reale e riscrive l'indirizzo di destinazione, e per le risposte rimette il VIP come sorgente, così il client non scopre mai quale server ha raggiunto. Una tabella dei flussi (indirizzo e porta del client -> server) mantiene ogni pacchetto successivo della connessione sullo stesso server: senza, una connessione TCP si romperebbe non appena la scelta cambiasse. Gli health check sondano i server e tolgono dal pool quelli che smettono di rispondere.\n\nCome scegliere il server è la parte interessante. Il round robin scorre il pool a turno; la variante pesata dà ai server più grandi una quota proporzionale; least connections manda il nuovo flusso al server che ne ha meno di attivi, adattandosi a connessioni lunghe o lente; power of two choices estrae due server a caso e prende il meno carico, ottenendo gran parte del beneficio quasi senza stato condiviso. Fare l'hash del flusso (o dell'indirizzo del client) non richiede alcuno stato e permette a più bilanciatori di fare la stessa scelta in modo indipendente, ma l'hash mod N ha un difetto: quando N cambia quasi ogni flusso ricade su un server diverso. Il consistent hashing dispone i server (come molti nodi virtuali) e i flussi su un anello e assegna ogni flusso al server successivo in senso orario, così aggiungere o togliere un server sposta solo circa 1/N dei flussi. Il Maglev hashing raggiunge lo stesso obiettivo con una tabella di lookup precalcolata, riempita a partire da permutazioni per server, che dà un carico molto uniforme e ricerche O(1). Il laboratorio conta quanti flussi vengono riassegnati da ciascuno schema quando il pool cambia."
+
+msgid "request from"
+msgstr "richiesta da"
+
+msgid "UDP port"
+msgstr "porta UDP"
+
+msgid "requests served"
+msgstr "richieste servite"
+
+msgid "UDP server that answers with its own name"
+msgstr "Server UDP che risponde con il proprio nome"
+
+msgid "run NODE whoami [port=8000]\n  Put several behind a load balancer and ask with reqgen to see who answers."
+msgstr "run NODO whoami [port=8000]\n  Mettine diversi dietro un load balancer e interroga con reqgen per vedere chi risponde."
+
+msgid "flow from port"
+msgstr "flusso dalla porta"
+
+msgid "requests"
+msgstr "richieste"
+
+msgid "answers"
+msgstr "risposte"
+
+msgid "flows changed server"
+msgstr "flussi hanno cambiato server"
+
+msgid "unknown destination"
+msgstr "destinazione sconosciuta"
+
+msgid "flows (source ports)"
+msgstr "flussi (porte sorgente)"
+
+msgid "requests / answers"
+msgstr "richieste / risposte"
+
+msgid "flows / changed server"
+msgstr "flussi / cambiati di server"
+
+msgid "Request generator: many client flows, and which server answered"
+msgstr "Generatore di richieste: molti flussi client, e quale server ha risposto"
+
+msgid "run NODE reqgen DEST [port=8000] [count=200] [rate=20] [flows=30] [life=0]\n  Sends `count` UDP requests at `rate` per second, cycling over `flows` source\n  ports (at most 40), to whoami servers; tallies the names that answer and\n  counts the flows whose server changed. life=K ends a flow after K requests and\n  opens a new one from a fresh port (0 = flows last forever)."
+msgstr "run NODO reqgen DEST [port=8000] [count=200] [rate=20] [flows=30] [life=0]\n  Invia `count` richieste UDP a `rate` al secondo, ruotando su `flows` porte\n  sorgente (al massimo 40), verso server whoami; conta i nomi che rispondono e\n  i flussi il cui server è cambiato. life=K chiude un flusso dopo K richieste e\n  ne apre uno nuovo da una porta nuova (0 = i flussi durano per sempre)."
+

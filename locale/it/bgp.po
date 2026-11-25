@@ -1,0 +1,183 @@
+# Italian translation of the netlab bgp module.
+msgid ""
+msgstr ""
+"Project-Id-Version: netlab\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "originated here"
+msgstr "originato qui"
+
+msgid "connected network"
+msgstr "rete direttamente connessa"
+
+msgid "only path"
+msgstr "unico percorso"
+
+msgid "higher local preference"
+msgstr "local preference più alta"
+
+msgid "shorter AS path"
+msgstr "AS path più corto"
+
+msgid "lowest router id"
+msgstr "router id più basso"
+
+msgid "no path left, route withdrawn"
+msgstr "nessun percorso rimasto, rotta ritirata"
+
+msgid "best path via"
+msgstr "percorso migliore via"
+
+msgid "not exported to"
+msgstr "non esportata a"
+
+msgid "valley-free policy"
+msgstr "politica valley-free"
+
+msgid "session with"
+msgstr "sessione con"
+
+msgid "is down"
+msgstr "caduta"
+
+msgid "interface down"
+msgstr "interfaccia non attiva"
+
+msgid "hold timer expired: nothing heard"
+msgstr "hold timer scaduto: nessun messaggio ricevuto"
+
+msgid "our own AS is in the path: loop, rejected"
+msgstr "il nostro AS è nel path: ciclo, rifiutata"
+
+msgid "originated by"
+msgstr "originato da"
+
+msgid "origin validation says INVALID (wrong origin AS or too specific): rejected"
+msgstr "la validazione dell'origine dice INVALID (AS di origine sbagliato o prefisso troppo specifico): rifiutato"
+
+msgid "from"
+msgstr "da"
+
+msgid "expected"
+msgstr "atteso"
+
+msgid "session refused"
+msgstr "sessione rifiutata"
+
+msgid "the neighbor restarted"
+msgstr "il vicino si è riavviato"
+
+msgid "Established: exchanging routes"
+msgstr "Established: scambio delle rotte"
+
+msgid "the neighbor closed it (NOTIFICATION)"
+msgstr "il vicino l'ha chiusa (NOTIFICATION)"
+
+msgid "usage: bgp announce|withdraw PREFIX/LEN"
+msgstr "uso: bgp announce|withdraw PREFISSO/LUNGHEZZA"
+
+msgid "now originates"
+msgstr "ora origina"
+
+msgid "stops originating"
+msgstr "smette di originare"
+
+msgid "as=NUMBER is required"
+msgstr "serve as=NUMERO"
+
+msgid "bad neighbor"
+msgstr "vicino non valido"
+
+msgid "(NODE:AS[:customer|peer|provider], on a shared network, different AS)"
+msgstr "(NODO:AS[:customer|peer|provider], su una rete condivisa, AS diverso)"
+
+msgid "bad network"
+msgstr "rete non valida"
+
+msgid "neighbors"
+msgstr "vicini"
+
+msgid "networks originated"
+msgstr "reti originate"
+
+msgid "autonomous system"
+msgstr "sistema autonomo"
+
+msgid "  policies off"
+msgstr "  politiche disattivate"
+
+msgid "  origin validation on"
+msgstr "  validazione dell'origine attiva"
+
+msgid "neighbor"
+msgstr "vicino"
+
+msgid "relation"
+msgstr "relazione"
+
+msgid "state"
+msgstr "stato"
+
+msgid "updates in/out"
+msgstr "update ricevuti/inviati"
+
+msgid "prefix"
+msgstr "prefisso"
+
+msgid "via"
+msgstr "via"
+
+msgid "AS path"
+msgstr "AS path"
+
+msgid "why it is the best"
+msgstr "perché è il migliore"
+
+msgid "BGP — path-vector routing between autonomous systems"
+msgstr "BGP — routing path vector fra sistemi autonomi"
+
+msgid ""
+"run ROUTER bgp as=N [network=PREFIX/LEN ...] [neighbor=NODE:AS[:RELATION] ...]\n"
+"               [connected=1] [keepalive=30s] [hold=3×keepalive] [mrai=500ms]\n"
+"               [prepend=N] [policy=1] [rov=1 roa=PREFIX/LEN:AS[:MAXLEN] ...]\n"
+"run ROUTER bgp announce|withdraw PREFIX/LEN\n"
+"  network= and neighbor= can be repeated. RELATION says what the neighbor is for\n"
+"  this AS: customer, peer or provider (none: no policy on that session).\n"
+"  connected=1 also originates every connected network.\n"
+"  policy=0 ignores the relations; prepend=N lengthens the AS path we export.\n"
+"  Nothing checks that an AS owns what it announces: that is the hijack lab;\n"
+"  rov=1 with roa= entries rejects announcements with the wrong origin.\n"
+"  Sessions use UDP port 179 here (TCP in real BGP): use loss-free links."
+msgstr ""
+"run ROUTER bgp as=N [network=PREFISSO/LUNGH ...] [neighbor=NODO:AS[:RELAZIONE] ...]\n"
+"               [connected=1] [keepalive=30s] [hold=3×keepalive] [mrai=500ms]\n"
+"               [prepend=N] [policy=1] [rov=1 roa=PREFISSO/LUNGH:AS[:LUNGHMAX] ...]\n"
+"run ROUTER bgp announce|withdraw PREFISSO/LUNGH\n"
+"  network= e neighbor= si possono ripetere. RELAZIONE dice che cos'è il vicino per\n"
+"  questo AS: customer, peer o provider (assente: nessuna politica su quella sessione).\n"
+"  connected=1 origina anche tutte le reti direttamente connesse.\n"
+"  policy=0 ignora le relazioni; prepend=N allunga l'AS path che esportiamo.\n"
+"  Nulla verifica che un AS possieda ciò che annuncia: è il laboratorio sui dirottamenti;\n"
+"  rov=1 con voci roa= rifiuta gli annunci con l'origine sbagliata.\n"
+"  Qui le sessioni usano la porta UDP 179 (TCP nel vero BGP): usa collegamenti senza perdite."
+
+msgid ""
+"The Internet is a network of autonomous systems (AS): networks under one administration, each with its own interior routing. BGP is the protocol they use to tell each other which address blocks (prefixes) they can reach. It is a path-vector protocol: an announcement carries the whole list of ASes it has crossed (the AS path). When a router passes a route on, it prepends its own AS number; a router that finds its own number in a path discards it, which prevents loops without any count-to-infinity. When a route disappears an explicit withdrawal is sent. Two BGP routers keep a session alive with KEEPALIVE messages and tear it down, withdrawing everything learned over it, when the hold timer expires.\n"
+"\n"
+"Unlike interior protocols, BGP does not look for the shortest path: it applies policy. Each AS first ranks the routes it hears by local preference, which encodes business relations (a route through a customer earns money, through a peer is free, through a provider costs), and only then by AS-path length. Export follows the same logic (Gao-Rexford rules): routes learned from customers are announced to everyone, routes learned from peers and providers only to customers. The result is that paths are valley-free: they go up through providers, cross at most one peering link, and go down through customers; nobody carries traffic for free between two of its providers.\n"
+"\n"
+"BGP trusts what it is told. An AS that announces a prefix it does not own attracts the traffic of everyone for whom its path looks better (prefix hijack), and announcing a more specific prefix attracts everyone, because forwarding always follows the longest match. Route origin validation (RPKI) lets routers reject announcements whose origin AS or prefix length does not match a signed authorization.\n"
+"\n"
+"Simplified here: sessions over UDP instead of TCP, eBGP only, one router per AS, no MED, communities or aggregation."
+msgstr ""
+"Internet è una rete di sistemi autonomi (AS): reti sotto un'unica amministrazione, ciascuna con il proprio routing interno. BGP è il protocollo con cui si comunicano quali blocchi di indirizzi (prefissi) sanno raggiungere. È un protocollo path vector: un annuncio porta l'elenco completo degli AS che ha attraversato (l'AS path). Quando un router inoltra una rotta vi antepone il proprio numero di AS; un router che trova il proprio numero in un path lo scarta, e questo evita i cicli senza alcun conteggio all'infinito. Quando una rotta sparisce viene inviato un ritiro esplicito (withdrawal). Due router BGP tengono viva la sessione con messaggi KEEPALIVE e la chiudono, ritirando tutto ciò che vi avevano imparato, quando scade l'hold timer.\n"
+"\n"
+"A differenza dei protocolli interni, BGP non cerca il percorso più corto: applica politiche. Ogni AS ordina le rotte che sente prima per local preference, che codifica le relazioni commerciali (una rotta tramite un cliente fa guadagnare, tramite un peer è gratuita, tramite un provider costa), e solo dopo per lunghezza dell'AS path. L'esportazione segue la stessa logica (regole di Gao-Rexford): le rotte imparate dai clienti si annunciano a tutti, quelle imparate da peer e provider solo ai clienti. Il risultato è che i percorsi sono valley-free: salgono attraverso i provider, attraversano al più un collegamento di peering e scendono attraverso i clienti; nessuno trasporta gratis traffico fra due dei propri provider.\n"
+"\n"
+"BGP si fida di ciò che gli viene detto. Un AS che annuncia un prefisso non suo attira il traffico di tutti quelli per cui il suo percorso appare migliore (prefix hijack), e annunciare un prefisso più specifico attira tutti, perché l'inoltro segue sempre la corrispondenza più lunga. La route origin validation (RPKI) permette ai router di rifiutare gli annunci il cui AS di origine o la cui lunghezza di prefisso non corrispondono a un'autorizzazione firmata.\n"
+"\n"
+"Semplificazioni: sessioni su UDP invece che TCP, solo eBGP, un router per AS, niente MED, community o aggregazione."
+

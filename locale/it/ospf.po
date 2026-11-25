@@ -1,0 +1,130 @@
+# Italian translation of the netlab ospf module.
+msgid ""
+msgstr ""
+"Project-Id-Version: netlab\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "routers in the shortest-path tree"
+msgstr "router nell'albero dei cammini minimi"
+
+msgid "routes"
+msgstr "rotte"
+
+msgid "originating router-LSA"
+msgstr "genero il router-LSA"
+
+msgid "links"
+msgstr "collegamenti"
+
+msgid "neighbor"
+msgstr "vicino"
+
+msgid "interface down"
+msgstr "interfaccia non attiva"
+
+msgid "dead interval expired: no Hello heard"
+msgstr "dead interval scaduto: nessun Hello ricevuto"
+
+msgid "no ack: retransmitting LSA"
+msgstr "nessun ack: ritrasmetto il LSA"
+
+msgid "from"
+msgstr "da"
+
+msgid "hello/dead intervals differ from ours: ignored, no adjacency"
+msgstr "intervalli hello/dead diversi dai nostri: ignorato, nessuna adiacenza"
+
+msgid "new neighbor, state Init"
+msgstr "nuovo vicino, stato Init"
+
+msgid "two-way, adjacency Full: exchanging databases"
+msgstr "bidirezionale, adiacenza Full: scambio dei database"
+
+msgid "it no longer lists us: restarted"
+msgstr "non ci elenca più: si è riavviato"
+
+msgid "newer: stored and flooded on"
+msgstr "più recente: memorizzato e inoltrato agli altri"
+
+msgid "usage: ospf cost IFACE N"
+msgstr "uso: ospf cost INTERFACCIA N"
+
+msgid "cost of"
+msgstr "costo di"
+
+msgid "a new LSA tells everyone"
+msgstr "un nuovo LSA lo comunica a tutti"
+
+msgid "started: router id"
+msgstr "avviato: router id"
+
+msgid "router id"
+msgstr "router id"
+
+msgid "hello / dead"
+msgstr "hello / dead"
+
+msgid "SPF runs"
+msgstr "esecuzioni SPF"
+
+msgid "last"
+msgstr "ultima"
+
+msgid "LSAs flooded / retransmitted"
+msgstr "LSA inoltrati / ritrasmessi"
+
+msgid "address"
+msgstr "indirizzo"
+
+msgid "dev"
+msgstr "interf."
+
+msgid "state"
+msgstr "stato"
+
+msgid "cost"
+msgstr "costo"
+
+msgid "LSDB: router"
+msgstr "LSDB: router"
+
+msgid "(neighbor:cost, network/cost)"
+msgstr "(vicino:costo, rete/costo)"
+
+msgid "age"
+msgstr "età"
+
+msgid "OSPF — link-state routing with shortest-path-first"
+msgstr "OSPF — routing link state con shortest path first"
+
+msgid ""
+"run ROUTER ospf [hello=10s] [dead=4×hello] [cost=N] [cost.eth1=N] [id=A.B.C.D]\n"
+"                [rxmt=TIME] [spf=200ms] [carrier=1]\n"
+"run ROUTER ospf cost IFACE N     change the cost of an interface while running\n"
+"  Without cost= the cost of an interface is 100 Mbit/s divided by its bandwidth.\n"
+"  carrier=0 ignores link-down signals: failures are found only by the dead interval.\n"
+"  Neighbors must use the same hello and dead intervals."
+msgstr ""
+"run ROUTER ospf [hello=10s] [dead=4×hello] [cost=N] [cost.eth1=N] [id=A.B.C.D]\n"
+"                [rxmt=TEMPO] [spf=200ms] [carrier=1]\n"
+"run ROUTER ospf cost INTERFACCIA N   cambia il costo di un'interfaccia durante l'esecuzione\n"
+"  Senza cost= il costo di un'interfaccia è 100 Mbit/s diviso per la sua banda.\n"
+"  carrier=0 ignora i segnali di link caduto: i guasti si scoprono solo con il dead interval.\n"
+"  I vicini devono usare gli stessi intervalli hello e dead."
+
+msgid ""
+"A link-state protocol makes every router learn the whole map. Each router does three things. First, it discovers its neighbors by sending Hello packets on every interface; two routers become adjacent when each sees itself listed in the other's Hello, and a neighbor that stays silent for the dead interval is declared down. Second, it describes itself in a link-state advertisement (LSA): the list of its neighbors and attached networks with a cost for each. The LSA carries a sequence number and is flooded: a router that receives a newer LSA stores it, acknowledges it and passes it on to all its other neighbors, retransmitting until acknowledged. Soon every router holds the same link-state database. Third, each router runs Dijkstra's algorithm on that database with itself as the root and installs, for every network, the first hop of the cheapest path.\n"
+"\n"
+"Compared with distance vector, bad news travel as fast as good news (a change is flooded at once, and everyone recomputes from facts rather than from hearsay), there is no count-to-infinity, and costs can express bandwidth instead of hop count. The price is memory and computation, which real OSPF contains by splitting large networks into areas.\n"
+"\n"
+"Simplified here: single area, no designated router (routers on a shared LAN form a full mesh of adjacencies), a new adjacency sends its whole database instead of the database description exchange, packet layouts are OSPF-like but not bit-exact, and LSAs do not age out."
+msgstr ""
+"Un protocollo link state fa sì che ogni router conosca l'intera mappa. Ogni router fa tre cose. Primo, scopre i vicini inviando pacchetti Hello su ogni interfaccia; due router diventano adiacenti quando ciascuno si vede elencato nell'Hello dell'altro, e un vicino che tace per tutto il dead interval è dichiarato caduto. Secondo, descrive se stesso in un link-state advertisement (LSA): l'elenco dei suoi vicini e delle reti collegate, ciascuno con un costo. Il LSA porta un numero di sequenza e viene diffuso a inondazione (flooding): un router che riceve un LSA più recente lo memorizza, lo conferma e lo passa a tutti gli altri vicini, ritrasmettendo finché non riceve conferma. In breve ogni router possiede lo stesso link-state database. Terzo, ogni router esegue l'algoritmo di Dijkstra su quel database con se stesso come radice e installa, per ogni rete, il primo salto del percorso meno costoso.\n"
+"\n"
+"Rispetto al distance vector, le cattive notizie viaggiano veloci quanto le buone (un cambiamento viene diffuso subito, e tutti ricalcolano a partire dai fatti e non dal sentito dire), non esiste conteggio all'infinito, e i costi possono esprimere la banda invece del numero di salti. Il prezzo è memoria e calcolo, che il vero OSPF contiene dividendo le reti grandi in aree.\n"
+"\n"
+"Semplificazioni: area unica, nessun designated router (i router su una LAN condivisa formano una maglia completa di adiacenze), una nuova adiacenza invia l'intero database invece dello scambio di database description, i formati dei pacchetti somigliano a OSPF ma non sono identici bit per bit, e i LSA non scadono."
+

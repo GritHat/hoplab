@@ -1,0 +1,173 @@
+# Italian translation of netlab: nat.c (nat, rendezvous)
+msgid ""
+msgstr ""
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "new mapping"
+msgstr "nuova associazione"
+
+msgid "translation table full: packet dropped"
+msgstr "tabella di traduzione piena: pacchetto scartato"
+
+msgid "port"
+msgstr "porta"
+
+msgid "no mapping, nothing inside to deliver it to"
+msgstr "nessuna associazione, non c'è nessuno all'interno a cui consegnarlo"
+
+msgid "unsolicited sender filtered out"
+msgstr "mittente non sollecitato, filtrato"
+
+msgid "hairpin: inside host reached via the public address"
+msgstr "hairpin: host interno raggiunto tramite l'indirizzo pubblico"
+
+msgid "mapping expired"
+msgstr "associazione scaduta"
+
+msgid "usage: nat forward proto=udp|tcp port=N to=HOST[:PORT]"
+msgstr "uso: nat forward proto=udp|tcp port=N to=HOST[:PORTA]"
+
+msgid "outside port already in use:"
+msgstr "porta esterna già in uso:"
+
+msgid "port forwarding:"
+msgstr "port forwarding:"
+
+msgid "start it first: run NODE nat out=IFACE"
+msgstr "prima va avviato: run NODO nat out=INTERFACCIA"
+
+msgid "which is the outside interface? (out=IFACE)"
+msgstr "qual è l'interfaccia esterna? (out=INTERFACCIA)"
+
+msgid "unknown type"
+msgstr "tipo sconosciuto"
+
+msgid "on"
+msgstr "su"
+
+msgid "idle timeout"
+msgstr "timeout di inattività"
+
+msgid "outside"
+msgstr "esterno"
+
+msgid "behaviour"
+msgstr "comportamento"
+
+msgid "translated / blocked"
+msgstr "tradotti / bloccati"
+
+msgid "inside"
+msgstr "interno"
+
+msgid "public"
+msgstr "pubblica"
+
+msgid "remote"
+msgstr "remoto"
+
+msgid "idle"
+msgstr "fermo"
+
+msgid "out/in"
+msgstr "usc/entr"
+
+msgid "(port forwarding)"
+msgstr "(port forwarding)"
+
+msgid "contacted:"
+msgstr "contattati:"
+
+msgid "more mappings"
+msgstr "altre associazioni"
+
+msgid "(no mappings yet)"
+msgstr "(ancora nessuna associazione)"
+
+msgid "NAT: many private hosts behind one public address"
+msgstr "NAT: molti host privati dietro un solo indirizzo pubblico"
+
+msgid "run ROUTER nat out=IFACE [type=full|restricted|port|symmetric] [timeout=30s]\n               [hairpin=1] [preserve=1]\nrun ROUTER nat forward proto=udp|tcp port=N to=HOST[:PORT]\n  out is the interface towards the Internet; its address becomes the public one.\n  type chooses mapping and filtering (default port: port-restricted cone).\n  preserve=1 keeps the original source port when it is free.\n  forward publishes an inside server on a port of the public address."
+msgstr "run ROUTER nat out=INTERFACCIA [type=full|restricted|port|symmetric] [timeout=30s]\n               [hairpin=1] [preserve=1]\nrun ROUTER nat forward proto=udp|tcp port=N to=HOST[:PORTA]\n  out è l'interfaccia verso Internet; il suo indirizzo diventa quello pubblico.\n  type sceglie mappatura e filtraggio (default port: port-restricted cone).\n  preserve=1 conserva la porta sorgente originale quando è libera.\n  forward pubblica un server interno su una porta dell'indirizzo pubblico."
+
+msgid "Private addresses (10/8, 172.16/12, 192.168/16) are not routed on the Internet: a packet from 192.168.1.10 can reach a server, but the answer has nowhere to go. A NAT router fixes this by rewriting the source of every outgoing packet to its own public address and to a port it picks (NAPT), and by remembering the pair in a translation table: inside address:port <-> public port. When the answer arrives on that public port the router looks the entry up, rewrites the destination back and forwards the packet inside. IP and transport checksums are recomputed, ICMP echo uses its identifier as the port, and ICMP errors need the quoted packet translated too. Entries are created by outgoing traffic and expire when idle, so nobody outside can open a conversation: that is why servers behind a NAT need an explicit port forwarding rule.\n\nNATs differ in two choices. Mapping: an endpoint-independent NAT reuses the same public port for everything an inside socket sends, while a symmetric NAT allocates a new port for each destination. Filtering: who may send to a mapped port? Anyone (full cone), only addresses the inside host has contacted (address-restricted), only the exact address:port pairs contacted (port-restricted), or only the one destination of the mapping (symmetric). These choices decide whether two hosts that are both behind NATs can talk directly: with UDP hole punching each learns the other's public endpoint from a rendezvous server and both send at the same time, so each NAT sees an outgoing packet first and lets the peer's packets in. It works with cone NATs and fails when a symmetric NAT meets a symmetric or port-restricted one, because the port the peer was told about is not the port actually used; then a relay (TURN) is needed."
+msgstr "Gli indirizzi privati (10/8, 172.16/12, 192.168/16) non vengono instradati su Internet: un pacchetto da 192.168.1.10 può raggiungere un server, ma la risposta non ha dove andare. Un router NAT risolve il problema riscrivendo la sorgente di ogni pacchetto in uscita con il proprio indirizzo pubblico e con una porta scelta da lui (NAPT), e ricordando la coppia in una tabella di traduzione: indirizzo:porta interni <-> porta pubblica. Quando la risposta arriva su quella porta pubblica il router cerca la voce, riscrive la destinazione e inoltra il pacchetto all'interno. I checksum IP e di trasporto vengono ricalcolati, l'ICMP echo usa il suo identificatore come porta, e per gli errori ICMP va tradotto anche il pacchetto citato. Le voci nascono dal traffico in uscita e scadono quando restano inattive, quindi nessuno dall'esterno può aprire una conversazione: per questo i server dietro un NAT hanno bisogno di una regola esplicita di port forwarding.\n\nI NAT differiscono in due scelte. Mappatura: un NAT indipendente dall'endpoint riusa la stessa porta pubblica per tutto ciò che un socket interno invia, mentre un NAT simmetrico assegna una porta nuova per ogni destinazione. Filtraggio: chi può inviare a una porta mappata? Chiunque (full cone), solo gli indirizzi che l'host interno ha contattato (address-restricted), solo le esatte coppie indirizzo:porta contattate (port-restricted), oppure solo l'unica destinazione della mappatura (simmetrico). Queste scelte decidono se due host entrambi dietro un NAT possono parlarsi direttamente: con l'UDP hole punching ciascuno impara l'endpoint pubblico dell'altro da un server di rendezvous ed entrambi inviano nello stesso momento, così ogni NAT vede prima un pacchetto in uscita e lascia entrare quelli del peer. Funziona con i NAT cone e fallisce quando un NAT simmetrico ne incontra uno simmetrico o port-restricted, perché la porta comunicata al peer non è quella realmente usata; in quel caso serve un relay (TURN)."
+
+msgid "registered: its packets arrive from"
+msgstr "registrato: i suoi pacchetti arrivano da"
+
+msgid "introducing"
+msgstr "presento"
+
+msgid "no answer from the server"
+msgstr "nessuna risposta dal server"
+
+msgid "no direct path to"
+msgstr "nessun percorso diretto verso"
+
+msgid "the NATs do not let the punch through (a relay is needed)"
+msgstr "i NAT non lasciano passare il punch (serve un relay)"
+
+msgid "is reachable at"
+msgstr "è raggiungibile a"
+
+msgid "punching"
+msgstr "invio i punch"
+
+msgid "the peer reaches us from"
+msgstr "il peer ci raggiunge da"
+
+msgid "not"
+msgstr "non da"
+
+msgid "its NAT is symmetric; answering there"
+msgstr "il suo NAT è simmetrico; rispondo lì"
+
+msgid "hole punched, direct path to"
+msgstr "buco aperto, percorso diretto verso"
+
+msgid "usage: rendezvous server | rendezvous join SERVER name=ME peer=OTHER"
+msgstr "uso: rendezvous server | rendezvous join SERVER name=IO peer=ALTRO"
+
+msgid "server listening on UDP port"
+msgstr "server in ascolto sulla porta UDP"
+
+msgid "UDP port"
+msgstr "porta UDP"
+
+msgid "me / peer"
+msgstr "io / peer"
+
+msgid "local UDP port"
+msgstr "porta UDP locale"
+
+msgid "peer endpoint"
+msgstr "endpoint del peer"
+
+msgid "waiting for the server"
+msgstr "in attesa del server"
+
+msgid "punches sent / received"
+msgstr "punch inviati / ricevuti"
+
+msgid "direct path open"
+msgstr "percorso diretto aperto"
+
+msgid "no direct path"
+msgstr "nessun percorso diretto"
+
+msgid "trying"
+msgstr "tentativo in corso"
+
+msgid "UDP hole punching through NATs, with a rendezvous server"
+msgstr "UDP hole punching attraverso i NAT, con un server di rendezvous"
+
+msgid "run NODE rendezvous server [port=3478]\nrun NODE rendezvous join SERVER name=ME peer=OTHER [tries=6] [interval=500ms]\n                    [wait=0ms]\n  Both peers join; the server tells each the public endpoint of the other and\n  they send PUNCH datagrams to each other (after `wait`). punch.ok becomes 1 when\n  one arrives."
+msgstr "run NODO rendezvous server [port=3478]\nrun NODO rendezvous join SERVER name=IO peer=ALTRO [tries=6] [interval=500ms]\n                    [wait=0ms]\n  Entrambi i peer fanno join; il server comunica a ciascuno l'endpoint pubblico dell'altro\n  ed essi si inviano datagrammi PUNCH (dopo `wait`). punch.ok diventa 1 quando\n  ne arriva uno."
+
+msgid "Two hosts behind different NATs cannot simply send to each other: neither knows the other's public address and port, and both NATs drop unsolicited packets. A rendezvous server with a public address solves the first problem: each peer sends it a datagram, and the server reads the source address and port as rewritten by the NAT (this is what STUN does) and passes each endpoint to the other peer. Then both peers send datagrams to the endpoint they were given, at the same time. The first packet of each side may be dropped by the other NAT, but on its way out it opened a mapping and a filter entry for the peer; the following packets pass in both directions. This relies on the NAT reusing the same public port it showed to the server: symmetric NATs do not, so the punch fails unless the other side accepts packets from any port. The lab reports which combinations work."
+msgstr "Due host dietro NAT diversi non possono semplicemente inviarsi dati: nessuno dei due conosce indirizzo e porta pubblici dell'altro, ed entrambi i NAT scartano i pacchetti non sollecitati. Un server di rendezvous con un indirizzo pubblico risolve il primo problema: ogni peer gli invia un datagramma, e il server legge indirizzo e porta sorgente così come li ha riscritti il NAT (è ciò che fa STUN) e passa ciascun endpoint all'altro peer. Poi entrambi i peer inviano datagrammi all'endpoint ricevuto, nello stesso momento. Il primo pacchetto di ciascun lato può essere scartato dall'altro NAT, ma uscendo ha aperto una mappatura e una voce di filtro per il peer; i pacchetti successivi passano in entrambe le direzioni. Tutto ciò si basa sul fatto che il NAT riusi la stessa porta pubblica mostrata al server: i NAT simmetrici non lo fanno, quindi il punch fallisce a meno che l'altro lato accetti pacchetti da qualunque porta. Il laboratorio mostra quali combinazioni funzionano."
+
