@@ -58,8 +58,8 @@ note 12s Link r2-r3 fails: r2 loses its route to the network of h3. Watch what r
 note[it] 12s Il collegamento r2-r3 si guasta: r2 perde la rotta verso la rete di h3. Osserva cosa dice ora r1 a r2.
 note 16s Without split horizon r1 and r2 point at each other: the metric climbs, packets loop until TTL 0.
 note[it] 16s Senza split horizon r1 e r2 si indicano a vicenda: la metrica sale, i pacchetti girano finché il TTL arriva a 0.
-note 45s Metric 16 reached: the route is finally declared unreachable everywhere.
-note[it] 45s Raggiunta la metrica 16: la rotta è finalmente dichiarata irraggiungibile ovunque.
+note 26s Metric 16 reached: the route is finally declared unreachable everywhere.
+note[it] 26s Raggiunta la metrica 16: la rotta è finalmente dichiarata irraggiungibile ovunque.
 
 at 8s  run h1 ping h3 count=2
 at 12s link r2 r3 down

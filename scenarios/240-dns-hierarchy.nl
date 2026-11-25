@@ -6,7 +6,7 @@ topic  dns
 about     Iterative resolution across the delegation tree. A recursive resolver starts at the root, is referred to the .com servers, then to the authoritative server of example.com, and finally gets the answer; the second lookup is served from the cache. `dig trace=1` makes the client walk the tree itself. Compare the number of upstream queries before and after caching.
 about[it] Risoluzione iterativa lungo l'albero delle deleghe. Un resolver ricorsivo parte dalla radice, viene rimandato ai server di .com, poi al server autoritativo di example.com, e infine ottiene la risposta; la seconda ricerca arriva dalla cache. `dig trace=1` fa percorrere l'albero al client stesso. Confronta il numero di query a monte prima e dopo la cache.
 node h1 host
-node r  host role=resolver
+node r  router role=resolver
 node root host role=root
 node com  host role=TLD
 node auth host role=auth
