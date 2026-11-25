@@ -1,0 +1,198 @@
+# Italian translation of the netlab tcp module.
+msgid ""
+msgstr ""
+"Project-Id-Version: netlab\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "zero-window probe"
+msgstr "sonda a finestra zero"
+
+msgid "bottleneck bandwidth found"
+msgstr "banda del collo di bottiglia trovata"
+
+msgid "3 duplicate ACKs: fast retransmit"
+msgstr "3 ACK duplicati: fast retransmit"
+
+msgid "no answer to SYN: giving up"
+msgstr "nessuna risposta al SYN: rinuncio"
+
+msgid "too many retransmissions: connection dropped"
+msgstr "troppe ritrasmissioni: connessione abbandonata"
+
+msgid "retransmission timeout"
+msgstr "timeout di ritrasmissione"
+
+msgid "connection closed (TIME_WAIT)"
+msgstr "connessione chiusa (TIME_WAIT)"
+
+msgid "window update"
+msgstr "aggiornamento della finestra"
+
+msgid "connection established"
+msgstr "connessione stabilita"
+
+msgid "the receiver advertises window 0: sender blocked by flow control"
+msgstr ""
+"il ricevitore annuncia finestra 0: mittente bloccato dal controllo di flusso"
+
+msgid "ECN echo: congestion signalled without loss"
+msgstr "eco ECN: congestione segnalata senza perdite"
+
+msgid "wrong checksum: segment discarded"
+msgstr "checksum errato: segmento scartato"
+
+msgid "no listener on port"
+msgstr "nessuno in ascolto sulla porta"
+
+msgid "connection refused (RST)"
+msgstr "connessione rifiutata (RST)"
+
+msgid "connection reset by peer"
+msgstr "connessione azzerata dall'altro capo"
+
+msgid "packet marked CE by a router: echoing ECE"
+msgstr "pacchetto marcato CE da un router: rimando ECE"
+
+msgid "connection closed"
+msgstr "connessione chiusa"
+
+msgid "out of order"
+msgstr "fuori ordine"
+
+msgid "expected"
+msgstr "atteso"
+
+msgid "no route to"
+msgstr "nessuna rotta verso"
+
+msgid "opening a connection"
+msgstr "apertura di una connessione"
+
+msgid "connected"
+msgstr "connesso"
+
+msgid "done"
+msgstr "completato"
+
+msgid "retransmissions"
+msgstr "ritrasmissioni"
+
+msgid "timeouts"
+msgstr "timeout"
+
+msgid "failed"
+msgstr "fallito"
+
+msgid "connection refused"
+msgstr "connessione rifiutata"
+
+msgid "timeout"
+msgstr "timeout"
+
+msgid "connection reset"
+msgstr "connessione azzerata"
+
+msgid "from"
+msgstr "da"
+
+msgid "listening on TCP port"
+msgstr "in ascolto sulla porta TCP"
+
+msgid "unknown destination"
+msgstr "destinazione sconosciuta"
+
+msgid "unknown command"
+msgstr "comando sconosciuto"
+
+msgid "no connections"
+msgstr "nessuna connessione"
+
+msgid "sink received"
+msgstr "ricevuti dal sink"
+
+msgid ""
+"run NODE tcp sink [port=5001] [rwnd=BYTES] [readrate=RATE]\n"
+"run NODE tcp send DEST [port=5001] [bytes=1M] "
+"[cc=reno|tahoe|newreno|cubic|bbr]\n"
+"             [ecn=1] [mss=1460] [iw=10] [ssthresh=SEGMENTS] [rto_min=200ms]\n"
+"  sink accepts connections and discards the data; readrate makes it a slow\n"
+"  reader (flow control). send transfers `bytes` and reports time and "
+"goodput.\n"
+"  Not implemented: SACK, delayed ACKs, timestamps; bbr is a simplified "
+"model."
+msgstr ""
+"run NODO tcp sink [port=5001] [rwnd=BYTE] [readrate=VELOCITÀ]\n"
+"run NODO tcp send DEST [port=5001] [bytes=1M] "
+"[cc=reno|tahoe|newreno|cubic|bbr]\n"
+"             [ecn=1] [mss=1460] [iw=10] [ssthresh=SEGMENTI] [rto_min=200ms]\n"
+"  sink accetta connessioni e scarta i dati; readrate lo rende un lettore "
+"lento\n"
+"  (controllo di flusso). send trasferisce `bytes` e riporta tempo e "
+"goodput.\n"
+"  Non implementati: SACK, ACK ritardati, timestamp; bbr è un modello "
+"semplificato."
+
+msgid ""
+"TCP turns the unreliable, unordered packet service of IP into a reliable "
+"byte stream between two ports. A connection starts with the three-way "
+"handshake (SYN, SYN+ACK, ACK) in which the two ends choose initial sequence "
+"numbers and exchange options such as the maximum segment size. Every byte "
+"has a sequence number; the receiver answers with cumulative "
+"acknowledgements (\"I have everything before N\") and buffers segments that "
+"arrive out of order. A segment that is not acknowledged before the "
+"retransmission timeout (RTO, computed from the smoothed round-trip time and "
+"its variance, doubled at each expiry) is sent again; three duplicate ACKs "
+"reveal a hole earlier and trigger a fast retransmit. The connection ends "
+"when each side has sent a FIN and seen it acknowledged.\n"
+"\n"
+"Two windows limit the sender. The receive window, advertised in every "
+"segment, is flow control: it keeps a fast sender from overrunning a slow "
+"reader, and when it drops to zero the sender probes periodically until it "
+"reopens. The congestion window (cwnd) is the sender's own estimate of what "
+"the network can carry. It grows exponentially in slow start up to ssthresh, "
+"then linearly in congestion avoidance (additive increase); a loss halves it "
+"(multiplicative decrease), giving the classic sawtooth. Tahoe restarts from "
+"one segment after every loss; Reno adds fast recovery; NewReno repairs "
+"several losses in one window using partial ACKs; CUBIC grows the window as "
+"a cubic function of the time since the last loss, which suits fast "
+"long-distance paths; BBR ignores loss and instead models the path, pacing "
+"packets at the measured bottleneck rate and probing periodically for more. "
+"With ECN, routers mark packets instead of dropping them and the receiver "
+"echoes the mark, so the sender slows down without losing data."
+msgstr ""
+"TCP trasforma il servizio a pacchetti di IP, inaffidabile e senza ordine, "
+"in un flusso di byte affidabile fra due porte. Una connessione comincia con "
+"l'handshake a tre vie (SYN, SYN+ACK, ACK), in cui i due capi scelgono i "
+"numeri di sequenza iniziali e si scambiano opzioni come la dimensione "
+"massima del segmento. Ogni byte ha un numero di sequenza; il ricevitore "
+"risponde con riscontri cumulativi («ho tutto ciò che precede N») e tiene da "
+"parte i segmenti arrivati fuori ordine. Un segmento non riscontrato entro "
+"il timeout di ritrasmissione (RTO, calcolato dal tempo di andata e ritorno "
+"livellato e dalla sua varianza, raddoppiato a ogni scadenza) viene "
+"rispedito; tre ACK duplicati rivelano prima un buco e innescano un fast "
+"retransmit. La connessione termina quando ciascun lato ha inviato un FIN e "
+"lo ha visto riscontrato.\n"
+"\n"
+"Due finestre limitano il mittente. La finestra di ricezione, annunciata in "
+"ogni segmento, è il controllo di flusso: impedisce a un mittente veloce di "
+"travolgere un lettore lento, e quando scende a zero il mittente la sonda "
+"periodicamente finché non si riapre. La finestra di congestione (cwnd) è la "
+"stima che il mittente fa di quanto la rete può trasportare. Cresce "
+"esponenzialmente in slow start fino a ssthresh, poi linearmente in "
+"congestion avoidance (incremento additivo); una perdita la dimezza "
+"(decremento moltiplicativo), da cui il classico dente di sega. Tahoe "
+"riparte da un segmento dopo ogni perdita; Reno aggiunge il fast recovery; "
+"NewReno ripara più perdite nella stessa finestra usando gli ACK parziali; "
+"CUBIC fa crescere la finestra come funzione cubica del tempo trascorso "
+"dall'ultima perdita, adatta ai percorsi veloci e lunghi; BBR ignora le "
+"perdite e costruisce invece un modello del percorso, cadenzando i pacchetti "
+"alla velocità misurata del collo di bottiglia e sondando periodicamente se "
+"ce n'è di più. Con ECN i router marcano i pacchetti invece di scartarli e "
+"il ricevitore rimanda il segnale, così il mittente rallenta senza perdere "
+"dati."
+
+msgid "TCP — reliable byte streams, flow and congestion control"
+msgstr "TCP — flussi di byte affidabili, controllo di flusso e di congestione"

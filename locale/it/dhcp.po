@@ -1,0 +1,94 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: netlab\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "from"
+msgstr "da"
+
+msgid "pool exhausted, no offer"
+msgstr "pool esaurito, nessuna offerta"
+
+msgid "lease"
+msgstr "lease"
+
+msgid "unknown interface"
+msgstr "interfaccia sconosciuta"
+
+msgid "server needs pool=FIRST-LAST"
+msgstr "il server richiede pool=PRIMO-ULTIMO"
+
+msgid "bad pool (use FIRST-LAST)"
+msgstr "pool non valido (usa PRIMO-ULTIMO)"
+
+msgid "server ready, pool"
+msgstr "server pronto, pool"
+
+msgid "pool"
+msgstr "pool"
+
+msgid "offers / ACK / NAK"
+msgstr "offerte / ACK / NAK"
+
+msgid "leases (remaining)"
+msgstr "lease (rimanenti)"
+
+msgid "DHCP server and client: hand out and renew addresses"
+msgstr "Server e client DHCP: assegnare e rinnovare indirizzi"
+
+msgid "run NODE dhcp server pool=FIRST-LAST [lease=60s] [dns=ADDR] [router=ADDR] [if=eth0]\nrun NODE dhcp client [if=eth0]      obtain and keep an address\nrun NODE dhcp release               give the address back\n  Hosts in a DHCP scenario start with no address; give the server a static ip."
+msgstr "run NODO dhcp server pool=PRIMO-ULTIMO [lease=60s] [dns=IND] [router=IND] [if=eth0]\nrun NODO dhcp client [if=eth0]      ottiene e mantiene un indirizzo\nrun NODO dhcp release               restituisce l'indirizzo\n  Gli host di uno scenario DHCP partono senza indirizzo; dai al server un ip statico."
+
+msgid "no answer, starting over"
+msgstr "nessuna risposta, si ricomincia"
+
+msgid "renewing with"
+msgstr "rinnovo con"
+
+msgid "rebinding (broadcast)"
+msgstr "rebinding (broadcast)"
+
+msgid "lease expired, dropping"
+msgstr "lease scaduto, rilascio di"
+
+msgid "broadcast from"
+msgstr "broadcast da"
+
+msgid "lease renewed:"
+msgstr "lease rinnovato:"
+
+msgid "bound:"
+msgstr "assegnato:"
+
+msgid "gw"
+msgstr "gw"
+
+msgid "from the server, starting over"
+msgstr "dal server, si ricomincia"
+
+msgid "releasing"
+msgstr "rilascio di"
+
+msgid "state"
+msgstr "stato"
+
+msgid "address"
+msgstr "indirizzo"
+
+msgid "server / gateway"
+msgstr "server / gateway"
+
+msgid "lease remaining"
+msgstr "lease rimanente"
+
+msgid "T1 renew / T2 rebind"
+msgstr "T1 rinnovo / T2 rebind"
+
+msgid "DHCP client state"
+msgstr "Stato del client DHCP"
+
+msgid "A host that joins a network with no address uses DHCP to get one. It cannot send a normal unicast yet, so everything starts as a broadcast. The client broadcasts a DISCOVER; every server that can serve the subnet replies with an OFFER proposing an address, the subnet mask, the default gateway, the DNS servers and a lease time. The client picks one offer and broadcasts a REQUEST naming the chosen server (so the others take their offer back); that server answers ACK and the client finally configures the interface, or NAK if the address is no longer free.\n\nA lease is temporary. The client starts two timers: at T1 (half the lease) it tries to renew with the same server by unicast; at T2 (seven eighths) it broadcasts to any server; if the lease runs out it must drop the address and start over. RELEASE returns an address early. The message format is inherited from the older BOOTP protocol: a fixed header carrying the client hardware address and the offered address, followed by a list of typed options, of which option 53 (the message type) turns BOOTP into DHCP. Here one server serves its own subnet directly; real networks reach a central server through relay agents."
+msgstr "Un host che entra in una rete senza indirizzo usa DHCP per ottenerne uno. Non può ancora inviare un unicast normale, quindi tutto parte in broadcast. Il client manda in broadcast un DISCOVER; ogni server che può servire la sottorete risponde con un OFFER proponendo un indirizzo, la maschera di sottorete, il gateway predefinito, i server DNS e una durata del lease. Il client sceglie un'offerta e manda in broadcast un REQUEST nominando il server scelto (così gli altri ritirano la propria offerta); quel server risponde ACK e il client finalmente configura l'interfaccia, oppure NAK se l'indirizzo non è più libero.\n\nUn lease è temporaneo. Il client avvia due timer: a T1 (metà del lease) tenta di rinnovare con lo stesso server in unicast; a T2 (sette ottavi) manda in broadcast a qualunque server; se il lease si esaurisce deve abbandonare l'indirizzo e ricominciare. RELEASE restituisce un indirizzo in anticipo. Il formato dei messaggi è ereditato dal vecchio protocollo BOOTP: un'intestazione fissa che porta l'indirizzo hardware del client e l'indirizzo offerto, seguita da un elenco di opzioni tipate, di cui l'opzione 53 (il tipo di messaggio) trasforma BOOTP in DHCP. Qui un server serve direttamente la propria sottorete; le reti reali raggiungono un server centrale tramite agenti relay."

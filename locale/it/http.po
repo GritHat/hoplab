@@ -1,0 +1,124 @@
+# Italian translation of the netlab http module.
+msgid ""
+msgstr ""
+"Project-Id-Version: netlab\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "complete"
+msgstr "completata"
+
+msgid "object"
+msgstr "oggetto"
+
+msgid "objects"
+msgstr "oggetti"
+
+msgid "TCP connection"
+msgstr "connessione TCP"
+
+msgid "TCP connections"
+msgstr "connessioni TCP"
+
+msgid "failed"
+msgstr "fallita"
+
+msgid "connection refused"
+msgstr "connessione rifiutata"
+
+msgid "timeout"
+msgstr "timeout"
+
+msgid "connection reset"
+msgstr "connessione azzerata"
+
+msgid "connection closed early"
+msgstr "connessione chiusa in anticipo"
+
+msgid "server listening on TCP port"
+msgstr "server in ascolto sulla porta TCP"
+
+msgid "which URL?"
+msgstr "quale URL?"
+
+msgid "too many requests in progress"
+msgstr "troppe richieste in corso"
+
+msgid "unknown host"
+msgstr "host sconosciuto"
+
+msgid "persistent connection"
+msgstr "connessione persistente"
+
+msgid "one connection per object"
+msgstr "una connessione per oggetto"
+
+msgid "unknown command"
+msgstr "comando sconosciuto"
+
+msgid "server on TCP port"
+msgstr "server sulla porta TCP"
+
+msgid "requests served"
+msgstr "richieste servite"
+
+msgid "index page embeds"
+msgstr "la pagina indice incorpora"
+
+msgid ""
+"run NODE http server [port=80] [objects=3] [objsize=5000]\n"
+"run NODE http get HOST[/PATH] [port=80] [keepalive=1] [embedded=1]\n"
+"  The server answers / and /index.html with a page that embeds `objects`\n"
+"  images, and /N with N bytes. The client fetches the page and then, with\n"
+"  embedded=1, every object it references: over the same connection\n"
+"  (keepalive=1) or opening a new connection for each (keepalive=0)."
+msgstr ""
+"run NODO http server [port=80] [objects=3] [objsize=5000]\n"
+"run NODO http get HOST[/PERCORSO] [port=80] [keepalive=1] [embedded=1]\n"
+"  Il server risponde a / e /index.html con una pagina che incorpora "
+"`objects`\n"
+"  immagini, e a /N con N byte. Il client scarica la pagina e poi, con\n"
+"  embedded=1, ogni oggetto a cui fa riferimento: sulla stessa connessione\n"
+"  (keepalive=1) o aprendone una nuova per ciascuno (keepalive=0)."
+
+msgid ""
+"HTTP is a request/response protocol carried by a TCP connection. The client "
+"sends a request made of text lines: a request line (method, path, version), "
+"headers such as Host, and an empty line. The server answers with a status "
+"line (200 OK, 404 Not Found, ...), its own headers and the body; "
+"Content-Length tells the client where the body ends, because TCP itself "
+"only delivers a stream of bytes without message boundaries.\n"
+"\n"
+"A web page is usually an HTML document plus the objects it references. "
+"HTTP/1.0 opened a new TCP connection for every object, paying a three-way "
+"handshake and a fresh slow start each time. HTTP/1.1 keeps the connection "
+"open (persistent connections), so later requests skip the handshake and "
+"inherit an already opened congestion window: compare keepalive=1 and "
+"keepalive=0 on a path with some delay and the difference in page load time "
+"is exactly those saved round trips. Here requests on a connection are "
+"strictly sequential; HTTP/2 multiplexes them and HTTP/3 moves the whole "
+"thing onto QUIC to avoid head-of-line blocking."
+msgstr ""
+"HTTP è un protocollo a richiesta e risposta trasportato da una connessione "
+"TCP. Il client invia una richiesta fatta di righe di testo: una riga di "
+"richiesta (metodo, percorso, versione), intestazioni come Host e una riga "
+"vuota. Il server risponde con una riga di stato (200 OK, 404 Not Found, "
+"...), le sue intestazioni e il corpo; Content-Length dice al client dove "
+"finisce il corpo, perché TCP consegna solo un flusso di byte senza confini "
+"fra i messaggi.\n"
+"\n"
+"Una pagina web è di solito un documento HTML più gli oggetti a cui fa "
+"riferimento. HTTP/1.0 apriva una nuova connessione TCP per ogni oggetto, "
+"pagando ogni volta un handshake a tre vie e un nuovo slow start. HTTP/1.1 "
+"tiene aperta la connessione (connessioni persistenti), così le richieste "
+"successive saltano l'handshake ed ereditano una finestra di congestione già "
+"aperta: confronta keepalive=1 e keepalive=0 su un percorso con un po' di "
+"ritardo e la differenza nel tempo di caricamento è esattamente quei giri "
+"risparmiati. Qui le richieste su una connessione sono strettamente in "
+"sequenza; HTTP/2 le trasmette in parallelo e HTTP/3 sposta il tutto su QUIC per evitare "
+"il blocco in testa alla coda."
+
+msgid "HTTP/1.1 — web server and client"
+msgstr "HTTP/1.1 — server e client web"
