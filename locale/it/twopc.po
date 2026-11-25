@@ -1,0 +1,254 @@
+# Italian translation of the netlab "twopc" module.
+msgid ""
+msgstr ""
+"Project-Id-Version: netlab\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "log record forced to disk"
+msgstr "record di log forzato su disco"
+
+msgid "transaction"
+msgstr "transazione"
+
+msgid "decision COMMIT"
+msgstr "decisione COMMIT"
+
+msgid "decision ABORT"
+msgstr "decisione ABORT"
+
+msgid "a vote did not arrive in time"
+msgstr "un voto non è arrivato in tempo"
+
+msgid "pre-commit phase over"
+msgstr "fase di pre-commit conclusa"
+
+msgid "decision not acknowledged by everybody: sending it again"
+msgstr "decisione non riscontrata da tutti: la invio di nuovo"
+
+msgid "transaction exists already, or too many:"
+msgstr "transazione già esistente, o troppe:"
+
+msgid "phase 1, PREPARE sent to every participant"
+msgstr "fase 1, PREPARE inviato a tutti i partecipanti"
+
+msgid "three-phase commit"
+msgstr "three-phase commit"
+
+msgid "two-phase commit"
+msgstr "two-phase commit"
+
+msgid "query about"
+msgstr "richiesta su"
+
+msgid "from"
+msgstr "da"
+
+msgid "unknown transaction, presumed aborted"
+msgstr "transazione sconosciuta, si presume annullata"
+
+msgid "all voted yes; phase 2, PRE-COMMIT sent"
+msgstr "tutti hanno votato sì; fase 2, PRE-COMMIT inviato"
+
+msgid "all participants voted yes"
+msgstr "tutti i partecipanti hanno votato sì"
+
+msgid "a participant voted no"
+msgstr "un partecipante ha votato no"
+
+msgid "pre-commit acknowledged by everybody"
+msgstr "pre-commit riscontrato da tutti"
+
+msgid "acknowledged by everybody, finished"
+msgstr "riscontrata da tutti, conclusa"
+
+msgid "committed"
+msgstr "commit eseguito"
+
+msgid "aborted"
+msgstr "annullata"
+
+msgid "unblocked; locks were held for"
+msgstr "sbloccata; i lock sono rimasti presi per"
+
+msgid ""
+"3PC: pre-committed and the coordinator is silent, so everybody is prepared "
+"to commit"
+msgstr ""
+"3PC: pre-commit ricevuto e il coordinatore tace, quindi tutti sono pronti "
+"al commit"
+
+msgid "3PC: no PRE-COMMIT arrived, so nobody can have committed"
+msgstr ""
+"3PC: nessun PRE-COMMIT arrivato, quindi nessuno può aver fatto il commit"
+
+msgid "BLOCKED"
+msgstr "BLOCCATA"
+
+msgid ""
+"voted yes and heard nothing: it can neither commit nor abort on its own, "
+"and keeps its locks"
+msgstr ""
+"ha votato sì e non ha saputo più nulla: da sola non può né fare il commit "
+"né annullare, e tiene i suoi lock"
+
+msgid "asking the coordinator for the decision"
+msgstr "chiedo la decisione al coordinatore"
+
+msgid "prepared (changes and locks on disk), vote YES"
+msgstr "pronta (modifiche e lock su disco), voto YES"
+
+msgid "cannot do it, vote NO and abort locally"
+msgstr "impossibile, voto NO e annullo in locale"
+
+msgid "pre-commit: now I know everybody voted yes"
+msgstr "pre-commit: ora so che tutti hanno votato sì"
+
+msgid "decision received from the coordinator"
+msgstr "decisione ricevuta dal coordinatore"
+
+msgid "start with `coordinator` or `participant`"
+msgstr "avviare con `coordinator` o `participant`"
+
+msgid "unknown participant"
+msgstr "partecipante sconosciuto"
+
+msgid "the coordinator needs participants=a,b,c"
+msgstr "al coordinatore serve participants=a,b,c"
+
+msgid "unknown coordinator"
+msgstr "coordinatore sconosciuto"
+
+msgid "from now on this participant votes"
+msgstr "d'ora in poi questo partecipante vota"
+
+msgid "unknown command"
+msgstr "comando sconosciuto"
+
+msgid "recovery: reading the log"
+msgstr "ripristino: lettura del log"
+
+msgid "recovery: begun but no decision in the log"
+msgstr "ripristino: iniziata ma senza decisione nel log"
+
+msgid "recovery: pre-commit in the log"
+msgstr "ripristino: pre-commit nel log"
+
+msgid "in doubt after the crash, asking the coordinator"
+msgstr "in dubbio dopo il guasto, chiedo al coordinatore"
+
+msgid "role"
+msgstr "ruolo"
+
+msgid "coordinator"
+msgstr "coordinatore"
+
+msgid "participants"
+msgstr "partecipanti"
+
+msgid "participant"
+msgstr "partecipante"
+
+msgid "votes"
+msgstr "voti"
+
+msgid "timeout"
+msgstr "timeout"
+
+msgid "write-ahead log"
+msgstr "write-ahead log"
+
+msgid "Atomic commitment: two-phase and three-phase commit"
+msgstr "Commit atomico: two-phase e three-phase commit"
+
+msgid ""
+"run NODE twopc coordinator participants=p1,p2,p3 [timeout=1s]\n"
+"run NODE twopc participant coordinator=NODE [vote=yes|no] [timeout=1s]\n"
+"run COORD twopc begin [tx=NAME] [three=1]   start a transaction (three=1: "
+"3PC)\n"
+"run PART twopc vote=no                      change how a participant votes\n"
+"  Crash and restart nodes with `node N down` / `node N up` to see recovery."
+msgstr ""
+"run NODO twopc coordinator participants=p1,p2,p3 [timeout=1s]\n"
+"run NODO twopc participant coordinator=NODO [vote=yes|no] [timeout=1s]\n"
+"run COORD twopc begin [tx=NOME] [three=1]   avvia una transazione (three=1: "
+"3PC)\n"
+"run PART twopc vote=no                      cambia il voto di un "
+"partecipante\n"
+"  Guasta e riavvia i nodi con `node N down` / `node N up` per vedere il "
+"ripristino."
+
+msgid ""
+"A distributed transaction touches data on several machines and must be "
+"atomic: either every machine commits it or none does. No machine may decide "
+"alone, because another one might be unable to commit; and once a machine "
+"has promised, it cannot change its mind.\n"
+"\n"
+"Two-phase commit (2PC) gives the decision to a coordinator. Phase 1: it "
+"sends PREPARE; each participant makes the changes durable without applying "
+"them, writes a READY record to its log and votes YES, or votes NO and "
+"aborts. Phase 2: if all voted YES the coordinator writes COMMIT to its log "
+"- this single log write is the moment the transaction commits - and tells "
+"everybody; otherwise it sends ABORT. Participants acknowledge, and the "
+"coordinator repeats the decision until all have.\n"
+"\n"
+"Logs make the protocol survive crashes. A coordinator that restarts finds "
+"either a decision, which it sends again, or none, and then aborts (presumed "
+"abort). A participant that restarts in the READY state is in doubt and asks "
+"the coordinator.\n"
+"\n"
+"The weakness is the window between a YES vote and the decision. A "
+"participant that has voted YES and hears nothing can neither commit "
+"(somebody may have voted NO) nor abort (the coordinator may have "
+"committed): it must wait, holding its locks, until the coordinator comes "
+"back. 2PC is a blocking protocol.\n"
+"\n"
+"Three-phase commit (3PC) inserts a PRE-COMMIT round between the votes and "
+"the commit, so that no process commits while another is still uncertain. A "
+"participant that times out before PRE-COMMIT knows nobody committed and "
+"aborts; one that times out after it knows everybody voted YES and commits. "
+"This removes blocking only if timeouts are reliable failure detectors, that "
+"is in a synchronous network without partitions; the version here also omits "
+"the termination protocol that elects a new coordinator. With real networks "
+"the general answer is consensus (Paxos, Raft): replicate the coordinator's "
+"decision so that it survives the crash of any single machine."
+msgstr ""
+"Una transazione distribuita tocca dati su più macchine e deve essere "
+"atomica: o tutte le macchine fanno il commit o nessuna. Nessuna macchina "
+"può decidere da sola, perché un'altra potrebbe non essere in grado di "
+"concludere; e una volta che una macchina ha promesso, non può cambiare "
+"idea.\n"
+"\n"
+"Il two-phase commit (2PC) affida la decisione a un coordinatore. Fase 1: "
+"invia PREPARE; ogni partecipante rende durevoli le modifiche senza "
+"applicarle, scrive un record READY nel suo log e vota YES, oppure vota NO e "
+"annulla. Fase 2: se tutti hanno votato YES il coordinatore scrive COMMIT "
+"nel suo log - questa singola scrittura è l'istante in cui la transazione è "
+"conclusa - e lo comunica a tutti; altrimenti invia ABORT. I partecipanti "
+"riscontrano, e il coordinatore ripete la decisione finché non l'hanno fatto "
+"tutti.\n"
+"\n"
+"I log permettono al protocollo di sopravvivere ai guasti. Un coordinatore "
+"che riparte trova una decisione, e la invia di nuovo, oppure nessuna, e "
+"allora annulla (presumed abort). Un partecipante che riparte nello stato "
+"READY è in dubbio e chiede al coordinatore.\n"
+"\n"
+"Il punto debole è la finestra fra il voto YES e la decisione. Un "
+"partecipante che ha votato YES e non sente più nulla non può fare il commit "
+"(qualcuno potrebbe aver votato NO) né annullare (il coordinatore potrebbe "
+"aver deciso il commit): deve aspettare, tenendo i suoi lock, finché il "
+"coordinatore non torna. Il 2PC è un protocollo bloccante.\n"
+"\n"
+"Il three-phase commit (3PC) inserisce un giro di PRE-COMMIT fra i voti e il "
+"commit, così che nessun processo faccia il commit mentre un altro è ancora "
+"incerto. Un partecipante che va in timeout prima del PRE-COMMIT sa che "
+"nessuno ha fatto il commit e annulla; uno che va in timeout dopo sa che "
+"tutti hanno votato YES e fa il commit. Questo elimina il blocco solo se i "
+"timeout sono rilevatori di guasti affidabili, cioè in una rete sincrona "
+"senza partizioni; la versione qui implementata omette inoltre il protocollo "
+"di terminazione che elegge un nuovo coordinatore. Nelle reti reali la "
+"risposta generale è il consenso (Paxos, Raft): replicare la decisione del "
+"coordinatore così che sopravviva al guasto di una qualsiasi macchina."
+

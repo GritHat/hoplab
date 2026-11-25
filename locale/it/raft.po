@@ -1,0 +1,171 @@
+# Italian translation of netlab module "raft".
+msgid ""
+msgstr ""
+"Language: it\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "committed entry"
+msgstr "voce committed"
+
+msgid "stored on a majority, applied"
+msgstr "memorizzata dalla maggioranza, applicata"
+
+msgid "applied entry"
+msgstr "voce applicata"
+
+msgid "steps down: a higher term exists"
+msgstr "si dimette: esiste un term più alto"
+
+msgid "elected LEADER for term"
+msgstr "eletto LEADER per il term"
+
+msgid "votes"
+msgstr "voti"
+
+msgid "election timeout"
+msgstr "timeout di elezione"
+
+msgid "candidate for term"
+msgstr "candidato per il term"
+
+msgid "asking for votes"
+msgstr "chiede i voti"
+
+msgid "election timeout: pre-vote for term"
+msgstr "timeout di elezione: pre-vote per il term"
+
+msgid "forwarded command dropped: not the leader any more"
+msgstr "comando inoltrato scartato: non sono più il leader"
+
+msgid "command from"
+msgstr "comando da"
+
+msgid "appended at index"
+msgstr "aggiunto all'indice"
+
+msgid "would vote"
+msgstr "voterebbe"
+
+msgid "no (a leader is alive or the log is behind)"
+msgstr "no (c'è un leader attivo o il log è arretrato)"
+
+msgid "vote granted"
+msgstr "voto concesso"
+
+msgid "refused: stale term"
+msgstr "rifiutato: term superato"
+
+msgid "refused: candidate's log is behind mine"
+msgstr "rifiutato: il log del candidato è più indietro del mio"
+
+msgid "refused: already voted in this term"
+msgstr "rifiutato: ho già votato in questo term"
+
+msgid "vote"
+msgstr "voto"
+
+msgid "recognises leader"
+msgstr "riconosce il leader"
+
+msgid "log does not match"
+msgstr "il log non corrisponde"
+
+msgid "retry from"
+msgstr "riprovare da"
+
+msgid "discarding uncommitted entries"
+msgstr "scarta le voci non committed"
+
+msgid "they conflict with the leader's log"
+msgstr "sono in conflitto con il log del leader"
+
+msgid "appended"
+msgstr "aggiunte"
+
+msgid "log length"
+msgstr "lunghezza del log"
+
+msgid "rejected (log mismatch)"
+msgstr "rifiutato (log non corrispondente)"
+
+msgid "the member list is missing (peers=n1,n2,...)"
+msgstr "manca l'elenco dei membri (peers=n1,n2,...)"
+
+msgid "unknown member"
+msgstr "membro sconosciuto"
+
+msgid "this node is not in the member list"
+msgstr "questo nodo non è nell'elenco dei membri"
+
+msgid "bad election range (example: election=1000-2000ms)"
+msgstr "intervallo di elezione non valido (esempio: election=1000-2000ms)"
+
+msgid "follower, term 0"
+msgstr "follower, term 0"
+
+msgid "members"
+msgstr "membri"
+
+msgid "usage: raft put KEY=VALUE"
+msgstr "uso: raft put CHIAVE=VALORE"
+
+msgid "log full"
+msgstr "log pieno"
+
+msgid "client command"
+msgstr "comando del client"
+
+msgid "replicating"
+msgstr "in replica"
+
+msgid "not the leader: forwarded to"
+msgstr "non sono il leader: inoltrato a"
+
+msgid "client command rejected"
+msgstr "comando del client rifiutato"
+
+msgid "no leader known (election in progress or no majority reachable)"
+msgstr "nessun leader noto (elezione in corso o maggioranza non raggiungibile)"
+
+msgid "(not set)"
+msgstr "(non impostato)"
+
+msgid "local state, applied index"
+msgstr "stato locale, indice applicato"
+
+msgid ", may be stale: not the leader"
+msgstr ", può essere vecchio: non sono il leader"
+
+msgid "usage: raft put KEY=VALUE | raft get KEY"
+msgstr "uso: raft put CHIAVE=VALORE | raft get CHIAVE"
+
+msgid "restarted from stable storage:"
+msgstr "riavviato dalla memoria stabile:"
+
+msgid "follower again, commit index unknown until the leader tells"
+msgstr "di nuovo follower, indice di commit ignoto finché il leader non lo comunica"
+
+msgid "voted for"
+msgstr "ha votato"
+
+msgid "leader"
+msgstr "leader"
+
+msgid "election timer"
+msgstr "timer di elezione"
+
+msgid "(empty log)"
+msgstr "(log vuoto)"
+
+msgid "index:term · green = applied, blue = not committed"
+msgstr "indice:term · verde = applicata, blu = non committed"
+
+msgid "Raft — consensus: one replicated log, one leader at a time"
+msgstr "Raft — consenso: un log replicato, un leader alla volta"
+
+msgid "run NODE raft peers=n1,n2,n3,... [election=1000-2000ms] [heartbeat=300ms] [prevote=1]\n  Start it on every member with the same peers list (an odd number is best).\nrun NODE raft put KEY=VALUE   submit a command (forwarded to the leader)\nrun NODE raft get KEY         read the local copy of the state machine\n  Crash and restart members with `node N down|up`, partition with `link A B down`."
+msgstr "run NODO raft peers=n1,n2,n3,... [election=1000-2000ms] [heartbeat=300ms] [prevote=1]\n  Va avviato su ogni membro con lo stesso elenco peers (meglio un numero dispari).\nrun NODO raft put CHIAVE=VALORE   invia un comando (inoltrato al leader)\nrun NODO raft get CHIAVE          legge la copia locale della macchina a stati\n  Per far cadere e riavviare i membri: `node N down|up`; per partizionare: `link A B down`."
+
+msgid "Consensus lets a group of machines behave like one reliable machine: they agree on a single sequence of commands (the replicated log) and each applies it, in order, to its own copy of a state machine. As long as a majority is alive and can communicate, the service keeps working and never returns contradictory answers; when no majority is reachable it stops making progress rather than risk an inconsistency. Raft obtains this with a strong leader: one member at a time accepts commands and tells the others what to store.\n\nTime is divided into terms, numbered consecutively; every message carries the sender's term and whoever sees a higher one adopts it and becomes a follower. A follower that hears nothing from a leader for a randomized election timeout becomes a candidate: it increments the term, votes for itself and asks the others (RequestVote). Each member grants at most one vote per term, and only to a candidate whose log is at least as up-to-date as its own (higher last term, or same term and at least as long). A majority of votes makes a leader; randomized timeouts make split votes rare and short-lived. Because any two majorities intersect, at most one leader exists per term, and the vote restriction guarantees it already holds every committed entry (leader completeness).\n\nThe leader appends client commands to its log and replicates them with AppendEntries, which also serves as heartbeat. Each request names the index and term of the entry that precedes the new ones; a follower accepts only if its log contains that entry, otherwise it refuses and the leader retries from further back. By induction, two logs that agree on one (index, term) pair agree on everything before it (log matching). A follower whose log diverges — because it once received entries from a leader that failed before committing them — has the conflicting suffix overwritten.\n\nAn entry is committed once the leader of the current term has stored it on a majority; committed entries are never lost and are applied in order by everybody. A subtle rule: a leader never commits entries of earlier terms by counting replicas, only indirectly by committing an entry of its own term after them (hence the no-op appended at the start of each term). Without this rule an entry present on a majority could still be overwritten.\n\nTerm, vote and log are written to stable storage before answering, so a member that crashes and restarts cannot vote twice in a term or forget an entry it acknowledged; commit index and state machine are volatile and are rebuilt. A member isolated by a partition keeps timing out and inflating its term; when the partition heals it forces a needless election. The pre-vote extension avoids it: before incrementing the term a would-be candidate asks whether it could win, and members that still hear a leader say no. Real systems add log compaction (snapshots), membership changes through joint or single-server reconfiguration, and linearizable reads (read index, leases); etcd, Consul and CockroachDB are built on Raft, while Paxos and its Multi-Paxos variants solve the same problem with a less prescriptive structure."
+msgstr "Il consenso permette a un gruppo di macchine di comportarsi come un'unica macchina affidabile: si accordano su un'unica sequenza di comandi (il log replicato) e ciascuna la applica, in ordine, alla propria copia di una macchina a stati. Finché una maggioranza è attiva e può comunicare, il servizio continua a funzionare e non dà mai risposte contraddittorie; quando nessuna maggioranza è raggiungibile smette di avanzare piuttosto che rischiare un'incoerenza. Raft lo ottiene con un leader forte: un solo membro alla volta accetta i comandi e dice agli altri che cosa memorizzare.\n\nIl tempo è diviso in term, numerati consecutivamente; ogni messaggio porta il term del mittente e chi ne vede uno più alto lo adotta e diventa follower. Un follower che non sente un leader per un timeout di elezione casuale diventa candidato: incrementa il term, vota per sé e chiede il voto agli altri (RequestVote). Ogni membro concede al più un voto per term, e solo a un candidato il cui log sia aggiornato almeno quanto il proprio (ultimo term più alto, oppure stesso term e lunghezza almeno uguale). La maggioranza dei voti fa un leader; i timeout casuali rendono i voti divisi rari e brevi. Poiché due maggioranze qualsiasi si intersecano, esiste al più un leader per term, e la restrizione sul voto garantisce che possieda già ogni voce committed (leader completeness).\n\nIl leader aggiunge i comandi dei client al proprio log e li replica con AppendEntries, che funge anche da heartbeat. Ogni richiesta indica indice e term della voce che precede quelle nuove; un follower accetta solo se il suo log contiene quella voce, altrimenti rifiuta e il leader riprova da più indietro. Per induzione, due log che concordano su una coppia (indice, term) concordano su tutto ciò che la precede (log matching). Un follower il cui log diverge — perché ha ricevuto voci da un leader caduto prima di farne il commit — si vede sovrascrivere il suffisso in conflitto.\n\nUna voce è committed quando il leader del term corrente l'ha memorizzata su una maggioranza; le voci committed non si perdono mai e sono applicate in ordine da tutti. Una regola sottile: un leader non fa mai il commit di voci di term precedenti contando le repliche, ma solo indirettamente, facendo il commit di una voce del proprio term che le segue (da qui il no-op aggiunto all'inizio di ogni term). Senza questa regola una voce presente su una maggioranza potrebbe ancora essere sovrascritta.\n\nTerm, voto e log sono scritti su memoria stabile prima di rispondere, così un membro che cade e riparte non può votare due volte in un term né dimenticare una voce che ha confermato; indice di commit e macchina a stati sono volatili e vengono ricostruiti. Un membro isolato da una partizione continua ad andare in timeout e a gonfiare il proprio term; quando la partizione si ricompone provoca un'elezione inutile. L'estensione pre-vote lo evita: prima di incrementare il term l'aspirante candidato chiede se potrebbe vincere, e i membri che sentono ancora un leader rispondono di no. I sistemi reali aggiungono la compattazione del log (snapshot), i cambi di configurazione del gruppo (joint consensus o un server alla volta) e le letture linearizzabili (read index, lease); etcd, Consul e CockroachDB sono costruiti su Raft, mentre Paxos e le varianti Multi-Paxos risolvono lo stesso problema con una struttura meno prescrittiva."
+
