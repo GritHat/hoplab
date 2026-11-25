@@ -13,7 +13,7 @@ NL_SRC  = $(wildcard src/*.c)
 NL_OBJ  = $(patsubst src/%.c,build/%.o,$(NL_SRC)) $(patsubst %.c,build/common-%.o,$(COMMON))
 NL_HDR  = $(wildcard src/*.h) $(HEADERS)
 
-.PHONY: all clean test
+.PHONY: all clean test regress
 all: $(PROGS) netlab
 
 # each demo program is one .c file plus the common modules
@@ -35,6 +35,11 @@ build:
 # headless run of every scenario in the catalog, checking its `expect` lines
 test: netlab
 	./netlab check
+
+# the full regression suite: seeds, parameter variants, sanitizers, tunnels,
+# classic demos, translations (tests/regress.sh quick for a fast pass)
+regress: all
+	tests/regress.sh
 
 clean:
 	rm -rf $(PROGS) netlab build
