@@ -51,9 +51,11 @@ coordinator, restart, decision logged:     resend it
 
 ```
 PREPARE / votes  ->  PRE-COMMIT / acks  ->  COMMIT
-participant timeout rules:
-   voted YES, no PRE-COMMIT:   nobody can have committed          => ABORT
-   PRE-COMMIT received:        everybody voted YES and is prepared => COMMIT
+coordinator silent: a participant takes over, asks the others' state and decides
+   somebody ABORTED or never voted          => ABORT
+   somebody COMMITTED                       => COMMIT
+   somebody PRE-COMMITTED, nobody decided   => PRE-COMMIT to all, then COMMIT
+   everybody uncertain (only voted YES)     => ABORT: nobody can have committed
 ```
 
 The rules are safe only if a timeout proves a crash: a synchronous network, crash failures, no partition. Cost: `6n` messages, five delays.
@@ -71,7 +73,7 @@ The rules are safe only if a timeout proves a crash: a synchronous network, cras
 
 **What deployed systems do.** XA transaction managers implement 2PC with presumed abort (no forced abort record, no ACK for aborts) or presumed commit, and a read-only optimisation that lets participants without updates drop out after phase one; operators resolve in-doubt transactions by hand ("heuristic" decisions, which can violate atomicity). Spanner and CockroachDB run 2PC across shards whose participants and coordinator are each a Paxos or Raft group, so no single machine failure blocks. Other designs avoid distributed commit: deterministic ordering before execution (Calvin), or sagas with compensating actions when isolation can be relaxed. 3PC is essentially never deployed.
 
-**In netlab.** The `twopc` module logs READY before voting and the decision before announcing it, resends the decision until acknowledged and answers queries from in-doubt participants. A participant declares itself blocked after two timeouts. Its `three=1` mode omits the termination protocol that would elect a new coordinator: participants act on timeouts alone. After a restart the coordinator re-announces all the decisions in its log.
+**In netlab.** The `twopc` module logs READY before voting and the decision before announcing it, repeats PREPARE a few times within the timeout, resends the decision until acknowledged and answers queries from in-doubt participants. A 2PC participant declares itself blocked after two timeouts. With `three=1` the participants run the termination protocol: the first whose timer fires takes over, collects the states and applies the rules above; a restarted coordinator makes the same inquiry instead of trusting its log. The counter `twopc.contradicted` reveals a participant told the opposite of what it decided.
 
 **Primary literature.**
 
@@ -89,15 +91,15 @@ The rules are safe only if a timeout proves a crash: a synchronous network, cras
 
 **391-two-phase-commit.** `./netlab run 391-two-phase-commit`. A coordinator c and participants p1, p2, p3. Open the `twopc` tab of c and of one participant: each shows its write-ahead log. Use the sequence view (`s`) for the two phases. Three transactions: `pay1` commits (measure the delays: votes 30 ms after PREPARE, commit known 45 ms after); `pay2` aborts because p2 votes NO; `pay3` starts while p3 is down, so the coordinator waits one timeout (1 s) and aborts, then repeats the decision every second until p3, restarted at 8 s, acknowledges. In each log check the order: READY before the vote, the decision before its announcement.
 
-- `loss=0.3` (on p1's link). Predict the possible outcomes for each transaction: a lost PREPARE or vote becomes an ABORT by timeout; a lost decision or ACK only causes "sending it again". The counters of committed and aborted transactions change from run to run; the participants never disagree.
+- `loss=0.3` (on p1's link, from 0.5 s on). Predict the possible outcomes for each transaction: a lost PREPARE or vote is asked again within the timeout and becomes an ABORT only if it keeps failing; a lost decision or ACK only causes "sending it again". The number of commits may change from run to run; the participants never disagree: the checks ask for `twopc.ended == 3` on c and `twopc.contradicted == 0` everywhere.
 - `timeout=20ms`: shorter than the 30 ms round trip. Every transaction aborts although nobody failed. State the rule for choosing the timeout.
 - In a running lab: `:` then `p1 twopc vote=no` and `c twopc begin tx=x1`; then crash a participant after it has voted (pause with space, step with `.`, select it and press `k`) and read what it does on restart.
 
-**392-commit-blocking.** `./netlab run 392-commit-blocking`. Transaction `t2` (2PC): the coordinator crashes 5 ms after PREPARE. The participants log READY, vote, and two seconds later print "BLOCKED — voted yes and heard nothing", then query the coordinator every second. At 8 s the coordinator restarts, finds no decision, aborts, and the log reports "unblocked; locks were held for 5.0 s" (counter `twopc.blocked`). Transaction `t4` (3PC, `three=1`) repeats the crash: after the timeout each participant aborts by itself, "no PRE-COMMIT arrived, so nobody can have committed".
+**392-commit-blocking.** `./netlab run 392-commit-blocking`. After a normal 2PC (`t1`) and a normal 3PC (`t2`), transaction `t3` (3PC) loses its coordinator 5 ms after PREPARE: two seconds later p1 logs "3PC termination: the coordinator is silent, I take over", finds everybody uncertain and aborts for all; at 11 s the coordinator restarts, asks the participants and adopts their decision. Transaction `t4` (2PC, 14 s) repeats the crash: the participants print "BLOCKED — voted yes and heard nothing" and query the coordinator every second until it restarts after `outage`, finds no decision and aborts; the log reports "unblocked; locks were held for 5.0 s" (counter `twopc.blocked`).
 
-- `outage=8s` (not longer: the next transaction starts at 12 s): predict the lock time for 2PC (8 s) and for 3PC (unchanged, about 2 s).
-- `crash=60ms`: the coordinator now crashes after deciding and announcing. Predict: `t2` commits with no blocking; in `t4` the participants have received PRE-COMMIT and commit on timeout. Then `crash=20ms`: the votes arrive at a dead coordinator; 2PC blocks as before.
-- Breaking 3PC by hand. Pause shortly after 14 s and step (`.`) until the coordinator logs "PRE-COMMIT sent"; before it is delivered, enter `:` `link p3 s1 down` and `:` `node c down`, then resume. Prediction: p1 and p2 receive PRE-COMMIT and commit after their timeout, p3 never receives it and aborts. Atomicity is violated: a partition is not a crash.
+- `outage=20s` (up to about 40 s): predict the lock time of the 2PC transaction (the outage itself) and observe that the 3PC one was settled in about three seconds whatever the outage.
+- `crash=60ms`: the coordinator now crashes after it has the votes. Predict: `t4` commits with no blocking (the decision was already announced); in `t3` the participants are pre-committed and the takeover commits instead of aborting. Then `crash=20ms`: the votes arrive at a dead coordinator; 2PC blocks as before.
+- Breaking 3PC with a partition: `crash=45ms cable=down`. 40 ms after the PREPARE of `t3` the cable of p3 is cut, just before PRE-COMMIT reaches it. Prediction: p1 and p2 are pre-committed and commit; p3, alone and uncertain, aborts; when the cable returns p3 logs "ATOMICITY VIOLATED" and `twopc.contradicted` is 1 on p3. A partition is not a crash.
 
 ## Check yourself
 

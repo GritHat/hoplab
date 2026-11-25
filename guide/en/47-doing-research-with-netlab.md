@@ -23,7 +23,7 @@ The seed matters only where something draws random numbers: loss, jitter, random
 
 prints the event log and then one line per `expect`, with the value found: `ok    h1 tcp.goodput_kbps >= 0   (got 1862.27)`. The exit status is 1 if any expectation fails, and `--quiet` prints only the verdict. `--until TIME` overrides the scenario's duration. Log messages are translated, so fix the language when a script parses them.
 
-Counters are the metric interface. Each module maintains named counters on its node (`tcp.retransmits`, `raft.max_term`, `swim.false_positives`, ...); the Node tab lists them at detail 2. To read a counter from a script, add an expectation that always holds, `expect h1 tcp.retransmits >= 0`, to **your own copy** of the scenario and parse the `got` value. A file may hold 32 expectations and a node 48 counters. Time series (cwnd, RTT) are drawn in the interface but are not exported; for a quantity over time, parse the log at detail 2 or add a counter.
+Counters are the metric interface. Each module maintains named counters on its node (`tcp.retransmits`, `raft.term`, `swim.mistaken_deaths`, ...); the Node tab lists them at detail 2. To read a counter from a script, add an expectation that always holds, `expect h1 tcp.retransmits >= 0`, to **your own copy** of the scenario and parse the `got` value. A file may hold 32 expectations and a node 48 counters. Time series (cwnd, RTT) are drawn in the interface but are not exported; for a quantity over time, parse the log at detail 2 or add a counter.
 
 A scenario is found by path before the catalog is searched, so copies live wherever you like:
 
@@ -49,7 +49,7 @@ From `src/nl.h` and the scenario documentation: 64 nodes, 160 links, 16 interfac
 
 Time is virtual, in microseconds, and advances only through events. Nodes compute in zero time: there is no CPU, no scheduling delay, no disk. Anything whose real behaviour is governed by processing cost (fsync latency in consensus, slow members in failure detection, softirq batching in TCP) is absent. Clocks are perfect unless a module adds an offset.
 
-Protocols are simplified, and each module's help text lists how. The ones that most affect conclusions in this track: TCP without timestamps, tail-loss probe or HyStart, and BBR in its first version without policer detection; BGP with eBGP only and one router per AS; DNS without TCP fallback, EDNS or DNSSEC; a tick-based CSMA/CA with no capture; Raft without snapshots, membership change or linearizable reads.
+Protocols are simplified, and each module's help text lists how. The ones that most affect conclusions in this track: TCP without timestamps, tail-loss probe or HyStart, and BBR in its first version without policer detection; BGP with eBGP only and one router per AS; DNS without TCP fallback, EDNS or DNSSEC; a tick-based CSMA/CA with no capture; Raft without snapshots, membership change or leases (reads use ReadIndex).
 
 ## Threats to validity
 
@@ -103,7 +103,7 @@ Metric: Jain's index per queue size, with its spread over seeds; add the two `st
 - **ECMP or segment routing** (RFC 2992, RFC 8402) in the forwarding path. Measure load split across paths, packet reordering seen by TCP, and failover time after a link failure.
 - **Routing validation extensions.** Add provider-authorisation checks in the spirit of ASPA, or roles as in RFC 9234, to `src/bgp.c`. Measure the fraction of leaked or implausible routes rejected as a function of which ASes deploy the check.
 - **Multi-Paxos or Viewstamped Replication** beside Raft, with the same client commands. Measure leaderless time after a crash, messages per committed command, and recovery work for a lagging replica, on identical scenarios.
-- **Linearizable reads for Raft**: ReadIndex and leases, with a clock-offset parameter. Measure stale reads and read latency, and find the clock error at which leases break.
+- **Leases for Raft reads**: the module answers reads by ReadIndex; add leader leases with a clock-offset parameter. Measure read latency against ReadIndex, and find the clock error at which leases start to return stale data.
 - **A Kademlia DHT.** Compare lookup hops and lookup failures with Chord under the same scripted churn, and the maintenance traffic of the two.
 - **Delta-state CRDTs and Lifeguard.** Ship deltas instead of full state and measure bytes per update and convergence time; add processing delay to members and measure SWIM's false positives with and without local health awareness.
 

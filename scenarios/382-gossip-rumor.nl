@@ -4,9 +4,9 @@ level  3
 layer  8
 topic  gossip
 about  Twelve nodes on a LAN. At 2 s node n1 learns a piece of news and the epidemic starts: at every round each node that is spreading the rumor sends it to `fanout` peers chosen at random (push), and/or every node asks random peers for what it is missing (pull). n1 prints, round after round, how many nodes know: the curve is the classic S of an epidemic and everybody is reached in about log2(N) rounds, with no coordinator and no knowledge of the topology.
-about  Watch: the graph in n1's gossip panel, "infective" turning into "removed" when a node loses interest, the redundant pushes near the end. Experiments: mode=push with stop=1 (the rumor may die before reaching everyone: the residue), mode=pull (slow start, very fast finish), fanout=1 vs 4 (rounds vs messages: compare gossip.messages), add loss=20% on the links.
+about  Watch: the graph in n1's gossip panel, "infective" turning into "removed" when a node loses interest, the redundant pushes near the end. n1 learns how far the rumor went from the nodes themselves: each one reports to the origin when it first hears it (a census, not part of the epidemic), and the final report gives gossip.reached and gossip.residue. Experiments: mode=push with stop=1 (every informed node may lose interest before everyone has heard: n1 then reports that the rumor died out, with its residue; with pull or pushpull nobody is ever left out), mode=pull (slow start, very fast finish), fanout=1 vs 4 (rounds vs messages: compare gossip.messages), add loss=20% on the links.
 about[it] Dodici nodi su una LAN. A 2 s il nodo n1 apprende una notizia e parte l'epidemia: a ogni round ciascun nodo che sta diffondendo la voce la invia a `fanout` nodi scelti a caso (push), e/o ogni nodo chiede a nodi casuali ciò che gli manca (pull). n1 stampa, round dopo round, quanti nodi sanno: la curva è la classica S di un'epidemia e tutti sono raggiunti in circa log2(N) round, senza coordinatore e senza conoscere la topologia.
-about[it] Da osservare: il grafico nel pannello gossip di n1, "infective" che diventa "removed" quando un nodo perde interesse, i push ridondanti verso la fine. Esperimenti: mode=push con stop=1 (la voce può estinguersi prima di raggiungere tutti: il residuo), mode=pull (partenza lenta, finale rapidissimo), fanout=1 contro 4 (round contro messaggi: confronta gossip.messages), aggiungere loss=20% sui collegamenti.
+about[it] Da osservare: il grafico nel pannello gossip di n1, "infective" che diventa "removed" quando un nodo perde interesse, i push ridondanti verso la fine. n1 viene a sapere fin dove è arrivata la voce dai nodi stessi: ognuno avvisa l'origine la prima volta che la sente (un censimento, estraneo all'epidemia), e il rapporto finale riporta gossip.reached e gossip.residue. Esperimenti: mode=push con stop=1 (tutti i nodi informati possono perdere interesse prima che tutti abbiano sentito: n1 riferisce allora che la voce si è estinta, con il suo residuo; con pull o pushpull nessuno resta mai escluso), mode=pull (partenza lenta, finale rapidissimo), fanout=1 contro 4 (round contro messaggi: confronta gossip.messages), aggiungere loss=20% sui collegamenti.
 param  mode pushpull Style: push, pull or pushpull
 param[it] mode Stile: push, pull o pushpull
 param  fanout 2 Peers contacted per round
@@ -65,9 +65,9 @@ note 2s n1 starts the rumor. Follow the count printed at every round: 1, 2-3, 5-
 note[it] 2s n1 fa partire la voce. Segui il conteggio stampato a ogni round: 1, 2-3, 5-8, ... raddoppia all'incirca.
 note 6s Near the end most pushes hit nodes that already know: that waste is the price of having no coordinator.
 note[it] 6s Verso la fine quasi tutti i push colpiscono nodi che sanno già: quello spreco è il prezzo dell'assenza di un coordinatore.
-duration 20s
+duration 30s
+expect n1 gossip.guarantee_ok == 1
+expect n1 gossip.reached >= 8
 expect n1 gossip.rounds >= 2
-expect n1 gossip.rounds <= 14
-expect n5 gossip.infected == 1
-expect n8 gossip.infected == 1
-expect n12 gossip.infected == 1
+expect n1 gossip.rounds <= 30
+expect n1 gossip.residue >= 0

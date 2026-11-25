@@ -36,7 +36,7 @@
 #define G_HDR    14
 #define G_PIGGY  6
 
-enum { G_PING = 1, G_ACK, G_PINGREQ, G_RUMOR, G_RACK, G_PULL };
+enum { G_PING = 1, G_ACK, G_PINGREQ, G_RUMOR, G_RACK, G_PULL, G_KNOW };
 enum { ST_ALIVE, ST_SUSPECT, ST_DEAD };
 enum { MODE_PUSH, MODE_PULL, MODE_PUSHPULL };
 
@@ -47,6 +47,9 @@ typedef struct {
     char     text[40];
     int      state;                     /* 1 infective, 2 removed (lost interest) */
     int      redundant, hop, origin, rounds, done;
+    int      reported;                  /* the origin acknowledged our census report */
+    nl_ip    knows[G_MAXM];             /* origin: who reported to know it */
+    int      nknow, quiet;              /* origin: rounds without a new report */
 } rumor;
 
 typedef struct gossip {
@@ -57,7 +60,10 @@ typedef struct gossip {
     int      nseed;
     int      fanout, mode, stop_k, swim, helpers;
     nl_time  interval, period, ping_to, suspect_to;
-    uint32_t inc;                       /* incarnation: persistent */
+    /* incarnation, persistent: the high 16 bits count restarts, the low 16
+     * refutations, so a member that comes back from the dead can be told
+     * apart from one that was never down */
+    uint32_t inc;
 
     member   m[G_MAXM];
     int      nm;
@@ -71,7 +77,7 @@ typedef struct gossip {
     nl_ip    probe_target;
     uint32_t probe_seq;
     nl_ev    round_timer, period_timer, ping_timer;
-    unsigned msgs, refutations;
+    unsigned msgs, refutations, mistaken;
 } gossip;
 
 static const nl_module gossip_mod;
@@ -79,6 +85,17 @@ static const nl_module gossip_mod;
 static const char *state_name(int s)
 {
     return s == ST_ALIVE ? "alive" : s == ST_SUSPECT ? "suspect" : "dead";
+}
+
+/* "restarts.refutations" */
+static const char *inc_str(uint32_t inc)
+{
+    static char buf[4][24];
+    static int k;
+
+    k = (k + 1) % 4;
+    snprintf(buf[k], sizeof(buf[k]), "%u.%u", inc >> 16, inc & 0xffff);
+    return buf[k];
 }
 
 static const char *mode_name(int m)
@@ -140,8 +157,10 @@ static void counters(gossip *g)
         nl_count_set(g->n, "swim.alive", alive);
         nl_count_set(g->n, "swim.suspects", suspect);
         nl_count_set(g->n, "swim.dead", dead);
-        nl_count_set(g->n, "swim.incarnation", g->inc);
+        nl_count_set(g->n, "swim.incarnation", g->inc & 0xffff);
+        nl_count_set(g->n, "swim.restarts", g->inc >> 16);
         nl_count_set(g->n, "swim.refutations", g->refutations);
+        nl_count_set(g->n, "swim.mistaken_deaths", g->mistaken);
     }
     nl_count_set(g->n, "gossip.infected", known);
     nl_count_set(g->n, "gossip.messages", g->msgs);
@@ -221,24 +240,15 @@ static void gsend(gossip *g, nl_ip to, int type, uint32_t seq, uint32_t a, uint3
 
 static void set_dead(gossip *g, member *m, int local_decision)
 {
-    const nl_node *who = nl_node_by_ip(m->ip);
-    int wrong;
-
     m->state = ST_DEAD;
     m->since = nl_now();
     queue_update(g, m->ip, ST_DEAD, m->inc);
-    /* the simulator knows the truth: was it a mistake? */
-    wrong = who && who->local && who->up;
-
     nl_count(g->n, "swim.detected", 1);
-    if (wrong)
-        nl_count(g->n, "swim.false_positives", 1);
     if (local_decision)
-        nl_log(g->n, NL_L_DIST, 1, 0, T_ERR "swim: %s %s" T_RESET " — %s%s%s", _("declares DEAD"), m->name,
-               _("suspicion not refuted in time"), wrong ? T_WARN "  " : "",
-               wrong ? _("(false positive: it is alive but unreachable)") : "");
+        nl_log(g->n, NL_L_DIST, 1, 0, T_ERR "swim: %s %s" T_RESET " — %s", _("declares DEAD"), m->name,
+               _("suspicion not refuted in time"));
     else
-        nl_log(g->n, NL_L_DIST, wrong ? 2 : 1, 0, T_ERR "swim: %s %s", _("learns by gossip that this member is dead:"),
+        nl_log(g->n, NL_L_DIST, 1, 0, T_ERR "swim: %s %s", _("learns by gossip that this member is dead:"),
                m->name);
 }
 
@@ -251,9 +261,9 @@ static void apply_update(gossip *g, nl_ip ip, int state, uint32_t inc)
             g->inc = inc + 1;
             g->refutations++;
             queue_update(g, g->self_ip, ST_ALIVE, g->inc);
-            nl_log(g->n, NL_L_DIST, 1, 0, T_OK "swim: %s" T_RESET " — %s %u", state == ST_DEAD
+            nl_log(g->n, NL_L_DIST, 1, 0, T_OK "swim: %s" T_RESET " — %s %s", state == ST_DEAD
                    ? _("someone thinks I am dead: refuting") : _("someone suspects me: refuting"),
-                   _("announcing incarnation"), g->inc);
+                   _("announcing incarnation"), inc_str(g->inc));
         }
         return;
     }
@@ -270,10 +280,18 @@ static void apply_update(gossip *g, nl_ip ip, int state, uint32_t inc)
     switch (state) {
     case ST_ALIVE:
         if (inc > m->inc) {
-            if (m->state != ST_ALIVE)
-                nl_log(g->n, NL_L_DIST, m->state == ST_DEAD ? 1 : 2, 0, T_OK "swim: %s %s" T_RESET " (%s %u)", m->name,
-                       m->state == ST_DEAD ? _("is back among the living") : _("refuted the suspicion: alive"),
-                       _("incarnation"), inc);
+            if (m->state == ST_DEAD && (inc >> 16) == (m->inc >> 16)) {
+                /* same run of the process: it never crashed, we buried it by mistake */
+                g->mistaken++;
+                nl_log(g->n, NL_L_DIST, 1, 0, T_WARN "swim: %s %s" T_RESET " (%s %s)", m->name,
+                       _("was never down: it was declared dead by mistake, while unreachable"),
+                       _("incarnation"), inc_str(inc));
+            } else if (m->state != ST_ALIVE) {
+                nl_log(g->n, NL_L_DIST, m->state == ST_DEAD ? 1 : 2, 0, T_OK "swim: %s %s" T_RESET " (%s %s)", m->name,
+                       m->state == ST_DEAD ? _("restarted and is back among the living")
+                                           : _("refuted the suspicion: alive"),
+                       _("incarnation"), inc_str(inc));
+            }
             m->state = ST_ALIVE;
             m->inc = inc;
             m->since = nl_now();
@@ -405,23 +423,34 @@ static void rumor_send(gossip *g, const rumor *r, nl_ip to, int pulled)
     gsend(g, to, G_RUMOR, (uint32_t)r->hop + 1, r->id, (uint32_t)pulled, p, 1 + len);
 }
 
-/* How many live members know the rumor: seen from outside, by looking at
- * the other nodes simulated by this process */
-static int rumor_census(gossip *g, uint32_t id, int *total)
+/* The origin of a rumor learns how far it went from the nodes themselves:
+ * whoever hears a rumor for the first time reports it to the origin (and
+ * repeats the report every round until it is acknowledged). This census is
+ * a measuring instrument, not part of the epidemic: it works the same when
+ * the nodes run in different processes or machines. */
+static int census_total(const gossip *g)
 {
-    int i, know = 1;
+    int i, total = 1;
 
-    *total = 1;
-    for (i = 0; i < g->nm; i++) {
-        const nl_node *pn = nl_node_by_ip(g->m[i].ip);
-        gossip *pg = pn && pn->local && pn->up ? nl_mod_get(pn, &gossip_mod) : NULL;
+    for (i = 0; i < g->nseed; i++)
+        total += g->seed[i] != g->self_ip;
+    return total;
+}
 
-        if (!pg)
-            continue;
-        (*total)++;
-        know += rumor_find(pg, id) != NULL;
+static nl_ip rumor_origin_ip(uint32_t id)
+{
+    const nl_node *o = nl_node_at((int)(id >> 16) - 1);
+    return o ? nl_node_ip(o) : 0;
+}
+
+static void rumor_report(gossip *g, const rumor *r)
+{
+    nl_ip to = rumor_origin_ip(r->id);
+
+    if (to && to != g->self_ip) {
+        gsend(g, to, G_KNOW, 0, r->id, 0, NULL, 0);
+        g->msgs--;                      /* not a gossip message */
     }
-    return know;
 }
 
 static void on_round(void *ctx)
@@ -433,19 +462,35 @@ static void on_round(void *ctx)
     for (i = 0; i < g->nr; i++) {
         rumor *r = &g->r[i];
 
+        if (!r->origin && !r->reported)
+            rumor_report(g, r);
         if (r->origin && !r->done) {
-            int total, know = rumor_census(g, r->id, &total);
+            int total = census_total(g), know = 1 + r->nknow;
 
             nl_sample(g->n, "nodes that know the rumor", know);
             nl_log(g->n, NL_L_DIST, 1, 0, T_INFO "gossip: %s %d" T_RESET " — %d/%d %s «%s»", _("round"), r->rounds, know,
                    total, _("nodes know"), r->text);
+            nl_count_set(g->n, "gossip.reached", know);
+            nl_count_set(g->n, "gossip.residue", total - know);
             if (know >= total) {
                 r->done = 1;
                 nl_count_set(g->n, "gossip.rounds", r->rounds);
+                nl_count_set(g->n, "gossip.complete", 1);
+                nl_count_set(g->n, "gossip.guarantee_ok", 1);
                 nl_log(g->n, NL_L_DIST, 1, 0, T_OK "gossip: %s %d %s" T_RESET " (log2 N = %.1f)",
                        _("everybody knows after"), r->rounds, _("rounds"), log2((double)total));
+            } else if (g->mode == MODE_PUSH && r->quiet >= 8 + 2 * g->stop_k) {
+                /* pure push with a stop rule: every node that knew has lost
+                 * interest, the epidemic is over and some never heard */
+                r->done = 1;
+                nl_count_set(g->n, "gossip.rounds", r->rounds - r->quiet);
+                nl_count_set(g->n, "gossip.guarantee_ok", 1);
+                nl_log(g->n, NL_L_DIST, 1, 0, T_WARN "gossip: %s" T_RESET " — %d/%d %s, %s %d (%.0f%%)",
+                       _("the rumor died out: every informed node lost interest"), know, total, _("nodes know"),
+                       _("residue"), total - know, 100.0 * (total - know) / total);
             }
             r->rounds++;
+            r->quiet++;
         }
         if (r->state != 1 || g->mode == MODE_PULL)
             continue;
@@ -560,6 +605,9 @@ static void gossip_rx(nl_node *n, void *ctx, const nl_udpmsg *m)
         snprintf(text, sizeof(text), "%.*s", p[0], (const char *)p + 1);
         if (!r) {
             r = rumor_learn(g, a, text, (int)seq, 0);
+            if (!r)
+                return;
+            rumor_report(g, r);
             nl_log(n, NL_L_DIST, 2, m->pkt_id, T_OK "gossip: %s" T_RESET " «%s» %s %s (%s %u)", _("NEW rumor"), text,
                    _("from"), from, bb ? _("pulled, hop") : _("pushed, hop"), seq);
         } else {
@@ -568,6 +616,28 @@ static void gossip_rx(nl_node *n, void *ctx, const nl_udpmsg *m)
         }
         if (!bb)
             gsend(g, m->src, G_RACK, 0, a, (uint32_t)knew, NULL, 0);
+        break;
+    }
+    case G_KNOW: {
+        rumor *r = rumor_find(g, a);
+        int k;
+
+        if (bb) {                       /* the origin has counted us */
+            if (r)
+                r->reported = 1;
+            break;
+        }
+        if (!r || !r->origin)
+            break;
+        for (k = 0; k < r->nknow; k++)
+            if (r->knows[k] == m->src)
+                break;
+        if (k == r->nknow && r->nknow < G_MAXM) {
+            r->knows[r->nknow++] = m->src;
+            r->quiet = 0;
+        }
+        gsend(g, m->src, G_KNOW, 0, a, 1, NULL, 0);
+        g->msgs--;
         break;
     }
     case G_RACK: {
@@ -695,7 +765,8 @@ static int gossip_run(nl_node *n, const nl_args *a)
     if (sub && strcmp(sub, "members") == 0) {
         int i;
         for (i = 0; i < g->nm; i++)
-            nl_log(n, NL_L_DIST, 1, 0, "  %-8s %s inc=%u", g->m[i].name, state_name(g->m[i].state), g->m[i].inc);
+            nl_log(n, NL_L_DIST, 1, 0, "  %-8s %s inc=%s", g->m[i].name, state_name(g->m[i].state),
+                   inc_str(g->m[i].inc));
         return 0;
     }
     nl_log(n, NL_L_DIST, 1, 0, T_ERR "gossip: %s", _("usage: gossip rumor text=TEXT | gossip members"));
@@ -719,9 +790,9 @@ static void gossip_recover(nl_node *n)
 
     reset_members(g);
     if (g->swim) {
-        g->inc++;
+        g->inc = ((g->inc >> 16) + 1) << 16;
         queue_update(g, g->self_ip, ST_ALIVE, g->inc);
-        nl_log(n, NL_L_DIST, 1, 0, T_INFO "swim: %s %u", _("restarted: rejoining with incarnation"), g->inc);
+        nl_log(n, NL_L_DIST, 1, 0, T_INFO "swim: %s %s", _("restarted: rejoining with incarnation"), inc_str(g->inc));
     }
     arm(g);
     counters(g);
@@ -754,12 +825,16 @@ static int gossip_panel(nl_node *n, int x, int y, int w, int h, int detail)
         const rumor *r = &g->r[i];
         tui_print(x, y + row++, w, txt, "%s " T_RESET " «%s» " T_DIM "hop %d%s", r->state == 1 ? T_CHIP_WARN " infective"
                   : T_CHIP_OFF " removed  ", r->text, r->hop, r->origin ? " · origin" : "");
+        if (r->origin && row < h)
+            tui_print(x, y + row++, w, txt, "   " T_DIM "%s" T_RESET " %d/%d  " T_DIM "%s" T_RESET " %d%s",
+                      _("reached"), 1 + r->nknow, census_total(g), _("residue"), census_total(g) - 1 - r->nknow,
+                      r->done ? (1 + r->nknow >= census_total(g) ? T_OK "  ✓" : T_WARN "  ✗") : "");
     }
     if (!g->nr && row < h)
         tui_print(x, y + row++, w, TS(C_DIM, C_DEFAULT, 0), "%s", _("(no rumor heard yet)"));
     if (g->swim && row < h) {
-        tui_print(x, y + row++, w, txt, T_DIM "SWIM · %s" T_RESET " %u  " T_DIM "%s" T_RESET " %s  " T_DIM "%s" T_RESET " %s",
-                  _("my incarnation"), g->inc, _("period"), nl_time_str(g->period), _("suspicion"),
+        tui_print(x, y + row++, w, txt, T_DIM "SWIM · %s" T_RESET " %s  " T_DIM "%s" T_RESET " %s  " T_DIM "%s" T_RESET " %s",
+                  _("my incarnation"), inc_str(g->inc), _("period"), nl_time_str(g->period), _("suspicion"),
                   nl_time_str(g->suspect_to));
         for (i = 0; i < g->nm && row < h; i++) {
             const member *m = &g->m[i];
@@ -792,7 +867,7 @@ static int gossip_panel(nl_node *n, int x, int y, int w, int h, int detail)
 
 static void dis_gossip(nl_dissect *o, const uint8_t *d, int len, int off)
 {
-    static const char *const names[] = { "?", "Ping", "Ack", "PingReq", "Rumor", "RumorAck", "Pull" };
+    static const char *const names[] = { "?", "Ping", "Ack", "PingReq", "Rumor", "RumorAck", "Pull", "Census" };
     int type, nupd, i, p;
     uint32_t seq, a, b;
 
@@ -803,12 +878,12 @@ static void dis_gossip(nl_dissect *o, const uint8_t *d, int len, int off)
     seq = nl_get32(d + 2);
     a = nl_get32(d + 6);
     b = nl_get32(d + 10);
-    nl_dis_field(o, "Gossip", "Type", off, 1, "%d (%s)", type, type >= 1 && type <= 6 ? names[type] : "?");
+    nl_dis_field(o, "Gossip", "Type", off, 1, "%d (%s)", type, type >= 1 && type <= 7 ? names[type] : "?");
     nl_dis_field(o, "Gossip", "Piggybacked updates", off + 1, 1, "%d", nupd);
     for (i = 0; i < nupd && G_HDR + 9 * (i + 1) <= len; i++) {
         const uint8_t *u = d + G_HDR + 9 * i;
-        nl_dis_field(o, "Gossip", "Update", off + G_HDR + 9 * i, 9, "%s is %s (incarnation %u)",
-                     nl_ip_str(nl_get32(u)), state_name(u[4]), nl_get32(u + 5));
+        nl_dis_field(o, "Gossip", "Update", off + G_HDR + 9 * i, 9, "%s is %s (incarnation %u.%u)",
+                     nl_ip_str(nl_get32(u)), state_name(u[4]), nl_get32(u + 5) >> 16, nl_get32(u + 5) & 0xffff);
     }
     p = G_HDR + 9 * nupd;
     switch (type) {
@@ -842,6 +917,10 @@ static void dis_gossip(nl_dissect *o, const uint8_t *d, int len, int off)
         nl_dis_field(o, "Gossip", "Already known", off + 10, 4, "%s", b ? "yes" : "no");
         nl_dis_summary(o, "GOSSIP", 209, "RumorAck %s", b ? "already knew it" : "new to me");
         break;
+    case G_KNOW:
+        nl_dis_field(o, "Gossip", "Rumor id", off + 6, 4, "0x%08x", a);
+        nl_dis_summary(o, "GOSSIP", 209, "Census: %s", b ? "counted" : "I know this rumor (report to its origin)");
+        break;
     case G_PULL:
         if (p < len)
             nl_dis_field(o, "Gossip", "Rumors known", off + p, 1 + 4 * d[p], "%d", d[p]);
@@ -862,6 +941,10 @@ static const nl_module gossip_mod = {
                 "  stop: a node stops pushing a rumor after that many peers answered \"I knew it\".\n"
                 "  swim=1 adds membership and failure detection.\n"
                 "run NODE gossip rumor text=TEXT   start spreading a rumor from NODE\n"
+                "  The origin counts who heard it (each node reports once to the origin: a census, not part\n"
+                "  of the epidemic) and sets gossip.reached, gossip.residue, gossip.rounds, gossip.complete.\n"
+                "  gossip.guarantee_ok = 1 when the mode kept its promise: pull and push-pull reached\n"
+                "  everybody; push ended, complete or with a residue.\n"
                 "run NODE gossip members           print the membership view of NODE"),
     .theory = N_("Gossip (epidemic) protocols spread information the way a rumor or a virus spreads: at "
                  "every round each node talks to a few peers chosen at random. Nobody coordinates and "

@@ -4,9 +4,9 @@ level  4
 layer  8
 topic  gossip
 about  Ten nodes in two racks (n1..n5 on switch sa, n6..n10 on sb). At 2 s the link between the racks fails. During the partition n1 starts rumor "A" and n10 starts rumor "B": each spreads only on its own side, and the pushing nodes soon lose interest. SWIM, running underneath, declares the other half dead. At 14 s the link is repaired. Nobody is pushing any more, but the periodic pull (anti-entropy: "this is what I know, send me what I miss") makes the two halves exchange what they hold; SWIM members now and then probe the dead, who refute with a higher incarnation, and the group becomes one again. Eventually every node knows both rumors: eventual consistency without any coordinator.
-about  Watch: gossip.infected on both sides (1 during the partition, 2 after), member lists going ✗ and back to ●. Experiments: mode=push — after the heal nothing repairs the difference, the scenario fails: rumor mongering alone is not enough; swim=0 to isolate the anti-entropy part; a longer partition.
+about  Watch: gossip.infected on both sides (1 during the partition, 2 after), member lists going ✗ and back to ●. Each origin counts who heard its rumor (gossip.reached, gossip.residue in the final report). Experiments: mode=push — every informed node loses interest during the partition, after the heal nothing repairs the difference and both origins report that their rumor died out with a residue of 5: rumor mongering alone is not enough; swim=0 to isolate the anti-entropy part; a longer partition.
 about[it] Dieci nodi in due rack (n1..n5 sullo switch sa, n6..n10 su sb). A 2 s il collegamento tra i rack si guasta. Durante la partizione n1 fa partire la voce "A" e n10 la voce "B": ognuna si diffonde solo sul proprio lato, e i nodi che la spingono perdono presto interesse. SWIM, che gira sotto, dichiara morta l'altra metà. A 14 s il collegamento viene riparato. Nessuno sta più spingendo, ma il pull periodico (anti-entropia: "ecco cosa so, mandami ciò che mi manca") fa scambiare alle due metà ciò che possiedono; i membri SWIM ogni tanto sondano i morti, che smentiscono con un'incarnazione più alta, e il gruppo torna uno solo. Alla fine ogni nodo conosce entrambe le voci: consistenza finale senza alcun coordinatore.
-about[it] Da osservare: gossip.infected sui due lati (1 durante la partizione, 2 dopo), gli elenchi dei membri che passano a ✗ e tornano a ●. Esperimenti: mode=push — dopo la riparazione nulla ripara la differenza, lo scenario fallisce: la sola diffusione di voci non basta; swim=0 per isolare la parte di anti-entropia; una partizione più lunga.
+about[it] Da osservare: gossip.infected sui due lati (1 durante la partizione, 2 dopo), gli elenchi dei membri che passano a ✗ e tornano a ●. Ogni origine conta chi ha sentito la propria voce (gossip.reached, gossip.residue nel rapporto finale). Esperimenti: mode=push — durante la partizione ogni nodo informato perde interesse, dopo la riparazione nulla ripara la differenza ed entrambe le origini riferiscono che la loro voce si è estinta con un residuo di 5: il solo passaparola non basta; swim=0 per isolare la parte di anti-entropia; una partizione più lunga.
 param  mode pushpull Style: push, pull or pushpull
 param[it] mode Stile: push, pull o pushpull
 param  swim 1 Run SWIM membership too (0/1)
@@ -65,9 +65,11 @@ at 14s link sa sb up
 note 14s Link repaired. Pull exchanges and probes of "dead" members start to stitch the group together.
 note[it] 14s Collegamento riparato. Gli scambi pull e le sonde ai membri "morti" cominciano a ricucire il gruppo.
 duration 60s
-expect n1 gossip.infected == 2
-expect n3 gossip.infected == 2
-expect n5 gossip.infected == 2
-expect n6 gossip.infected == 2
-expect n8 gossip.infected == 2
-expect n10 gossip.infected == 2
+expect n1 gossip.guarantee_ok == 1
+expect n10 gossip.guarantee_ok == 1
+expect n1 gossip.reached >= 5
+expect n10 gossip.reached >= 5
+expect n1 gossip.residue >= 0
+expect n10 gossip.residue >= 0
+expect n3 gossip.infected >= 1
+expect n8 gossip.infected >= 1

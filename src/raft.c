@@ -12,11 +12,15 @@
  *
  *   RequestVote / PreVote      lastLogIndex(4) lastLogTerm(4)
  *   ...Reply                   granted(1)
- *   AppendEntries              prevIndex(4) prevTerm(4) commit(4) n(1)
+ *   AppendEntries              prevIndex(4) prevTerm(4) commit(4) n(1) round(4)
  *                              then n entries: term(4) len(1) command
- *   AppendEntriesReply         success(1) index(4)   (match index, or a hint
- *                              where to retry from on failure)
+ *   AppendEntriesReply         success(1) index(4) round(4)   (match index, or a
+ *                              hint where to retry from on failure; `round`
+ *                              echoes the request: it is how a leader counts
+ *                              who still follows it when it serves a read)
  *   ClientForward              len(1) command
+ *   Read                       id(4) len(1) key        (follower -> leader)
+ *   ReadReply                  id(4) status(1) index(4) len(1) value
  *
  * `from` is the index of the sender in the member list, which every member
  * sorts by name so that all agree.
@@ -34,10 +38,26 @@
 #define RAFT_BATCH  8
 #define RAFT_KV     16
 
-enum { M_RV = 1, M_RVR, M_PV, M_PVR, M_AE, M_AER, M_CLIENT };
+enum { M_RV = 1, M_RVR, M_PV, M_PVR, M_AE, M_AER, M_CLIENT, M_READ, M_READR };
+enum { RD_OK = 0, RD_NOTFOUND = 1, RD_FAILED = 2 };
+#define RAFT_READS  8
 enum { R_FOLLOWER, R_CANDIDATE, R_LEADER };
 
 typedef struct { int term; char cmd[RAFT_CMD]; } rentry;
+
+/* A linearizable read in progress. On the leader: waiting for a majority to
+ * acknowledge a heartbeat round sent after the read arrived (ReadIndex).
+ * On a follower (fwd = 1): waiting for the leader's answer. */
+typedef struct {
+    int      used, fwd;
+    unsigned id;
+    int      origin;                    /* member that asked; self = a local client */
+    char     key[16];
+    int      index;                     /* state must be applied up to here */
+    unsigned need;                      /* heartbeat round that must be acknowledged */
+    unsigned acks;
+    nl_time  deadline;
+} rread;
 
 typedef struct raft {
     nl_node *n;
@@ -46,6 +66,7 @@ typedef struct raft {
     nl_ip    pip[RAFT_MAXN];
     nl_time  el_min, el_max, hb;
     int      prevote;
+    int      first;                     /* lab aid: the very first timeout of this member is short */
 
     /* persistent state: survives a crash */
     int      term, voted_for, nlog;
@@ -60,10 +81,15 @@ typedef struct raft {
     nl_ev    el_timer, hb_timer;
     char     key[RAFT_KV][16], val[RAFT_KV][24];
     int      nkv;
-    unsigned elections;
+    unsigned elections, futile;         /* elections started / started and not won */
+    rread    rd[RAFT_READS];
+    unsigned round, read_id;
+    nl_ev    rd_timer;
 } raft;
 
 static const nl_module raft_mod;
+static void reads_check(raft *r);
+static void reads_fail_leader_side(raft *r);
 
 static const char *role_name(int role)
 {
@@ -72,42 +98,23 @@ static const char *role_name(int role)
 
 static int last_term(const raft *r) { return r->nlog ? r->log[r->nlog].term : 0; }
 
-/* Besides its own counters every member publishes two cluster-wide facts,
- * computed by looking at the other members directly (a privilege of the
- * simulator, limited to the members simulated by this process): how many
- * live members believe they are leader, and whether all live members have
- * applied the same commands. Scenarios assert on them. */
+/* Everything a scenario asserts is local to the member: the same lab then
+ * holds when every member runs in its own process or on its own machine.
+ * To check that the replicas agree, compare each member's raft.applied and
+ * raft.state_hash with the values the commands of the lab must produce. */
 static void counters(raft *r)
 {
-    int i, leaders = 0, agree = 1, max_term = 0;
-    double hash = -1, applied = -1;
-
     nl_count_set(r->n, "raft.is_leader", r->role == R_LEADER);
+    nl_count_set(r->n, "raft.has_leader", r->role == R_LEADER || (r->role == R_FOLLOWER && r->leader >= 0));
     nl_count_set(r->n, "raft.term", r->term);
     nl_count_set(r->n, "raft.commit_index", r->commit);
     nl_count_set(r->n, "raft.applied", r->applied);
     nl_count_set(r->n, "raft.log_len", r->nlog);
     nl_count_set(r->n, "raft.elections", r->elections);
+    nl_count_set(r->n, "raft.futile_elections", r->futile);
+    /* 1 = this member never disturbed the cluster with an election it could not win */
+    nl_count_set(r->n, "raft.no_futile_elections", r->futile == 0);
     nl_sample(r->n, "raft term", r->term);
-    for (i = 0; i < r->np; i++) {
-        const nl_node *pn = nl_node_find(r->pname[i]);
-        const raft *pr = pn && pn->local && pn->up ? nl_mod_get(pn, &raft_mod) : NULL;
-
-        if (!pr)
-            continue;
-        leaders += pr->role == R_LEADER;
-        if (pr->term > max_term)
-            max_term = pr->term;
-        if (applied < 0) {
-            applied = pr->applied;
-            hash = nl_count_get(pn, "raft.state_hash");
-        } else if (applied != pr->applied || hash != nl_count_get(pn, "raft.state_hash")) {
-            agree = 0;
-        }
-    }
-    nl_count_set(r->n, "raft.leaders", leaders);
-    nl_count_set(r->n, "raft.max_term", max_term);
-    nl_count_set(r->n, "raft.agree", agree);
 }
 
 /* ---- messages ---- */
@@ -146,7 +153,8 @@ static void send_append(raft *r, int peer)
     nl_put32(b + n, (uint32_t)prev);
     nl_put32(b + n + 4, (uint32_t)(prev > 0 ? r->log[prev].term : 0));
     nl_put32(b + n + 8, (uint32_t)r->commit);
-    n += 13;
+    nl_put32(b + n + 13, r->round);
+    n += 17;
     for (i = r->next[peer]; i <= r->nlog && cnt < RAFT_BATCH; i++, cnt++) {
         int cl = (int)strlen(r->log[i].cmd);
         nl_put32(b + n, (uint32_t)r->log[i].term);
@@ -162,6 +170,127 @@ static void send_append(raft *r, int peer)
         nl_log(r->n, NL_L_DIST, 3, 0, T_CHAN "raft" T_RESET " → %s heartbeat term=%d commit=%d", r->pname[peer],
                r->term, r->commit);
     send_to(r, peer, b, n);
+}
+
+/* ---- linearizable reads (ReadIndex) ---- */
+
+static const char *kv_get(const raft *r, const char *key);
+
+static void read_finish(raft *r, rread *q, int status)
+{
+    const char *v = status == RD_FAILED ? NULL : kv_get(r, q->key);
+
+    if (status == RD_OK && !v)
+        status = RD_NOTFOUND;
+    if (q->origin == r->self) {
+        if (status == RD_FAILED) {
+            nl_log(r->n, NL_L_DIST, 1, 0, T_ERR "raft: get %s — %s" T_RESET " (%s)", q->key, _("read refused"),
+                   r->role == R_LEADER ? _("cannot confirm leadership: no majority answers, I may be a deposed leader")
+                                       : _("no leader reachable"));
+            nl_count(r->n, "raft.read_failed", 1);
+        } else {
+            nl_log(r->n, NL_L_DIST, 1, 0, T_OK "raft: get %s" T_RESET " = " T_BOLD "%s" T_RESET "  " T_DIM "(%s %d/%d, %s %d)",
+                   q->key, v ? v : _("(not set)"), _("linearizable: leadership confirmed by"),
+                   __builtin_popcount(q->acks), r->np, _("read index"), q->index);
+            nl_count(r->n, "raft.reads_ok", 1);
+        }
+    } else {
+        uint8_t b[48];
+        int n = head(b, r, M_READR, r->term), vl = v ? (int)strlen(v) : 0;
+
+        nl_put32(b + n, q->id);
+        b[n + 4] = (uint8_t)status;
+        nl_put32(b + n + 5, (uint32_t)q->index);
+        b[n + 9] = (uint8_t)vl;
+        if (vl)
+            memcpy(b + n + 10, v, (size_t)vl);
+        send_to(r, q->origin, b, n + 10 + vl);
+    }
+    q->used = 0;
+}
+
+/* Answer the reads whose heartbeat round a majority has acknowledged, once
+ * the state machine has caught up with their read index. */
+static void reads_check(raft *r)
+{
+    int i;
+
+    for (i = 0; i < RAFT_READS; i++) {
+        rread *q = &r->rd[i];
+        if (q->used && !q->fwd && r->role == R_LEADER && __builtin_popcount(q->acks) * 2 > r->np &&
+            r->applied >= q->index)
+            read_finish(r, q, RD_OK);
+    }
+}
+
+static void reads_fail_leader_side(raft *r)
+{
+    int i;
+
+    for (i = 0; i < RAFT_READS; i++)
+        if (r->rd[i].used && !r->rd[i].fwd)
+            read_finish(r, &r->rd[i], RD_FAILED);
+}
+
+static void on_heartbeat(void *ctx);
+
+static void on_read_tick(void *ctx)
+{
+    raft *r = ctx;
+    int i;
+
+    for (i = 0; i < RAFT_READS; i++) {
+        rread *q = &r->rd[i];
+        if (!q->used || nl_now() < q->deadline)
+            continue;
+        if (q->fwd) {
+            nl_log(r->n, NL_L_DIST, 1, 0, T_ERR "raft: get %s — %s" T_RESET " (%s)", q->key, _("read refused"),
+                   _("the leader did not answer"));
+            nl_count(r->n, "raft.read_failed", 1);
+            q->used = 0;
+        } else {
+            read_finish(r, q, RD_FAILED);
+        }
+    }
+    r->rd_timer = nl_after(r->n, r->hb / 2 > 0 ? r->hb / 2 : 1, on_read_tick, r);
+}
+
+/* A read arrives at the leader from member `origin` (possibly itself). */
+static void read_begin(raft *r, int origin, unsigned id, const char *key)
+{
+    rread *q = NULL;
+    int i;
+
+    for (i = 0; i < RAFT_READS && !q; i++)
+        if (!r->rd[i].used)
+            q = &r->rd[i];
+    if (!q)
+        return;
+    memset(q, 0, sizeof(*q));
+    q->used = 1;
+    q->id = id;
+    q->origin = origin;
+    snprintf(q->key, sizeof(q->key), "%s", key);
+    /* the read index is the commit index, but a new leader does not know it
+     * until it has committed an entry of its own term (the no-op): then
+     * wait for that entry */
+    q->index = r->commit;
+    if (r->commit < 1 || r->log[r->commit].term != r->term) {
+        for (i = r->nlog; i > 1 && r->log[i - 1].term == r->term; i--)
+            ;
+        q->index = i;
+    }
+    q->acks = 1u << r->self;
+    q->need = r->round + 1;             /* the round that on_heartbeat() is about to send */
+    q->deadline = nl_now() + r->el_max;
+    nl_log(r->n, NL_L_DIST, 2, 0, T_CHAN "raft" T_RESET " get %s: %s %d, %s", key, _("read index"), q->index,
+           _("confirming leadership with a heartbeat round"));
+    if (r->np == 1) {
+        reads_check(r);
+        return;
+    }
+    nl_cancel(&r->hb_timer);
+    on_heartbeat(r);
 }
 
 /* ---- state machine ---- */
@@ -212,6 +341,7 @@ static void apply_entries(raft *r)
                    e->cmd[0] ? e->cmd : "no-op");
     }
     counters(r);
+    reads_check(r);
 }
 
 /* ---- roles ---- */
@@ -224,6 +354,10 @@ static void reset_election(raft *r)
     r->el_start = nl_now();
     r->el_deadline = r->el_start + r->el_min +
                      (nl_time)(nl_rand01() * (double)(r->el_max - r->el_min));
+    if (r->first) {                     /* so that a lab knows who leads first */
+        r->el_deadline = r->el_start + r->el_min / 3;
+        r->first = 0;
+    }
     r->el_timer = nl_after(r->n, r->el_deadline - r->el_start, on_election_timeout, r);
 }
 
@@ -233,6 +367,10 @@ static void become_follower(raft *r, int term)
         nl_log(r->n, NL_L_DIST, 1, 0, T_WARN "raft: %s" T_RESET " (term %d → %d)",
                _("steps down: a higher term exists"), r->term, term);
     nl_cancel(&r->hb_timer);
+    if (r->role == R_CANDIDATE)
+        r->futile++;                    /* an election that did not make a leader of us */
+    if (r->role == R_LEADER)
+        reads_fail_leader_side(r);
     if (term > r->term) {
         r->term = term;
         r->voted_for = -1;
@@ -251,6 +389,7 @@ static void on_heartbeat(void *ctx)
     r->hb_timer = 0;
     if (r->role != R_LEADER)
         return;
+    r->round++;
     for (i = 0; i < r->np; i++)
         if (i != r->self)
             send_append(r, i);
@@ -314,6 +453,8 @@ static void become_leader(raft *r)
 
 static void start_election(raft *r)
 {
+    if (r->role == R_CANDIDATE)
+        r->futile++;                    /* the previous attempt timed out */
     r->pre = 0;
     r->role = R_CANDIDATE;
     r->term++;
@@ -359,7 +500,7 @@ static void raft_rx(nl_node *n, void *ctx, const nl_udpmsg *m)
     raft *r = ctx;
     const uint8_t *b = m->data;
     int type, from, term;
-    uint8_t out[16];
+    uint8_t out[24];
     int on;
 
     if (m->len < 6)
@@ -391,11 +532,67 @@ static void raft_rx(nl_node *n, void *ctx, const nl_udpmsg *m)
         return;
     }
 
+    if (type == M_READ) {
+        char key[16];
+
+        if (m->len < 11 || b[10] >= sizeof(key) || m->len < 11 + b[10])
+            return;
+        snprintf(key, sizeof(key), "%.*s", b[10], (const char *)b + 11);
+        if (r->role != R_LEADER) {
+            rread tmp;
+            memset(&tmp, 0, sizeof(tmp));
+            tmp.used = 1;
+            tmp.id = nl_get32(b + 6);
+            tmp.origin = from;
+            snprintf(tmp.key, sizeof(tmp.key), "%s", key);
+            read_finish(r, &tmp, RD_FAILED);
+            return;
+        }
+        nl_log(n, NL_L_DIST, 2, m->pkt_id, T_CHAN "raft" T_RESET " ← %s Read %s", r->pname[from], key);
+        read_begin(r, from, nl_get32(b + 6), key);
+        return;
+    }
+    if (type == M_READR) {
+        unsigned id;
+        int i, status, vl;
+
+        if (m->len < 16)
+            return;
+        id = nl_get32(b + 6);
+        status = b[10];
+        vl = b[15];
+        if (m->len < 16 + vl)
+            return;
+        for (i = 0; i < RAFT_READS; i++) {
+            rread *q = &r->rd[i];
+            if (!q->used || !q->fwd || q->id != id)
+                continue;
+            if (status == RD_FAILED) {
+                nl_log(n, NL_L_DIST, 1, m->pkt_id, T_ERR "raft: get %s — %s" T_RESET " (%s %s)", q->key,
+                       _("read refused"), r->pname[from], _("cannot confirm that it is still the leader"));
+                nl_count(n, "raft.read_failed", 1);
+            } else {
+                char val[40];
+
+                if (status == RD_OK)
+                    snprintf(val, sizeof(val), "%.*s", vl, (const char *)b + 16);
+                else
+                    snprintf(val, sizeof(val), "%s", _("(not set)"));
+                nl_log(n, NL_L_DIST, 1, m->pkt_id, T_OK "raft: get %s" T_RESET " = " T_BOLD "%s" T_RESET "  " T_DIM
+                       "(%s %s, %s %u)", q->key, val, _("linearizable: answered by leader"), r->pname[from],
+                       _("read index"), nl_get32(b + 11));
+                nl_count(n, "raft.reads_ok", 1);
+            }
+            q->used = 0;
+        }
+        return;
+    }
+
     if (type == M_PV) {
         /* pre-vote: answer what we would do, change nothing */
         int lidx = (int)nl_get32(b + 6), lterm = (int)nl_get32(b + 10);
         int fresh = lterm > last_term(r) || (lterm == last_term(r) && lidx >= r->nlog);
-        int quiet = r->role != R_LEADER && nl_now() - r->last_heard >= r->el_min;
+        int quiet = r->role != R_LEADER && (!r->last_heard || nl_now() - r->last_heard >= r->el_min);
 
         if (m->len < 14)
             return;
@@ -458,19 +655,22 @@ static void raft_rx(nl_node *n, void *ctx, const nl_udpmsg *m)
             become_leader(r);
         break;
     case M_AE: {
-        int prev, pterm, lcommit, cnt, off = 19, k, ok, idx, hint;
+        int prev, pterm, lcommit, cnt, off = 23, k, ok, idx, hint;
+        unsigned round;
 
-        if (m->len < 19)
+        if (m->len < 23)
             return;
         prev = (int)nl_get32(b + 6);
         pterm = (int)nl_get32(b + 10);
         lcommit = (int)nl_get32(b + 14);
         cnt = b[18];
+        round = nl_get32(b + 19);
         if (term < r->term) {
             on = head(out, r, M_AER, r->term);
             out[on] = 0;
             nl_put32(out + on + 1, 0);
-            send_to(r, from, out, on + 5);
+            nl_put32(out + on + 5, round);
+            send_to(r, from, out, on + 9);
             return;
         }
         if (r->role != R_FOLLOWER)
@@ -535,16 +735,25 @@ static void raft_rx(nl_node *n, void *ctx, const nl_udpmsg *m)
         on = head(out, r, M_AER, r->term);
         out[on] = (uint8_t)ok;
         nl_put32(out + on + 1, (uint32_t)hint);
-        send_to(r, from, out, on + 5);
+        nl_put32(out + on + 5, round);
+        send_to(r, from, out, on + 9);
         break;
     }
     case M_AER: {
         int ok, idx;
 
-        if (r->role != R_LEADER || term != r->term || m->len < 11)
+        if (r->role != R_LEADER || term != r->term || m->len < 15)
             return;
         ok = b[6];
         idx = (int)nl_get32(b + 7);
+        {   /* whatever it says about the log, this member follows us in this round */
+            unsigned round = nl_get32(b + 11);
+            int i;
+            for (i = 0; i < RAFT_READS; i++)
+                if (r->rd[i].used && !r->rd[i].fwd && round >= r->rd[i].need)
+                    r->rd[i].acks |= 1u << from;
+            reads_check(r);
+        }
         if (ok) {
             if (idx > r->match[from]) {
                 r->match[from] = idx;
@@ -632,6 +841,7 @@ static int raft_start(nl_node *n, const nl_args *a)
     }
     r->hb = nl_arg_time(a, "heartbeat", NL_MS(300));
     r->prevote = (int)nl_arg_int(a, "prevote", 0);
+    r->first = (int)nl_arg_int(a, "first", 0);
     r->voted_for = r->leader = -1;
     nl_mod_set(n, &raft_mod, r);
     nl_udp_bind(n, RAFT_PORT, raft_rx, r);
@@ -639,6 +849,7 @@ static int raft_start(nl_node *n, const nl_args *a)
            r->np, _("members"), _("election timeout"), nl_time_str(r->el_min), nl_time_str(r->el_max),
            nl_time_str(r->hb));
     reset_election(r);
+    r->rd_timer = nl_after(n, r->hb, on_read_tick, r);
     counters(r);
     return 0;
 }
@@ -693,14 +904,55 @@ static int raft_run(nl_node *n, const nl_args *a)
         return 0;
     }
     if (sub && strcmp(sub, "get") == 0) {
-        const char *k = nl_arg_pos(a, 1), *v = k ? kv_get(r, k) : NULL;
+        const char *k = nl_arg_pos(a, 1);
 
-        nl_log(n, NL_L_DIST, 1, 0, T_INFO "raft: get %s" T_RESET " = %s  " T_DIM "(%s %d%s)", k ? k : "?",
-               v ? v : _("(not set)"), _("local state, applied index"), r->applied,
-               r->role == R_LEADER ? "" : _(", may be stale: not the leader"));
+        if (!k) {
+            nl_log(n, NL_L_DIST, 1, 0, T_ERR "raft: %s", _("usage: raft get KEY [stale=1]"));
+            return -1;
+        }
+        if (nl_arg_int(a, "stale", 0)) {
+            const char *v = kv_get(r, k);
+
+            nl_log(n, NL_L_DIST, 1, 0, T_WARN "raft: get %s" T_RESET " = " T_BOLD "%s" T_RESET "  " T_WARN "(%s %d%s)", k,
+                   v ? v : _("(not set)"), _("STALE READ allowed: local state, applied index"), r->applied,
+                   r->role == R_LEADER ? _(", leadership not confirmed") : _(", not the leader"));
+            nl_count(n, "raft.stale_reads", 1);
+            return 0;
+        }
+        if (r->role == R_LEADER) {
+            read_begin(r, r->self, ++r->read_id, k);
+        } else if (r->leader >= 0) {
+            uint8_t b[32];
+            int on = head(b, r, M_READ, r->term), kl = (int)strlen(k), i;
+            rread *q = NULL;
+
+            if (kl > 15)
+                kl = 15;
+            for (i = 0; i < RAFT_READS && !q; i++)
+                if (!r->rd[i].used)
+                    q = &r->rd[i];
+            if (!q)
+                return -1;
+            memset(q, 0, sizeof(*q));
+            q->used = q->fwd = 1;
+            q->id = ++r->read_id;
+            q->origin = r->self;
+            snprintf(q->key, sizeof(q->key), "%.*s", kl, k);
+            q->deadline = nl_now() + r->el_max;
+            nl_put32(b + on, q->id);
+            b[on + 4] = (uint8_t)kl;
+            memcpy(b + on + 5, k, (size_t)kl);
+            nl_log(n, NL_L_DIST, 2, 0, T_CHAN "raft" T_RESET " get %s: %s %s", k, _("not the leader: asking"),
+                   r->pname[r->leader]);
+            send_to(r, r->leader, b, on + 5 + kl);
+        } else {
+            nl_log(n, NL_L_DIST, 1, 0, T_ERR "raft: get %s — %s" T_RESET " (%s)", k, _("read refused"),
+                   _("no leader known (election in progress or no majority reachable)"));
+            nl_count(n, "raft.read_failed", 1);
+        }
         return 0;
     }
-    nl_log(n, NL_L_DIST, 1, 0, T_ERR "raft: %s", _("usage: raft put KEY=VALUE | raft get KEY"));
+    nl_log(n, NL_L_DIST, 1, 0, T_ERR "raft: %s", _("usage: raft put KEY=VALUE | raft get KEY [stale=1]"));
     return -1;
 }
 
@@ -709,7 +961,8 @@ static void raft_crash(nl_node *n)
     raft *r = nl_mod_get(n, &raft_mod);
 
     /* term, votedFor and the log are on stable storage; the rest is lost */
-    r->el_timer = r->hb_timer = 0;
+    r->el_timer = r->hb_timer = r->rd_timer = 0;
+    memset(r->rd, 0, sizeof(r->rd));
     r->role = R_FOLLOWER;
     r->leader = -1;
     r->commit = r->applied = 0;
@@ -727,6 +980,7 @@ static void raft_recover(nl_node *n)
            r->term, _("log length"), r->nlog, _("follower again, commit index unknown until the leader tells"));
     r->last_heard = nl_now();
     reset_election(r);
+    r->rd_timer = nl_after(n, r->hb, on_read_tick, r);
     counters(r);
 }
 
@@ -738,6 +992,7 @@ static void raft_stop(nl_node *n)
         return;
     nl_cancel(&r->el_timer);
     nl_cancel(&r->hb_timer);
+    nl_cancel(&r->rd_timer);
     nl_udp_unbind(n, RAFT_PORT);
     nl_mod_set(n, &raft_mod, NULL);
     free(r);
@@ -809,14 +1064,15 @@ static int raft_panel(nl_node *n, int x, int y, int w, int h, int detail)
 static void dis_raft(nl_dissect *o, const uint8_t *d, int len, int off)
 {
     static const char *const names[] = { "?", "RequestVote", "RequestVoteReply", "PreVote", "PreVoteReply",
-                                         "AppendEntries", "AppendEntriesReply", "ClientForward" };
+                                         "AppendEntries", "AppendEntriesReply", "ClientForward", "Read",
+                                         "ReadReply" };
     int type, term;
 
     if (len < 6)
         return;
     type = d[0];
     term = (int)nl_get32(d + 2);
-    nl_dis_field(o, "Raft", "Type", off, 1, "%d (%s)", type, type >= 1 && type <= 7 ? names[type] : "?");
+    nl_dis_field(o, "Raft", "Type", off, 1, "%d (%s)", type, type >= 1 && type <= 9 ? names[type] : "?");
     nl_dis_field(o, "Raft", "From (member index)", off + 1, 1, "%d", d[1]);
     nl_dis_field(o, "Raft", "Term", off + 2, 4, "%d", term);
     switch (type) {
@@ -837,15 +1093,16 @@ static void dis_raft(nl_dissect *o, const uint8_t *d, int len, int off)
         nl_dis_summary(o, "RAFT", 209, "%s term=%d %s", names[type], term, d[6] ? "granted" : "refused");
         return;
     case M_AE: {
-        int cnt, p = 19, k;
+        int cnt, p = 23, k;
 
-        if (len < 19)
+        if (len < 23)
             break;
         cnt = d[18];
         nl_dis_field(o, "Raft", "Prev log index", off + 6, 4, "%u", nl_get32(d + 6));
         nl_dis_field(o, "Raft", "Prev log term", off + 10, 4, "%u", nl_get32(d + 10));
         nl_dis_field(o, "Raft", "Leader commit", off + 14, 4, "%u", nl_get32(d + 14));
         nl_dis_field(o, "Raft", "Entries", off + 18, 1, "%d%s", cnt, cnt ? "" : " (heartbeat)");
+        nl_dis_field(o, "Raft", "Round", off + 19, 4, "%u", nl_get32(d + 19));
         for (k = 0; k < cnt && p + 5 <= len && p + 5 + d[p + 4] <= len; k++) {
             nl_dis_field(o, "Raft", "Entry", off + p, 5 + d[p + 4], "index %u term %u [%.*s]",
                          nl_get32(d + 6) + 1 + (unsigned)k, nl_get32(d + p), d[p + 4],
@@ -865,6 +1122,24 @@ static void dis_raft(nl_dissect *o, const uint8_t *d, int len, int off)
         nl_dis_summary(o, "RAFT", 209, "AppendEntriesReply term=%d %s %s=%u", term, d[6] ? "success" : "MISMATCH",
                        d[6] ? "match" : "retry", nl_get32(d + 7));
         return;
+    case M_READ:
+        if (len < 11 || 11 + d[10] > len)
+            break;
+        nl_dis_field(o, "Raft", "Read id", off + 6, 4, "%u", nl_get32(d + 6));
+        nl_dis_field(o, "Raft", "Key", off + 10, 1 + d[10], "%.*s", d[10], (const char *)d + 11);
+        nl_dis_summary(o, "RAFT", 209, "Read %.*s", d[10], (const char *)d + 11);
+        return;
+    case M_READR:
+        if (len < 16 || 16 + d[15] > len)
+            break;
+        nl_dis_field(o, "Raft", "Read id", off + 6, 4, "%u", nl_get32(d + 6));
+        nl_dis_field(o, "Raft", "Status", off + 10, 1, "%s",
+                     d[10] == RD_OK ? "ok" : d[10] == RD_NOTFOUND ? "not set" : "refused");
+        nl_dis_field(o, "Raft", "Read index", off + 11, 4, "%u", nl_get32(d + 11));
+        nl_dis_summary(o, "RAFT", 209, "ReadReply %s%.*s",
+                       d[10] == RD_OK ? "= " : d[10] == RD_NOTFOUND ? "(not set)" : "REFUSED",
+                       d[10] == RD_OK ? d[15] : 0, (const char *)d + 16);
+        return;
     case M_CLIENT:
         if (len < 7 || 7 + d[6] > len)
             break;
@@ -874,15 +1149,19 @@ static void dis_raft(nl_dissect *o, const uint8_t *d, int len, int off)
     default:
         break;
     }
-    nl_dis_summary(o, "RAFT", 209, "%s term=%d", type >= 1 && type <= 7 ? names[type] : "?", term);
+    nl_dis_summary(o, "RAFT", 209, "%s term=%d", type >= 1 && type <= 9 ? names[type] : "?", term);
 }
 
 static const nl_module raft_mod = {
     .name = "raft", .title = N_("Raft — consensus: one replicated log, one leader at a time"), .layer = NL_L_DIST,
-    .usage = N_("run NODE raft peers=n1,n2,n3,... [election=1000-2000ms] [heartbeat=300ms] [prevote=1]\n"
+    .usage = N_("run NODE raft peers=n1,n2,n3,... [election=1000-2000ms] [heartbeat=300ms] [prevote=1] [first=1]\n"
                 "  Start it on every member with the same peers list (an odd number is best).\n"
+                "  first=1 shortens only the very first timeout of that member, so that a lab knows who\n"
+                "  is elected first; the election timeout must stay well above the heartbeat interval.\n"
                 "run NODE raft put KEY=VALUE   submit a command (forwarded to the leader)\n"
-                "run NODE raft get KEY         read the local copy of the state machine\n"
+                "run NODE raft get KEY         linearizable read: the leader first confirms, with a\n"
+                "                              heartbeat round, that a majority still follows it\n"
+                "run NODE raft get KEY stale=1 read the local copy at once (may be out of date)\n"
                 "  Crash and restart members with `node N down|up`, partition with `link A B down`."),
     .theory = N_("Consensus lets a group of machines behave like one reliable machine: they agree on a "
                  "single sequence of commands (the replicated log) and each applies it, in order, to its "
@@ -919,7 +1198,13 @@ static const nl_module raft_mod = {
                  "needless election. The pre-vote extension avoids it: before incrementing the term a "
                  "would-be candidate asks whether it could win, and members that still hear a leader say "
                  "no. Real systems add log compaction (snapshots), membership changes through joint or "
-                 "single-server reconfiguration, and linearizable reads (read index, leases); etcd, Consul "
+                 "single-server reconfiguration. Reads need care too: a leader cut off from the majority "
+                 "does not know it has been replaced, so answering from its own state could return a value "
+                 "that a newer leader has already overwritten. Here a read is linearizable (ReadIndex): the "
+                 "leader notes its commit index, sends a heartbeat round, and answers only when a majority "
+                 "has acknowledged that round and the state machine has applied up to that index; followers "
+                 "forward reads to the leader. `stale=1` skips the check to show the anomaly. Leases trade "
+                 "the round for an assumption about clocks. etcd, Consul "
                  "and CockroachDB are built on Raft, while Paxos and its Multi-Paxos variants solve the "
                  "same problem with a less prescriptive structure."),
     .run = raft_run, .stop = raft_stop, .crash = raft_crash, .recover = raft_recover, .panel = raft_panel,

@@ -62,7 +62,7 @@ leader sets commitIndex = n   iff   matchIndex[i] >= n on a majority
 
 **Relatives.** Viewstamped Replication (1988) and Multi-Paxos reach the same guarantees; Raft differs by requiring the new leader to already hold all committed entries, so data flows only from leader to followers. Zab (ZooKeeper) is similar. Byzantine faults need `3f + 1` replicas (PBFT). Deployed Raft: etcd, Consul, CockroachDB, TiKV, Kafka's KRaft.
 
-**In netlab.** The `raft` module persists term, vote and log across `node N down/up`, appends a no-op at the start of each term, forwards commands from followers to the leader and offers `prevote=1`. It has no snapshots and no membership change, and `raft get` reads the local copy of the state machine, which may be stale: it is not a linearisable read. Followers learn a new commit index from the next AppendEntries, so they apply one heartbeat later than the leader.
+**In netlab.** The `raft` module persists term, vote and log across `node N down/up`, appends a no-op at the start of each term, forwards commands from followers to the leader and offers `prevote=1`. Reads are linearisable by ReadIndex: `raft get KEY` makes the leader confirm its leadership with a heartbeat round before answering (a follower forwards the read), and is refused when no majority answers; `raft get KEY stale=1` reads the local copy at once and may return old data. It has no snapshots and no membership change. Followers learn a new commit index from the next AppendEntries, so they apply one heartbeat later than the leader. In the labs `first=1` shortens only the first timeout of n1, so that the first leader is known.
 
 **Primary literature.**
 
@@ -77,7 +77,7 @@ leader sets commitIndex = n   iff   matchIndex[i] >= n on a majority
 <!-- detail: 1 -->
 ## In the lab
 
-**380-raft-election.** `./netlab run 380-raft-election`. Five servers around a switch; n1 has a shorter timeout (400–500 ms) so that it wins term 1. Select a node (`n`) and open its `raft` tab: role, term, the election timer bar, the log. Press `s` for the sequence view and follow RequestVote, the votes, then the first AppendEntries carrying the no-op. At 8 s n1 crashes: measure the time until "elected LEADER for term 2" (expected a little over 1 s: the smallest of four timeouts drawn in 1–2 s). At 16 s n1 restarts "from stable storage: term=1", receives an AppendEntries of term 2 and becomes a follower.
+**380-raft-election.** `./netlab run 380-raft-election`. Five servers around a switch; the very first timeout of n1 is shortened (`first=1`) so that it wins term 1. Select a node (`n`) and open its `raft` tab: role, term, the election timer bar, the log. Press `s` for the sequence view and follow RequestVote, the votes, then the first AppendEntries carrying the no-op. At 8 s n1 crashes: measure the time until "elected LEADER for term 2" (expected a little over 1 s: the smallest of four timeouts drawn in 1–2 s). At 16 s n1 restarts "from stable storage: term=1", receives an AppendEntries of term 2 and becomes a follower.
 
 - `election=1000-1050ms`: the timeouts are almost equal. Predict split votes: several "candidate for term …" lines within a few milliseconds, sometimes a term with no leader. Count the elections (counter `raft.elections`).
 - Partition a follower: `:` then `link n5 s1 down`; watch n5's term grow at every timeout. After some seconds `link n5 s1 up`. Prediction: the healthy leader logs "steps down: a higher term exists" and an election follows although nothing had failed. This is the disruption that PreVote removes.
@@ -85,7 +85,7 @@ leader sets commitIndex = n   iff   matchIndex[i] >= n on a majority
 
 **381-raft-replication.** `./netlab run 381-raft-replication`. Open the `raft` tab of the leader n1 (`nextIndex`/`matchIndex` per follower) and of a follower. Log cells are blue when stored and green when applied. Follow one command in the log at detail `2`: "appended at index 2", four AppendEntries with `prev=1/1`, "committed entry 2 … stored on a majority", and the followers applying it about one heartbeat later. At 6 s n4 crashes and commits continue with four servers; at 12 s n4 restarts with log length 4 and one AppendEntries with `prev=4/1 entries=3` brings it to 7.
 
-- `:` then `n3 raft put color=red` and `n5 raft get color`. Explain why the get may return nothing if issued immediately.
+- `:` then `n3 raft put color=red` and `n5 raft get color`: the read is forwarded to the leader, which answers after a heartbeat round. Repeat with `n5 raft get color stale=1` immediately after the put and explain why the local copy may not have the value yet.
 - Crash three servers and submit a command: the cell stays blue. Bring one server back with `node N up` and predict what happens to the pending entry.
 - Pause (space), submit `n1 raft put a=1`, advance with `.` until the AppendEntries have left, then crash n1 with `k`. Predict from the up-to-date rule which servers can become leader and whether `a=1` survives; verify with `raft.truncated` and the logs.
 

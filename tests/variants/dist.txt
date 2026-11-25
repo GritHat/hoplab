@@ -1,0 +1,148 @@
+# Parameter variants of the distributed-systems labs (raft, gossip, twopc, chord, crdt),
+# each verified with seeds 1..5: `./netlab run NAME key=value ... --quiet --seed N` prints PASS.
+# One line per verified run: PASS  scenario-name  key=value ...
+PASS  380-raft-election
+PASS  380-raft-election  election=1000-1050ms
+PASS  380-raft-election  election=500-1000ms
+PASS  380-raft-election  election=2000-4000ms
+PASS  380-raft-election  heartbeat=100ms
+PASS  380-raft-election  heartbeat=500ms
+PASS  380-raft-election  delay=1ms
+PASS  380-raft-election  delay=30ms
+PASS  380-raft-election  delay=100ms
+PASS  381-raft-replication
+PASS  381-raft-replication  election=1000-1050ms
+PASS  381-raft-replication  election=500-1000ms
+PASS  381-raft-replication  election=2000-4000ms
+PASS  381-raft-replication  heartbeat=100ms
+PASS  381-raft-replication  heartbeat=500ms
+PASS  381-raft-replication  delay=1ms
+PASS  381-raft-replication  delay=30ms
+PASS  381-raft-replication  delay=100ms
+PASS  481-raft-split-votes
+PASS  481-raft-split-votes  election=1000-2000ms
+PASS  481-raft-split-votes  election=1000-1010ms
+PASS  481-raft-split-votes  election=1000-1020ms
+PASS  481-raft-split-votes  election=1000-1100ms
+PASS  481-raft-split-votes  election=500-1000ms
+PASS  481-raft-split-votes  election=2000-4000ms
+PASS  481-raft-split-votes  heartbeat=100ms
+PASS  481-raft-split-votes  heartbeat=500ms
+PASS  480-raft-partition
+PASS  480-raft-partition  prevote=1
+PASS  480-raft-partition  election=500-1000ms
+PASS  480-raft-partition  election=500-1000ms prevote=1
+PASS  480-raft-partition  election=1500-3000ms
+PASS  480-raft-partition  election=1500-3000ms prevote=1
+PASS  480-raft-partition  heartbeat=100ms
+PASS  480-raft-partition  heartbeat=500ms
+PASS  480-raft-partition  delay=1ms
+PASS  480-raft-partition  delay=30ms
+PASS  480-raft-partition  delay=30ms prevote=1
+PASS  382-gossip-rumor
+PASS  382-gossip-rumor  mode=push
+PASS  382-gossip-rumor  mode=pull
+PASS  382-gossip-rumor  mode=push stop=1
+PASS  382-gossip-rumor  mode=push stop=2
+PASS  382-gossip-rumor  mode=push stop=5
+PASS  382-gossip-rumor  fanout=1
+PASS  382-gossip-rumor  fanout=4
+PASS  382-gossip-rumor  mode=pull fanout=1
+PASS  382-gossip-rumor  mode=push fanout=1
+PASS  382-gossip-rumor  interval=200ms
+PASS  382-gossip-rumor  interval=1s
+PASS  382-gossip-rumor  loss=0.1
+PASS  382-gossip-rumor  loss=0.2
+PASS  382-gossip-rumor  loss=0.3
+PASS  382-gossip-rumor  mode=push loss=0.3
+PASS  382-gossip-rumor  mode=pull loss=0.3
+PASS  482-swim-failure-detection
+PASS  482-swim-failure-detection  loss=0
+PASS  482-swim-failure-detection  loss=10%
+PASS  482-swim-failure-detection  loss=30%
+PASS  482-swim-failure-detection  loss=40%
+PASS  482-swim-failure-detection  loss=50%
+PASS  482-swim-failure-detection  period=200ms
+PASS  482-swim-failure-detection  period=500ms
+PASS  482-swim-failure-detection  period=2s
+PASS  482-swim-failure-detection  suspect=1s
+PASS  482-swim-failure-detection  suspect=2s
+PASS  482-swim-failure-detection  suspect=8s
+PASS  482-swim-failure-detection  helpers=0
+PASS  482-swim-failure-detection  helpers=1
+PASS  482-swim-failure-detection  helpers=5
+PASS  482-swim-failure-detection  helpers=0 loss=40%
+PASS  482-swim-failure-detection  suspect=1s loss=40%
+PASS  482-swim-failure-detection  helpers=0 suspect=1s loss=40%
+PASS  483-gossip-partition
+PASS  483-gossip-partition  mode=pull
+PASS  483-gossip-partition  mode=push
+PASS  483-gossip-partition  swim=0
+PASS  483-gossip-partition  swim=0 mode=pull
+PASS  483-gossip-partition  swim=0 mode=push
+PASS  483-gossip-partition  interval=200ms
+PASS  483-gossip-partition  interval=1s
+PASS  483-gossip-partition  interval=2s
+PASS  483-gossip-partition  suspect=1s
+PASS  483-gossip-partition  suspect=6s
+PASS  483-gossip-partition  suspect=10s
+PASS  391-two-phase-commit
+PASS  391-two-phase-commit  loss=0.1
+PASS  391-two-phase-commit  loss=0.3
+PASS  391-two-phase-commit  loss=0.5
+PASS  391-two-phase-commit  timeout=20ms
+PASS  391-two-phase-commit  timeout=200ms
+PASS  391-two-phase-commit  timeout=3s
+PASS  391-two-phase-commit  loss=0.3 timeout=200ms
+PASS  392-commit-blocking
+PASS  392-commit-blocking  outage=2s
+PASS  392-commit-blocking  outage=10s
+PASS  392-commit-blocking  outage=20s
+PASS  392-commit-blocking  outage=40s
+PASS  392-commit-blocking  crash=0
+PASS  392-commit-blocking  crash=1ms
+PASS  392-commit-blocking  crash=20ms
+PASS  392-commit-blocking  crash=30ms
+PASS  392-commit-blocking  crash=45ms
+PASS  392-commit-blocking  crash=60ms
+PASS  392-commit-blocking  crash=100ms
+PASS  392-commit-blocking  cable=down
+PASS  392-commit-blocking  crash=45ms cable=down
+PASS  392-commit-blocking  crash=60ms cable=down
+PASS  392-commit-blocking  crash=30ms cable=down
+PASS  392-commit-blocking  outage=20s cable=down
+PASS  392-commit-blocking  crash=60ms outage=20s
+PASS  393-chord-ring
+PASS  393-chord-ring  bits=4
+PASS  393-chord-ring  bits=5
+PASS  393-chord-ring  bits=6
+PASS  393-chord-ring  bits=12
+PASS  393-chord-ring  bits=16
+PASS  393-chord-ring  stabilize=200ms
+PASS  393-chord-ring  stabilize=800ms
+PASS  393-chord-ring  stabilize=1s
+PASS  490-chord-churn
+PASS  490-chord-churn  succlist=1
+PASS  490-chord-churn  succlist=2
+PASS  490-chord-churn  succlist=4
+PASS  490-chord-churn  stabilize=200ms
+PASS  490-chord-churn  stabilize=800ms
+PASS  490-chord-churn  succlist=1 stabilize=800ms
+PASS  394-crdt-counter
+PASS  394-crdt-counter  loss=0
+PASS  394-crdt-counter  loss=0.6
+PASS  394-crdt-counter  loss=0.7
+PASS  394-crdt-counter  sync=100ms
+PASS  394-crdt-counter  sync=2s
+PASS  394-crdt-counter  loss=0.6 sync=2s
+PASS  491-crdt-partition
+PASS  491-crdt-partition  skew=-400ms
+PASS  491-crdt-partition  skew=-600ms
+PASS  491-crdt-partition  skew=-1s
+PASS  491-crdt-partition  skew=-3s
+PASS  491-crdt-partition  skew=3s
+PASS  491-crdt-partition  heal=6s
+PASS  491-crdt-partition  heal=12s
+PASS  491-crdt-partition  heal=20s
+PASS  491-crdt-partition  heal=30s
+PASS  491-crdt-partition  heal=30s skew=-3s

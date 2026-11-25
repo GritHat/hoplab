@@ -53,6 +53,8 @@ typedef struct {
     uint16_t next_seq;
     int      own_write;                 /* the register holds a value written here */
     unsigned merges, lost, rounds;
+    unsigned types;                     /* bit mask of the data types this replica hosts */
+    uint8_t  agree[CR_MAXP];            /* the last state heard from that peer equalled ours */
 } crdt;
 
 static const nl_module crdt_mod;
@@ -109,10 +111,52 @@ static int set_text(const crdt *c, char *out, size_t n)
     return size;
 }
 
+/* Fingerprint of the whole state, independent of the order of the entries */
+static uint32_t state_digest(const crdt *c)
+{
+    uint32_t h = 2166136261u, sum = 0;
+    const char *s;
+    int i;
+
+    for (i = 0; i < c->np; i++)
+        h = (h ^ c->d.P[i]) * 16777619u, h = (h ^ c->d.N[i]) * 16777619u;
+    h = (h ^ c->d.reg_ts) * 16777619u;
+    h = (h ^ c->d.reg_rep) * 16777619u;
+    for (s = c->d.reg; *s; s++)
+        h = (h ^ (unsigned char)*s) * 16777619u;
+    for (i = 0; i < CR_ELEMS; i++) {
+        const cr_entry *e = &c->d.e[i];
+        uint32_t x = 2166136261u;
+
+        if (!e->used)
+            continue;
+        x = (x ^ e->rep) * 16777619u;
+        x = (x ^ e->seq) * 16777619u;
+        x = (x ^ (uint32_t)e->removed) * 16777619u;
+        for (s = e->elem; *s; s++)
+            x = (x ^ (unsigned char)*s) * 16777619u;
+        sum += x;
+    }
+    return h ^ sum;
+}
+
+/* A replica cannot see the others, but gossip tells it: it has converged
+ * when the last state received from every peer was identical to its own. */
+static int converged(const crdt *c)
+{
+    int i;
+
+    for (i = 0; i < c->np; i++)
+        if (i != c->me && !c->agree[i])
+            return 0;
+    return 1;
+}
+
 static void publish(crdt *c)
 {
     char buf[200];
 
+    nl_count_set(c->n, "crdt.converged", converged(c));
     nl_count_set(c->n, "crdt.value", (double)counter_value(c));
     nl_count_set(c->n, "crdt.size", set_text(c, buf, sizeof(buf)));
     nl_count_set(c->n, "crdt.register", atof(c->d.reg));
@@ -141,20 +185,17 @@ static cr_entry *entry_find(crdt *c, int rep, int seq, int create)
     return freeslot;
 }
 
-static void cr_gossip(void *ctx)
+/* Send the whole state to one peer. `reply` marks an answer (the peer
+ * asked, or sent a state that differs from ours): answers are not answered,
+ * unless they still differ. */
+static void cr_send(crdt *c, int to, int reply)
 {
-    crdt *c = ctx;
     uint8_t b[1400];
-    int len = 4, i, cnt = 0, to;
+    int len = 4, i, cnt = 0;
 
-    c->timer = nl_after(c->n, c->sync, cr_gossip, c);
-    if (c->np < 2)
-        return;
-    do
-        to = (int)nl_rand((unsigned)c->np);
-    while (to == c->me);
     b[0] = 1;
-    b[1] = (uint8_t)c->me;
+    /* bit 7: "I do not know yet whether we agree, please answer" */
+    b[1] = (uint8_t)(c->me | (!reply && !c->agree[to] ? 0x80 : 0));
     b[2] = (uint8_t)c->np;
     for (i = 0; i < c->np; i++, len += 4)
         nl_put32(b + len, c->d.P[i]);
@@ -178,9 +219,25 @@ static void cr_gossip(void *ctx)
         cnt++;
     }
     b[3] = (uint8_t)cnt;
-    c->rounds++;
+    nl_put32(b + len, state_digest(c));     /* so that the receiver can tell whether we now agree */
+    len += 4;
     nl_log(c->n, NL_L_DIST, 3, 0, T_INFO "crdt" T_RESET " %s → %s (%d B)", _("state sent to"), c->names[to], len);
     nl_udp_send(c->n, CR_PORT, c->ips[to], CR_PORT, b, len);
+}
+
+static void cr_gossip(void *ctx)
+{
+    crdt *c = ctx;
+    int to;
+
+    c->timer = nl_after(c->n, c->sync, cr_gossip, c);
+    if (c->np < 2)
+        return;
+    do
+        to = (int)nl_rand((unsigned)c->np);
+    while (to == c->me);
+    c->rounds++;
+    cr_send(c, to, 0);
 }
 
 /* Merge: the least upper bound of the two states */
@@ -188,14 +245,15 @@ static void cr_rx(nl_node *n, void *ctx, const nl_udpmsg *m)
 {
     crdt *c = ctx;
     const uint8_t *d = m->data;
-    int from, np, cnt, off = 4, i, changed = 0, rlen;
+    int from, np, cnt, off = 4, i, changed = 0, rlen, wants;
     uint32_t ts;
     long before = counter_value(c);
     char sbefore[200], safter[200], rbefore[20];
 
-    if (m->len < 4 || d[0] != 1 || d[2] != c->np || d[1] >= c->np || m->len < 4 + 8 * c->np + 6)
+    if (m->len < 4 || d[0] != 1 || d[2] != c->np || (d[1] & 0x7f) >= c->np || m->len < 4 + 8 * c->np + 6)
         return;
-    from = d[1];
+    from = d[1] & 0x7f;
+    wants = d[1] & 0x80;
     np = d[2];
     cnt = d[3];
     set_text(c, sbefore, sizeof(sbefore));
@@ -257,9 +315,17 @@ static void cr_rx(nl_node *n, void *ctx, const nl_udpmsg *m)
         }
         off += 5 + elen;
     }
+    if (changed)
+        memset(c->agree, 0, sizeof(c->agree));
+    c->agree[from] = off + 4 <= m->len && nl_get32(d + off) == state_digest(c);
+    /* anti-entropy in both directions: answer whoever asked, or whoever
+     * showed a state that lacks something we have */
+    if (wants || !c->agree[from])
+        cr_send(c, from, c->agree[from]);
     if (!changed) {
         nl_log(n, NL_L_DIST, 3, m->pkt_id, T_INFO "crdt" T_RESET " %s %s: %s", _("state from"), c->names[from],
                _("nothing new"));
+        publish(c);
         return;
     }
     c->merges++;
@@ -293,10 +359,27 @@ static int cr_run(nl_node *n, const nl_args *a)
             return -1;
         c->n = n;
         c->me = -1;
-        c->type = CR_PNCOUNTER;
-        for (i = 0; i < 4; i++)
-            if (strcmp(type, CR_TYPES[i]) == 0)
-                c->type = i;
+        {   /* one type, or several separated by commas: the replica hosts one object of each */
+            char tl[64];
+            char *tt, *ts = NULL;
+
+            snprintf(tl, sizeof(tl), "%s", type);
+            c->type = -1;
+            for (tt = strtok_r(tl, ",+", &ts); tt; tt = strtok_r(NULL, ",+", &ts)) {
+                for (i = 0; i < 4; i++)
+                    if (strcmp(tt, CR_TYPES[i]) == 0) {
+                        c->types |= 1u << i;
+                        if (c->type < 0)
+                            c->type = i;
+                    }
+            }
+            if (!c->types) {
+                nl_log(n, NL_L_DIST, 1, 0, T_ERR "crdt: %s '%s' (gcounter, pncounter, orset, lww)", _("unknown type"),
+                       type);
+                free(c);
+                return -1;
+            }
+        }
         snprintf(list, sizeof(list), "%s", nl_arg_str(a, "peers", n->name));
         for (tok = strtok_r(list, ",", &save); tok && c->np < CR_MAXP; tok = strtok_r(NULL, ",", &save)) {
             snprintf(c->names[c->np], sizeof(c->names[0]), "%s", tok);
@@ -327,11 +410,27 @@ static int cr_run(nl_node *n, const nl_args *a)
     }
     if (!cmd)
         return 0;
+    {   /* an operation must belong to a type this replica hosts */
+        unsigned need = !strcmp(cmd, "inc") ? (1u << CR_GCOUNTER | 1u << CR_PNCOUNTER)
+                      : !strcmp(cmd, "dec") ? (1u << CR_GCOUNTER | 1u << CR_PNCOUNTER)
+                      : !strcmp(cmd, "add") || !strcmp(cmd, "remove") ? 1u << CR_ORSET
+                      : !strcmp(cmd, "set") ? 1u << CR_LWW : 0;
+
+        if (need && !(c->types & need)) {
+            nl_log(n, NL_L_DIST, 1, 0, T_ERR "crdt: %s '%s' %s (%s)", _("operation"), cmd,
+                   _("does not exist for the type of this replica"),
+                   need & (1u << CR_ORSET) ? "type=orset" : need & (1u << CR_LWW) ? "type=lww" : "type=pncounter");
+            nl_count(n, "crdt.refused", 1);
+            return -1;
+        }
+    }
+    memset(c->agree, 0, sizeof(c->agree));
     if (strcmp(cmd, "inc") == 0 || strcmp(cmd, "dec") == 0) {
         uint32_t by = (uint32_t)nl_arg_int(a, "by", 1);
 
-        if (cmd[0] == 'd' && c->type == CR_GCOUNTER) {
+        if (cmd[0] == 'd' && !(c->types & 1u << CR_PNCOUNTER)) {
             nl_log(n, NL_L_DIST, 1, 0, T_ERR "crdt: %s", _("a G-Counter can only grow (use type=pncounter)"));
+            nl_count(n, "crdt.refused", 1);
             return -1;
         }
         if (cmd[0] == 'i')
@@ -418,26 +517,39 @@ static int cr_panel(nl_node *n, int x, int y, int w, int h, int detail)
     int row = 0, i, size;
     size_t len = 0;
 
-    row += nl_ui_kv(x, y + row, w, _("replica"), "%s (%d/%d), %s", n->name, c->me + 1, c->np, CR_TYPES[c->type]);
+    {
+        char tn[64] = "";
+        size_t tl = 0;
+
+        for (i = 0; i < 4; i++)
+            if (c->types & 1u << i)
+                tl += (size_t)snprintf(tn + tl, sizeof(tn) - tl, "%s%s", tl ? " + " : "", CR_TYPES[i]);
+        row += nl_ui_kv(x, y + row, w, _("replica"), "%s (%d/%d), %s%s", n->name, c->me + 1, c->np, tn,
+                        converged(c) ? T_OK "  ✓ in sync" : T_WARN "  …");
+    }
     row += nl_ui_kv(x, y + row, w, _("gossip"), "%s, %u %s, %u %s", nl_time_str(c->sync), c->rounds, _("rounds"),
                     c->merges, _("merges"));
-    row += nl_ui_kv(x, y + row, w, _("counter"), "%ld", counter_value(c));
-    for (i = 0; i < c->np; i++)
-        len += (size_t)snprintf(vec + len, len < sizeof(vec) ? sizeof(vec) - len : 0, "%s%s +%u −%u", i ? "  " : "",
-                                c->names[i], c->d.P[i], c->d.N[i]);
-    if (row < h)
-        tui_print(x, y + row++, w, TS(C_DIM, C_DEFAULT, 0), "  %s", vec);
+    if (c->types & (1u << CR_GCOUNTER | 1u << CR_PNCOUNTER)) {
+        row += nl_ui_kv(x, y + row, w, _("counter"), "%ld", counter_value(c));
+        for (i = 0; i < c->np; i++)
+            len += (size_t)snprintf(vec + len, len < sizeof(vec) ? sizeof(vec) - len : 0, "%s%s +%u −%u",
+                                    i ? "  " : "", c->names[i], c->d.P[i], c->d.N[i]);
+        if (row < h)
+            tui_print(x, y + row++, w, TS(C_DIM, C_DEFAULT, 0), "  %s", vec);
+    }
     size = set_text(c, buf, sizeof(buf));
-    row += nl_ui_kv(x, y + row, w, _("set"), "{%s} (%d)", buf, size);
-    if (detail >= 2)
+    if (c->types & 1u << CR_ORSET)
+        row += nl_ui_kv(x, y + row, w, _("set"), "{%s} (%d)", buf, size);
+    if (detail >= 2 && (c->types & 1u << CR_ORSET))
         for (i = 0; i < CR_ELEMS && row < h; i++)
             if (c->d.e[i].used)
                 tui_print(x, y + row++, w, TS(c->d.e[i].removed ? C_FAINT : C_TEXT, C_DEFAULT, 0),
                           "  %-12s " T_DIM "%s %s:%u%s", c->d.e[i].elem, _("tag"), c->names[c->d.e[i].rep],
                           c->d.e[i].seq, c->d.e[i].removed ? "  ✗" : "");
-    row += nl_ui_kv(x, y + row, w, _("register"), "«%s»  (%u ms, %s)%s", c->d.reg, c->d.reg_ts,
-                    c->d.reg_ts ? c->names[c->d.reg_rep] : "—", c->lost ? "  LWW!" : "");
-    if (h - row >= 5)
+    if (c->types & 1u << CR_LWW)
+        row += nl_ui_kv(x, y + row, w, _("register"), "«%s»  (%u ms, %s)%s", c->d.reg, c->d.reg_ts,
+                        c->d.reg_ts ? c->names[c->d.reg_rep] : "—", c->lost ? "  LWW!" : "");
+    if (h - row >= 5 && (c->types & (1u << CR_GCOUNTER | 1u << CR_PNCOUNTER)))
         nl_ui_graph(x, y + row, w, h - row, nl_series_find(n, "counter value"), C_OK, _("counter"));
     return h;
 }
@@ -454,14 +566,14 @@ static void dis_crdt(nl_dissect *o, const uint8_t *d, int len, int off)
         return;
     for (i = 0; i < np; i++)
         v += (long)nl_get32(d + 4 + 4 * i) - (long)nl_get32(d + 4 + 4 * np + 4 * i);
-    nl_dis_field(o, "CRDT", "Sender replica", off + 1, 1, "%d", d[1] + 1);
+    nl_dis_field(o, "CRDT", "Sender replica", off + 1, 1, "%d%s", (d[1] & 0x7f) + 1, d[1] & 0x80 ? " (please answer)" : "");
     nl_dis_field(o, "CRDT", "Increments", off + 4, 4 * np, "%d replicas", np);
     nl_dis_field(o, "CRDT", "Decrements", off + 4 + 4 * np, 4 * np, "%d replicas (value %ld)", np, v);
     nl_dis_field(o, "CRDT", "Register", off + 4 + 8 * np, 6 + d[4 + 8 * np + 5], "«%.*s» ts %u replica %d",
                  d[4 + 8 * np + 5], (const char *)d + 4 + 8 * np + 6, nl_get32(d + 4 + 8 * np),
                  d[4 + 8 * np + 4] + 1);
     nl_dis_field(o, "CRDT", "Set entries", off + 3, 1, "%d (tags and tombstones)", d[3]);
-    nl_dis_summary(o, "CRDT", 209, "state of replica %d: counter %ld, %d set tags", d[1] + 1, v, d[3]);
+    nl_dis_summary(o, "CRDT", 209, "state of replica %d: counter %ld, %d set tags", (d[1] & 0x7f) + 1, v, d[3]);
 }
 
 static const nl_module crdt_mod = {
@@ -470,7 +582,11 @@ static const nl_module crdt_mod = {
                 "run NODE crdt inc [by=N] | dec [by=N]     counter\n"
                 "run NODE crdt add X | remove X            observed-remove set\n"
                 "run NODE crdt set V                       last-writer-wins register\n"
-                "  Every node needs the same peers list. skew shifts the clock used by the register."),
+                "  Every node needs the same peers list. type selects what the replica hosts and which\n"
+                "  operations it accepts: gcounter (inc), pncounter (inc, dec), orset (add, remove), lww\n"
+                "  (set); several types separated by commas host one object of each (type=orset,lww).\n"
+                "  skew shifts the clock used by the register. crdt.converged is 1 when the last state\n"
+                "  heard from every peer was identical to the local one."),
     .theory = N_("Replicating data on several machines forces a choice when the network splits: refuse "
                  "updates until the replicas can agree (consistency), or accept them everywhere and "
                  "reconcile later (availability). Conflict-free replicated data types make the second "

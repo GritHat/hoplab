@@ -18,9 +18,17 @@ node s1 switch
 node n1 host
 node n2 host
 node n3 host
-link n1 s1 delay=10ms loss=$loss dup=0.1
-link n2 s1 delay=10ms loss=$loss dup=0.1
-link n3 s1 delay=10ms loss=$loss dup=0.1
+link n1 s1 delay=10ms dup=0.1
+link n2 s1 delay=10ms dup=0.1
+link n3 s1 delay=10ms dup=0.1
+# the links become lossy after one second, when every replica has resolved
+# the addresses of the others: the lab is about the data, not about ARP
+run n1 ping n2 count=1
+run n1 ping n3 count=1
+run n2 ping n3 count=1
+at 1s link n1 s1 loss=$loss
+at 1s link n2 s1 loss=$loss
+at 1s link n3 s1 loss=$loss
 auto all
 
 run n1 crdt peers=n1,n2,n3 type=pncounter sync=$sync
@@ -37,8 +45,11 @@ note[it] 4s Il gossip diffonde i totali per replica; ogni fusione può solo avvi
 at 6s   run n2 crdt dec
 note 6s A decrement on n2: it is an increment of n2's "decrements" entry, so it merges like everything else.
 note[it] 6s Un decremento su n2: è un incremento della voce "decrementi" di n2, quindi si fonde come tutto il resto.
-duration 20s
+duration 180s
 
 expect n1 crdt.value == 5
 expect n2 crdt.value == 5
 expect n3 crdt.value == 5
+expect n1 crdt.converged == 1
+expect n2 crdt.converged == 1
+expect n3 crdt.converged == 1

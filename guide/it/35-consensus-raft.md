@@ -62,7 +62,7 @@ il leader pone commitIndex = n   sse   matchIndex[i] >= n su una maggioranza
 
 **Parenti.** Viewstamped Replication (1988) e Multi-Paxos raggiungono le stesse garanzie; Raft si distingue perché richiede che il nuovo leader possieda già tutte le voci committed, così i dati fluiscono solo dal leader ai follower. Zab (ZooKeeper) è simile. I guasti bizantini richiedono `3f + 1` repliche (PBFT). Raft in produzione: etcd, Consul, CockroachDB, TiKV, KRaft di Kafka.
 
-**In netlab.** Il modulo `raft` rende persistenti term, voto e log attraverso `node N down/up`, aggiunge un no-op all'inizio di ogni term, inoltra al leader i comandi ricevuti dai follower e offre `prevote=1`. Non ha snapshot né cambi di configurazione, e `raft get` legge la copia locale della macchina a stati, che può essere superata: non è una lettura linearizzabile. I follower apprendono un nuovo indice di commit dal successivo AppendEntries, quindi applicano con un heartbeat di ritardo rispetto al leader.
+**In netlab.** Il modulo `raft` rende persistenti term, voto e log attraverso `node N down/up`, aggiunge un no-op all'inizio di ogni term, inoltra al leader i comandi ricevuti dai follower e offre `prevote=1`. Le letture sono linearizzabili con ReadIndex: `raft get CHIAVE` fa confermare al leader la propria leadership con un giro di heartbeat prima di rispondere (un follower inoltra la lettura), ed è rifiutata quando nessuna maggioranza risponde; `raft get CHIAVE stale=1` legge subito la copia locale e può restituire dati superati. Non ha snapshot né cambi di configurazione. I follower apprendono un nuovo indice di commit dal successivo AppendEntries, quindi applicano con un heartbeat di ritardo rispetto al leader. Nei laboratori `first=1` accorcia solo il primo timeout di n1, così che il primo leader sia noto.
 
 **Letteratura primaria.**
 
@@ -77,7 +77,7 @@ il leader pone commitIndex = n   sse   matchIndex[i] >= n su una maggioranza
 <!-- detail: 1 -->
 ## In laboratorio
 
-**380-raft-election.** `./netlab run 380-raft-election`. Cinque server attorno a uno switch; n1 ha un timeout più breve (400–500 ms) in modo da vincere il term 1. Selezionare un nodo (`n`) e aprire la scheda `raft`: ruolo, term, la barra del timer di elezione, il log. Premere `s` per la vista di sequenza e seguire RequestVote, i voti, poi il primo AppendEntries che porta il no-op. A 8 s n1 si guasta: misurare il tempo fino a "eletto LEADER per il term 2" (atteso poco più di 1 s: il più piccolo di quattro timeout estratti in 1–2 s). A 16 s n1 riparte "dalla memoria stabile: term=1", riceve un AppendEntries del term 2 e diventa follower.
+**380-raft-election.** `./netlab run 380-raft-election`. Cinque server attorno a uno switch; il primissimo timeout di n1 è accorciato (`first=1`) in modo da vincere il term 1. Selezionare un nodo (`n`) e aprire la scheda `raft`: ruolo, term, la barra del timer di elezione, il log. Premere `s` per la vista di sequenza e seguire RequestVote, i voti, poi il primo AppendEntries che porta il no-op. A 8 s n1 si guasta: misurare il tempo fino a "eletto LEADER per il term 2" (atteso poco più di 1 s: il più piccolo di quattro timeout estratti in 1–2 s). A 16 s n1 riparte "dalla memoria stabile: term=1", riceve un AppendEntries del term 2 e diventa follower.
 
 - `election=1000-1050ms`: i timeout sono quasi uguali. Prevedere gli split vote: più righe "candidato per il term …" a pochi millisecondi di distanza, talvolta un term senza leader. Contare le elezioni (contatore `raft.elections`).
 - Isolare un follower: `:` poi `link n5 s1 down`; osservare il term di n5 crescere a ogni timeout. Dopo qualche secondo `link n5 s1 up`. Previsione: il leader sano scrive "si dimette: esiste un term più alto" e segue un'elezione benché nulla si fosse guastato. È il disturbo che PreVote elimina.
@@ -85,7 +85,7 @@ il leader pone commitIndex = n   sse   matchIndex[i] >= n su una maggioranza
 
 **381-raft-replication.** `./netlab run 381-raft-replication`. Aprire la scheda `raft` del leader n1 (`nextIndex`/`matchIndex` per follower) e di un follower. Le celle del log sono blu quando la voce è memorizzata e verdi quando è applicata. Seguire un comando nel log a dettaglio `2`: "aggiunto all'indice 2", quattro AppendEntries con `prev=1/1`, "voce committed 2 … memorizzata dalla maggioranza", e i follower che la applicano circa un heartbeat dopo. A 6 s n4 si guasta e i commit proseguono con quattro server; a 12 s n4 riparte con un log di lunghezza 4 e un solo AppendEntries con `prev=4/1 entries=3` lo porta a 7.
 
-- `:` poi `n3 raft put color=red` e `n5 raft get color`. Spiegare perché il get può non restituire nulla se eseguito subito.
+- `:` poi `n3 raft put color=red` e `n5 raft get color`: la lettura viene inoltrata al leader, che risponde dopo un giro di heartbeat. Ripetere con `n5 raft get color stale=1` subito dopo il put e spiegare perché la copia locale può non avere ancora il valore.
 - Guastare tre server e inviare un comando: la cella resta blu. Riattivare un server con `node N up` e prevedere che cosa accade alla voce in sospeso.
 - Mettere in pausa (spazio), inviare `n1 raft put a=1`, avanzare con `.` finché gli AppendEntries sono partiti, poi guastare n1 con `k`. Prevedere, dalla regola del log più aggiornato, quali server possono diventare leader e se `a=1` sopravvive; verificare con `raft.truncated` e con i log.
 

@@ -28,11 +28,13 @@
 #define CH_PROBE 24
 #define CH_HDR   20
 
-enum { C_FIND = 1, C_FOUND, C_GETPRED, C_PRED, C_NOTIFY, C_PING, C_PONG, C_PUT, C_GET, C_VALUE, C_STORE };
+enum { C_FIND = 1, C_FOUND, C_GETPRED, C_PRED, C_NOTIFY, C_PING, C_PONG, C_PUT, C_GET, C_VALUE, C_STORE,
+       C_MOVE };
+#define C_LAST C_MOVE
 enum { P_JOIN = 1, P_FINGER, P_LOOKUP, P_PUT, P_GET, P_GETWAIT };
 
 static const char *const CH_NAMES[] = { "?", "FIND_SUCCESSOR", "FOUND", "GET_PREDECESSOR", "PREDECESSOR",
-                                        "NOTIFY", "PING", "PONG", "PUT", "GET", "VALUE", "STORE" };
+                                        "NOTIFY", "PING", "PONG", "PUT", "GET", "VALUE", "STORE", "MOVE" };
 
 typedef struct { uint32_t id; nl_ip ip; } cref;
 
@@ -58,7 +60,8 @@ typedef struct chord {
     cpend    pend[CH_PEND];
     struct { cref r; int waiting; } probe[CH_PROBE];
     int      nprobe;
-    unsigned lookups, found, lasthops;
+    unsigned lookups, found, lasthops, collisions;
+    uint32_t repl_sig;                  /* neighbourhood for which the replicas were last pushed */
 } chord;
 
 static const nl_module chord_mod;
@@ -126,6 +129,8 @@ static void publish(chord *c)
     nl_count_set(c->n, "chord.keys", k);
     nl_count_set(c->n, "chord.lookups", c->lookups);
     nl_count_set(c->n, "chord.found", c->found);
+    nl_count_set(c->n, "chord.answered", c->found + nl_count_get(c->n, "chord.notfound"));
+    nl_count_set(c->n, "chord.collisions", c->collisions);
     nl_count_set(c->n, "chord.hops", c->lasthops);
     nl_count_set(c->n, "chord.joined", c->joined);
 }
@@ -220,11 +225,57 @@ static void key_store(chord *c, const char *key, const char *val, int replicate)
     snprintf(k->val, sizeof(k->val), "%s", val);
     nl_log(c->n, NL_L_DIST, replicate ? 1 : 2, 0, T_OK "chord" T_RESET " %s %s=%s " T_DIM "(id %u)",
            replicate ? _("stored") : _("stored a copy of"), key, val, k->id);
+    /* r copies in all: here and on the next r - 1 successors */
     if (replicate)
-        for (i = 0; i < c->nsucc; i++)
+        for (i = 0; i < c->nsucc - 1; i++)
             if (c->succ[i].ip && c->succ[i].ip != c->ip)
                 chd_send(c, c->succ[i].ip, C_STORE, 0, 0, 0, k->id, self_ref(c), key, val);
     publish(c);
+}
+
+/* When the neighbourhood changes (a successor died or joined, or we
+ * inherited the arc of a dead predecessor) the keys we own must again
+ * exist on our first r - 1 successors. */
+static void replicas_check(chord *c)
+{
+    uint32_t sig = c->pred.ip * 31u;
+    int i, k, pushed = 0;
+
+    if (!c->pred.ip || c->nsucc < 2)
+        return;
+    for (i = 0; i < c->nsucc - 1; i++)
+        sig = sig * 131u + c->succ[i].ip;
+    if (sig == c->repl_sig)
+        return;
+    c->repl_sig = sig;
+    for (k = 0; k < CH_KEYS; k++) {
+        if (!c->keys[k].used || !in_half_open(c->keys[k].id, c->pred.id, c->id))
+            continue;
+        for (i = 0; i < c->nsucc - 1; i++)
+            if (c->succ[i].ip && c->succ[i].ip != c->ip)
+                chd_send(c, c->succ[i].ip, C_STORE, 0, 0, 0, c->keys[k].id, self_ref(c), c->keys[k].key,
+                         c->keys[k].val);
+        pushed++;
+    }
+    if (pushed)
+        nl_log(c->n, NL_L_DIST, 2, 0, T_INFO "chord" T_RESET " %s: %d %s", _("my neighbours changed"), pushed,
+               _("keys copied again to my successors"));
+}
+
+static void chd_start(chord *c);
+
+/* Two nodes hashed to the same identifier: this one moves to the next free
+ * position and joins again. */
+static void collision_move(chord *c, const char *with)
+{
+    c->collisions++;
+    nl_log(c->n, NL_L_DIST, 1, 0, T_WARN "● chord" T_RESET " %s %u %s %s: %s %u (%s)", _("identifier"), c->id,
+           _("is also the identifier of"), with, _("moving to"), (c->id + 1) & c->mask,
+           _("with few bits two names can hash to the same point"));
+    c->id = (c->id + 1) & c->mask;
+    if (!c->boot)
+        c->boot = c->contact;
+    chd_start(c);
 }
 
 /* ---- routing ---- */
@@ -347,6 +398,11 @@ static void on_found(chord *c, uint32_t reqid, cref node, int hops)
         return;
     switch (p->purpose) {
     case P_JOIN:
+        if (node.id == c->id && node.ip != c->ip) {
+            p->used = 0;
+            collision_move(c, who(node.ip));
+            return;
+        }
         set_successor(c, node);
         c->joined = 1;
         nl_log(c->n, NL_L_DIST, 1, 0, T_OK "● chord" T_RESET " %s (id %u): %s %s (id %u)", _("joined the ring"),
@@ -486,6 +542,7 @@ static void chd_tick(void *ctx)
     }
     if (!c->joined)
         return;
+    replicas_check(c);
 
     /* 3. stabilize: ask the successor for its predecessor */
     if (c->succ[0].ip && c->succ[0].ip != c->ip)
@@ -522,8 +579,18 @@ static void chd_rx(nl_node *n, void *ctx, const nl_udpmsg *m)
     target = nl_get32(d + 8);
     node.id = nl_get32(d + 12);
     node.ip = nl_get32(d + 16);
-    if (type < 1 || type > C_STORE || off + cnt * 8 > m->len)
+    if (type < 1 || type > C_LAST || off + cnt * 8 > m->len)
         return;
+    if (type == C_MOVE) {
+        if (c->id == target)
+            collision_move(c, who(node.ip));
+        return;
+    }
+    if ((type == C_NOTIFY || type == C_PING || type == C_PONG) && node.id == c->id && node.ip != c->ip &&
+        c->ip > node.ip && c->joined) {
+        collision_move(c, who(node.ip));
+        return;
+    }
     if (type != C_PING && type != C_PONG)
         nl_log(n, NL_L_DIST, 3, m->pkt_id, T_INFO "chord" T_RESET " ← %s %s %s", CH_NAMES[type], _("from"),
                who(m->src));
@@ -560,6 +627,15 @@ static void chd_rx(nl_node *n, void *ctx, const nl_udpmsg *m)
         break;
     }
     case C_NOTIFY:
+        if (c->pred.ip && node.ip != c->pred.ip && node.id == c->pred.id) {
+            /* two predecessors with one identifier: tell the one with the
+             * higher address to move */
+            cref keep = node.ip < c->pred.ip ? node : c->pred, move = node.ip < c->pred.ip ? c->pred : node;
+
+            chd_send(c, move.ip, C_MOVE, 0, 0, 0, move.id, keep, NULL, NULL);
+            c->pred = keep;
+            break;
+        }
         if (!c->pred.ip || in_open(node.id, c->pred.id, c->id)) {
             c->pred = node;
             nl_log(n, NL_L_DIST, 2, m->pkt_id, T_INFO "chord" T_RESET " %s: %s (id %u)", _("new predecessor"),
@@ -799,7 +875,7 @@ static int chd_panel(nl_node *n, int x, int y, int w, int h, int detail)
 
 static void dis_chord(nl_dissect *o, const uint8_t *d, int len, int off)
 {
-    if (len < CH_HDR || d[0] < 1 || d[0] > C_STORE)
+    if (len < CH_HDR || d[0] < 1 || d[0] > C_LAST)
         return;
     nl_dis_field(o, "Chord", "Message", off, 1, "%d (%s)", d[0], CH_NAMES[d[0]]);
     nl_dis_field(o, "Chord", "Hops", off + 1, 1, "%d", d[1]);
@@ -823,7 +899,9 @@ static const nl_module chord_mod = {
                 "run NODE chord put key=K value=V\n"
                 "run NODE chord get key=K\n"
                 "run NODE chord lookup key=K          only find the node responsible for K\n"
-                "  Without join= the node creates a new ring; the others join through any member."),
+                "  Without join= the node creates a new ring; the others join through any member.\n"
+                "  succlist=r: a node remembers its next r successors and every pair exists in r copies,\n"
+                "  on its owner and on the owner's next r - 1 successors (r=1: no fallback, no replica)."),
     .theory = N_("A distributed hash table stores key-value pairs on many machines with no central "
                  "directory: any node can find the machine responsible for a key, and nodes may come "
                  "and go. Chord does it with consistent hashing: nodes and keys are hashed onto the "
@@ -844,9 +922,14 @@ static const nl_module chord_mod = {
                  "coordination.\n\n"
                  "Failures are handled with a successor list: each node remembers its next r "
                  "successors, so that when the first one stops answering it falls back on the second, "
-                 "and lookups route around dead fingers. Data survives because every pair is "
-                 "replicated on the r successors of its owner: the node that inherits the arc of a "
-                 "dead one already holds a copy. Here lookups are recursive (each hop forwards the "
+                 "and lookups route around dead fingers. Data survives because every pair exists in r "
+                 "copies, on its owner and on the owner's next r - 1 successors: the node that inherits "
+                 "the arc of a dead one already holds a copy, and whenever its neighbourhood changes a "
+                 "node copies the keys it owns to its new successors, so that r copies exist again "
+                 "before the next failure. With r = 1 there is a single copy and a single successor "
+                 "pointer: every crash loses the keys of the dead node. Two names that hash to the same "
+                 "identifier (likely with few bits) are detected and one of them moves to the next "
+                 "position. Here lookups are recursive (each hop forwards the "
                  "query, the last one answers the origin directly), liveness is checked with pings "
                  "every stabilization round, and a node that restarts has lost its memory and joins "
                  "again as a new one."),

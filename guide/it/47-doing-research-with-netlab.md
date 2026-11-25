@@ -23,7 +23,7 @@ Il seme conta solo dove qualcosa estrae numeri casuali: perdite, jitter, timeout
 
 stampa il log degli eventi e poi una riga per ogni `expect`, con il valore trovato: `ok    h1 tcp.goodput_kbps >= 0   (got 1862.27)`. Lo stato di uscita è 1 se un'aspettativa fallisce, e `--quiet` stampa solo il verdetto. `--until TEMPO` sostituisce la durata dello scenario. I messaggi del log sono tradotti (in italiano `got` diventa `ottenuto`): quando uno script li analizza conviene fissare la lingua.
 
-I contatori sono l'interfaccia delle metriche. Ogni modulo mantiene sul proprio nodo contatori con un nome (`tcp.retransmits`, `raft.max_term`, `swim.false_positives`, ...); la scheda Node li elenca a dettaglio 2. Per leggere un contatore da uno script si aggiunga un'aspettativa sempre vera, `expect h1 tcp.retransmits >= 0`, alla **propria copia** dello scenario, e si estragga il valore `got`. Un file può contenere 32 aspettative e un nodo 48 contatori. Le serie temporali (cwnd, RTT) sono disegnate nell'interfaccia ma non vengono esportate; per una grandezza nel tempo si analizzi il log a dettaglio 2 o si aggiunga un contatore.
+I contatori sono l'interfaccia delle metriche. Ogni modulo mantiene sul proprio nodo contatori con un nome (`tcp.retransmits`, `raft.term`, `swim.mistaken_deaths`, ...); la scheda Node li elenca a dettaglio 2. Per leggere un contatore da uno script si aggiunga un'aspettativa sempre vera, `expect h1 tcp.retransmits >= 0`, alla **propria copia** dello scenario, e si estragga il valore `got`. Un file può contenere 32 aspettative e un nodo 48 contatori. Le serie temporali (cwnd, RTT) sono disegnate nell'interfaccia ma non vengono esportate; per una grandezza nel tempo si analizzi il log a dettaglio 2 o si aggiunga un contatore.
 
 Uno scenario viene cercato come percorso prima che nel catalogo, quindi le copie possono stare ovunque:
 
@@ -49,7 +49,7 @@ Da `src/nl.h` e dalla documentazione degli scenari: 64 nodi, 160 collegamenti, 1
 
 Il tempo è virtuale, in microsecondi, e avanza solo attraverso gli eventi. I nodi calcolano in tempo nullo: non c'è CPU, né ritardo di schedulazione, né disco. Tutto ciò il cui comportamento reale è governato dal costo di elaborazione (latenza di fsync nel consenso, membri lenti nel rilevamento dei guasti, elaborazione a lotti nel TCP) è assente. Gli orologi sono perfetti, a meno che un modulo aggiunga uno scostamento.
 
-I protocolli sono semplificati, e il testo di aiuto di ciascun modulo dice come. Le semplificazioni che più incidono sulle conclusioni di questo percorso: TCP senza timestamp, tail-loss probe né HyStart, e BBR nella sua prima versione senza rilevamento dei policer; BGP con solo eBGP e un router per AS; DNS senza ripiego su TCP, EDNS né DNSSEC; un CSMA/CA a tick senza effetto cattura; Raft senza snapshot, cambio di appartenenza né letture linearizzabili.
+I protocolli sono semplificati, e il testo di aiuto di ciascun modulo dice come. Le semplificazioni che più incidono sulle conclusioni di questo percorso: TCP senza timestamp, tail-loss probe né HyStart, e BBR nella sua prima versione senza rilevamento dei policer; BGP con solo eBGP e un router per AS; DNS senza ripiego su TCP, EDNS né DNSSEC; un CSMA/CA a tick senza effetto cattura; Raft senza snapshot, cambio di configurazione o lease (le letture usano ReadIndex).
 
 ## Minacce alla validità
 
@@ -103,7 +103,7 @@ Metrica: indice di Jain per ogni dimensione della coda, con la sua dispersione s
 - **ECMP o segment routing** (RFC 2992, RFC 8402) nel percorso di inoltro. Misurare la ripartizione del carico fra i percorsi, il riordino dei pacchetti visto da TCP e il tempo di ripristino dopo il guasto di un collegamento.
 - **Estensioni di validazione del routing.** Aggiungere a `src/bgp.c` controlli sull'autorizzazione dei provider nello spirito di ASPA, oppure i ruoli della RFC 9234. Misurare la frazione di rotte diffuse impropriamente o non plausibili che viene rifiutata, in funzione di quali AS adottano il controllo.
 - **Multi-Paxos o Viewstamped Replication** accanto a Raft, con gli stessi comandi del client. Misurare, su scenari identici, il tempo senza leader dopo un crash, i messaggi per comando confermato e il lavoro di recupero di una replica rimasta indietro.
-- **Letture linearizzabili per Raft**: ReadIndex e lease, con un parametro di scostamento dell'orologio. Misurare le letture obsolete e la latenza di lettura, e trovare l'errore di orologio oltre il quale i lease cedono.
+- **Lease per le letture di Raft**: il modulo risponde alle letture con ReadIndex; aggiungere i lease del leader con un parametro di scostamento dell'orologio. Misurare la latenza di lettura rispetto a ReadIndex, e trovare l'errore di orologio oltre il quale i lease iniziano a restituire dati obsoleti.
 - **Una DHT Kademlia.** Confrontare con Chord, a parità di churn programmato, i salti e i fallimenti delle ricerche, e il traffico di manutenzione dei due.
 - **Delta-state CRDT e Lifeguard.** Trasmettere delta anziché lo stato completo e misurare byte per aggiornamento e tempo di convergenza; aggiungere un ritardo di elaborazione ai membri e misurare i falsi positivi di SWIM con e senza consapevolezza della propria salute.
 
