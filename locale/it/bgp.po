@@ -43,11 +43,8 @@ msgstr "sessione con"
 msgid "is down"
 msgstr "caduta"
 
-msgid "interface down"
-msgstr "interfaccia non attiva"
-
-msgid "hold timer expired: nothing heard"
-msgstr "hold timer scaduto: nessun messaggio ricevuto"
+msgid "connection with"
+msgstr "connessione con"
 
 msgid "our own AS is in the path: loop, rejected"
 msgstr "il nostro AS è nel path: ciclo, rifiutata"
@@ -58,6 +55,15 @@ msgstr "originato da"
 msgid "origin validation says INVALID (wrong origin AS or too specific): rejected"
 msgstr "la validazione dell'origine dice INVALID (AS di origine sbagliato o prefisso troppo specifico): rifiutato"
 
+msgid "OPEN received in the wrong state"
+msgstr "OPEN ricevuto nello stato sbagliato"
+
+msgid "malformed OPEN"
+msgstr "OPEN malformato"
+
+msgid "unsupported BGP version"
+msgstr "versione di BGP non supportata"
+
 msgid "from"
 msgstr "da"
 
@@ -67,14 +73,77 @@ msgstr "atteso"
 msgid "session refused"
 msgstr "sessione rifiutata"
 
-msgid "the neighbor restarted"
-msgstr "il vicino si è riavviato"
+msgid "wrong AS number in the OPEN"
+msgstr "numero di AS sbagliato nell'OPEN"
+
+msgid "unacceptable hold time"
+msgstr "hold time inaccettabile"
+
+msgid "connection collision with"
+msgstr "collisione di connessioni con"
+
+msgid "keeping the connection opened by"
+msgstr "si tiene la connessione aperta da"
+
+msgid "malformed KEEPALIVE"
+msgstr "KEEPALIVE malformato"
 
 msgid "Established: exchanging routes"
 msgstr "Established: scambio delle rotte"
 
-msgid "the neighbor closed it (NOTIFICATION)"
-msgstr "il vicino l'ha chiusa (NOTIFICATION)"
+msgid "KEEPALIVE received in the wrong state"
+msgstr "KEEPALIVE ricevuto nello stato sbagliato"
+
+msgid "UPDATE received before the session was established"
+msgstr "UPDATE ricevuto prima che la sessione fosse stabilita"
+
+msgid "malformed UPDATE"
+msgstr "UPDATE malformato"
+
+msgid "the neighbor closed it"
+msgstr "il vicino l'ha chiusa"
+
+msgid "unknown message type"
+msgstr "tipo di messaggio sconosciuto"
+
+msgid "on the connection the neighbor opened"
+msgstr "sulla connessione aperta dal vicino"
+
+msgid "on the connection we opened"
+msgstr "sulla connessione aperta da noi"
+
+msgid "connection from"
+msgstr "connessione da"
+
+msgid "not a configured neighbor, refused"
+msgstr "non è un vicino configurato, rifiutata"
+
+msgid "the byte stream is not a sequence of BGP messages"
+msgstr "il flusso di byte non è una sequenza di messaggi BGP"
+
+msgid "the neighbor closed the TCP connection"
+msgstr "il vicino ha chiuso la connessione TCP"
+
+msgid "TCP connection reset"
+msgstr "connessione TCP azzerata (RST)"
+
+msgid "TCP connection refused"
+msgstr "connessione TCP rifiutata"
+
+msgid "TCP connection timed out"
+msgstr "connessione TCP scaduta"
+
+msgid "TCP connection closed"
+msgstr "connessione TCP chiusa"
+
+msgid "interface down"
+msgstr "interfaccia non attiva"
+
+msgid "no TCP connection yet: ConnectRetry timer expired, trying again"
+msgstr "ancora nessuna connessione TCP: timer ConnectRetry scaduto, nuovo tentativo"
+
+msgid "hold timer expired: nothing heard"
+msgstr "hold timer scaduto: nessun messaggio ricevuto"
 
 msgid "usage: bgp announce|withdraw PREFIX/LEN"
 msgstr "uso: bgp announce|withdraw PREFISSO/LUNGHEZZA"
@@ -96,6 +165,9 @@ msgstr "(NODO:AS[:customer|peer|provider], su una rete condivisa, AS diverso)"
 
 msgid "bad network"
 msgstr "rete non valida"
+
+msgid "cannot listen on TCP port 179"
+msgstr "impossibile mettersi in ascolto sulla porta TCP 179"
 
 msgid "neighbors"
 msgstr "vicini"
@@ -124,6 +196,15 @@ msgstr "stato"
 msgid "updates in/out"
 msgstr "update ricevuti/inviati"
 
+msgid "opened by the neighbor"
+msgstr "aperta dal vicino"
+
+msgid "opened by us"
+msgstr "aperta da noi"
+
+msgid "hold"
+msgstr "hold"
+
 msgid "prefix"
 msgstr "prefisso"
 
@@ -141,43 +222,53 @@ msgstr "BGP — routing path vector fra sistemi autonomi"
 
 msgid ""
 "run ROUTER bgp as=N [network=PREFIX/LEN ...] [neighbor=NODE:AS[:RELATION] ...]\n"
-"               [connected=1] [keepalive=30s] [hold=3×keepalive] [mrai=500ms]\n"
-"               [prepend=N] [policy=1] [rov=1 roa=PREFIX/LEN:AS[:MAXLEN] ...]\n"
+"               [connected=1] [keepalive=30s] [hold=3×keepalive] [retry=keepalive]\n"
+"               [mrai=500ms] [prepend=N] [prepend.NEIGHBOR=N] [policy=1]\n"
+"               [rov=1 roa=PREFIX/LEN:AS[:MAXLEN] ...]\n"
 "run ROUTER bgp announce|withdraw PREFIX/LEN\n"
 "  network= and neighbor= can be repeated. RELATION says what the neighbor is for\n"
 "  this AS: customer, peer or provider (none: no policy on that session).\n"
-"  connected=1 also originates every connected network.\n"
-"  policy=0 ignores the relations; prepend=N lengthens the AS path we export.\n"
+"  connected=1 also originates every connected network; `withdraw` silences one.\n"
+"  policy=0 ignores the relations. prepend=N lengthens the AS path we export to\n"
+"  everybody, prepend.NEIGHBOR=N only towards that neighbor.\n"
 "  Nothing checks that an AS owns what it announces: that is the hijack lab;\n"
 "  rov=1 with roa= entries rejects announcements with the wrong origin.\n"
-"  Sessions use UDP port 179 here (TCP in real BGP): use loss-free links."
+"  Sessions run over TCP port 179. keepalive is at least 1 s and hold at least 3 s;\n"
+"  retry is the ConnectRetry timer. AS numbers may be four octets long."
 msgstr ""
 "run ROUTER bgp as=N [network=PREFISSO/LUNGH ...] [neighbor=NODO:AS[:RELAZIONE] ...]\n"
-"               [connected=1] [keepalive=30s] [hold=3×keepalive] [mrai=500ms]\n"
-"               [prepend=N] [policy=1] [rov=1 roa=PREFISSO/LUNGH:AS[:LUNGHMAX] ...]\n"
+"               [connected=1] [keepalive=30s] [hold=3×keepalive] [retry=keepalive]\n"
+"               [mrai=500ms] [prepend=N] [prepend.VICINO=N] [policy=1]\n"
+"               [rov=1 roa=PREFISSO/LUNGH:AS[:LUNGHMAX] ...]\n"
 "run ROUTER bgp announce|withdraw PREFISSO/LUNGH\n"
 "  network= e neighbor= si possono ripetere. RELAZIONE dice che cos'è il vicino per\n"
 "  questo AS: customer, peer o provider (assente: nessuna politica su quella sessione).\n"
-"  connected=1 origina anche tutte le reti direttamente connesse.\n"
-"  policy=0 ignora le relazioni; prepend=N allunga l'AS path che esportiamo.\n"
+"  connected=1 origina anche tutte le reti direttamente connesse; `withdraw` ne zittisce una.\n"
+"  policy=0 ignora le relazioni. prepend=N allunga l'AS path che esportiamo a\n"
+"  tutti, prepend.VICINO=N solo verso quel vicino.\n"
 "  Nulla verifica che un AS possieda ciò che annuncia: è il laboratorio sui dirottamenti;\n"
 "  rov=1 con voci roa= rifiuta gli annunci con l'origine sbagliata.\n"
-"  Qui le sessioni usano la porta UDP 179 (TCP nel vero BGP): usa collegamenti senza perdite."
+"  Le sessioni viaggiano su TCP, porta 179. keepalive vale almeno 1 s e hold almeno 3 s;\n"
+"  retry è il timer ConnectRetry. I numeri di AS possono essere a quattro ottetti."
 
 msgid ""
-"The Internet is a network of autonomous systems (AS): networks under one administration, each with its own interior routing. BGP is the protocol they use to tell each other which address blocks (prefixes) they can reach. It is a path-vector protocol: an announcement carries the whole list of ASes it has crossed (the AS path). When a router passes a route on, it prepends its own AS number; a router that finds its own number in a path discards it, which prevents loops without any count-to-infinity. When a route disappears an explicit withdrawal is sent. Two BGP routers keep a session alive with KEEPALIVE messages and tear it down, withdrawing everything learned over it, when the hold timer expires.\n"
+"The Internet is a network of autonomous systems (AS): networks under one administration, each with its own interior routing. BGP is the protocol they use to tell each other which address blocks (prefixes) they can reach. It is a path-vector protocol: an announcement carries the whole list of ASes it has crossed (the AS path). When a router passes a route on, it prepends its own AS number; a router that finds its own number in a path discards it, which prevents loops without any count-to-infinity. When a route disappears an explicit withdrawal is sent.\n"
+"\n"
+"Two BGP routers talk over a TCP connection to port 179, so BGP itself needs no acknowledgements or retransmissions: a route is sent once and stays valid until it is withdrawn or the session ends. Either router may open the connection (if both do, the one opened by the router with the higher identifier is kept). Each sends an OPEN with its AS number, identifier and proposed hold time, confirms the other's with a KEEPALIVE, and the session is Established; then the whole table is sent as UPDATE messages, and afterwards only the changes. KEEPALIVEs every third of the hold time prove the neighbor is alive; when the hold timer expires, or the connection breaks, everything learned over the session is withdrawn. Errors are reported with a NOTIFICATION, which also closes the session.\n"
 "\n"
 "Unlike interior protocols, BGP does not look for the shortest path: it applies policy. Each AS first ranks the routes it hears by local preference, which encodes business relations (a route through a customer earns money, through a peer is free, through a provider costs), and only then by AS-path length. Export follows the same logic (Gao-Rexford rules): routes learned from customers are announced to everyone, routes learned from peers and providers only to customers. The result is that paths are valley-free: they go up through providers, cross at most one peering link, and go down through customers; nobody carries traffic for free between two of its providers.\n"
 "\n"
 "BGP trusts what it is told. An AS that announces a prefix it does not own attracts the traffic of everyone for whom its path looks better (prefix hijack), and announcing a more specific prefix attracts everyone, because forwarding always follows the longest match. Route origin validation (RPKI) lets routers reject announcements whose origin AS or prefix length does not match a signed authorization.\n"
 "\n"
-"Simplified here: sessions over UDP instead of TCP, eBGP only, one router per AS, no MED, communities or aggregation."
+"Not modelled here: iBGP (there is one router per AS and neighbors are directly connected), MED, communities, aggregation and route-flap damping; each UPDATE carries one prefix."
 msgstr ""
-"Internet è una rete di sistemi autonomi (AS): reti sotto un'unica amministrazione, ciascuna con il proprio routing interno. BGP è il protocollo con cui si comunicano quali blocchi di indirizzi (prefissi) sanno raggiungere. È un protocollo path vector: un annuncio porta l'elenco completo degli AS che ha attraversato (l'AS path). Quando un router inoltra una rotta vi antepone il proprio numero di AS; un router che trova il proprio numero in un path lo scarta, e questo evita i cicli senza alcun conteggio all'infinito. Quando una rotta sparisce viene inviato un ritiro esplicito (withdrawal). Due router BGP tengono viva la sessione con messaggi KEEPALIVE e la chiudono, ritirando tutto ciò che vi avevano imparato, quando scade l'hold timer.\n"
+"Internet è una rete di sistemi autonomi (AS): reti sotto un'unica amministrazione, ciascuna con il proprio routing interno. BGP è il protocollo con cui si comunicano quali blocchi di indirizzi (prefissi) sanno raggiungere. È un protocollo path vector: un annuncio porta l'elenco completo degli AS che ha attraversato (l'AS path). Quando un router inoltra una rotta vi antepone il proprio numero di AS; un router che trova il proprio numero in un path lo scarta, e questo evita i cicli senza alcun conteggio all'infinito. Quando una rotta sparisce viene inviato un ritiro esplicito (withdrawal).\n"
+"\n"
+"Due router BGP dialogano su una connessione TCP verso la porta 179, quindi BGP non ha bisogno di riscontri o ritrasmissioni propri: una rotta viene inviata una volta sola e resta valida finché non viene ritirata o la sessione termina. Ciascuno dei due può aprire la connessione (se lo fanno entrambi, si tiene quella aperta dal router con l'identificatore più alto). Ognuno invia un OPEN con il proprio numero di AS, l'identificatore e l'hold time proposto, conferma quello dell'altro con un KEEPALIVE, e la sessione è Established; a quel punto l'intera tabella viene inviata come messaggi UPDATE, e in seguito solo le variazioni. I KEEPALIVE ogni terzo dell'hold time dimostrano che il vicino è vivo; quando l'hold timer scade, o la connessione si interrompe, tutto ciò che era stato imparato sulla sessione viene ritirato. Gli errori si segnalano con un NOTIFICATION, che chiude anche la sessione.\n"
 "\n"
 "A differenza dei protocolli interni, BGP non cerca il percorso più corto: applica politiche. Ogni AS ordina le rotte che sente prima per local preference, che codifica le relazioni commerciali (una rotta tramite un cliente fa guadagnare, tramite un peer è gratuita, tramite un provider costa), e solo dopo per lunghezza dell'AS path. L'esportazione segue la stessa logica (regole di Gao-Rexford): le rotte imparate dai clienti si annunciano a tutti, quelle imparate da peer e provider solo ai clienti. Il risultato è che i percorsi sono valley-free: salgono attraverso i provider, attraversano al più un collegamento di peering e scendono attraverso i clienti; nessuno trasporta gratis traffico fra due dei propri provider.\n"
 "\n"
 "BGP si fida di ciò che gli viene detto. Un AS che annuncia un prefisso non suo attira il traffico di tutti quelli per cui il suo percorso appare migliore (prefix hijack), e annunciare un prefisso più specifico attira tutti, perché l'inoltro segue sempre la corrispondenza più lunga. La route origin validation (RPKI) permette ai router di rifiutare gli annunci il cui AS di origine o la cui lunghezza di prefisso non corrispondono a un'autorizzazione firmata.\n"
 "\n"
-"Semplificazioni: sessioni su UDP invece che TCP, solo eBGP, un router per AS, niente MED, community o aggregazione."
+"Non modellati qui: iBGP (c'è un router per AS e i vicini sono direttamente connessi), MED, community, aggregazione e route-flap damping; ogni UPDATE porta un solo prefisso."
 

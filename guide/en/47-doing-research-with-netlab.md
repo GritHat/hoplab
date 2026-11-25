@@ -49,7 +49,7 @@ From `src/nl.h` and the scenario documentation: 64 nodes, 160 links, 16 interfac
 
 Time is virtual, in microseconds, and advances only through events. Nodes compute in zero time: there is no CPU, no scheduling delay, no disk. Anything whose real behaviour is governed by processing cost (fsync latency in consensus, slow members in failure detection, softirq batching in TCP) is absent. Clocks are perfect unless a module adds an offset.
 
-Protocols are simplified, and each module's help text lists how. The ones that most affect conclusions in this track: TCP without SACK, delayed ACKs or timestamps, and a reduced BBR; BGP over UDP, eBGP only, one router per AS; DNS without TCP fallback, EDNS or DNSSEC; a tick-based CSMA/CA with no capture; Raft without snapshots, membership change or linearizable reads.
+Protocols are simplified, and each module's help text lists how. The ones that most affect conclusions in this track: TCP without SACK, delayed ACKs or timestamps, and a reduced BBR; BGP with eBGP only and one router per AS; DNS without TCP fallback, EDNS or DNSSEC; a tick-based CSMA/CA with no capture; Raft without snapshots, membership change or linearizable reads.
 
 ## Threats to validity
 

@@ -17,7 +17,8 @@ about  unreachable". m itself still reaches everybody. Look at the BGP tab of m 
 about  knows the routes, it just does not export them upwards.
 about
 about  Rerun with policy=0 (plain shortest AS path, export everything): after the failure the
-about  traffic between c1 and c2 flows through the unlucky customer m.
+about  traffic between c1 and c2 flows through the unlucky customer m. (The checks at the end of
+about  the run describe policy=1; with policy=0 three of them report the difference.)
 about[it]  Il routing fra sistemi autonomi segue il denaro, non la distanza. Due provider, p1 e p2,
 about[it]  sono in peering (si scambiano gratis il traffico dei rispettivi clienti). c1 compra transito
 about[it]  da p1, c2 da p2, e m è multihomed: cliente di entrambi. Ogni AS preferisce le rotte tramite
@@ -32,7 +33,8 @@ about[it]  il ping fallisce con "network unreachable". m invece raggiunge ancora
 about[it]  scheda BGP di m a dettaglio 3: conosce le rotte, semplicemente non le esporta verso l'alto.
 about[it]
 about[it]  Riprova con policy=0 (solo AS path più corto, si esporta tutto): dopo il guasto il traffico
-about[it]  fra c1 e c2 passa dallo sfortunato cliente m.
+about[it]  fra c1 e c2 passa dallo sfortunato cliente m. (Le verifiche a fine esecuzione descrivono
+about[it]  policy=1; con policy=0 tre di esse segnalano la differenza.)
 param  policy 1 Apply business relations (0 = shortest AS path only, export everything)
 param[it] policy Applica le relazioni commerciali (0 = solo AS path più corto, esporta tutto)
 param+ keepalive 3s BGP keepalive interval

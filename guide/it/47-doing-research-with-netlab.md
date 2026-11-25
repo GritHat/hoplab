@@ -49,7 +49,7 @@ Da `src/nl.h` e dalla documentazione degli scenari: 64 nodi, 160 collegamenti, 1
 
 Il tempo è virtuale, in microsecondi, e avanza solo attraverso gli eventi. I nodi calcolano in tempo nullo: non c'è CPU, né ritardo di schedulazione, né disco. Tutto ciò il cui comportamento reale è governato dal costo di elaborazione (latenza di fsync nel consenso, membri lenti nel rilevamento dei guasti, elaborazione a lotti nel TCP) è assente. Gli orologi sono perfetti, a meno che un modulo aggiunga uno scostamento.
 
-I protocolli sono semplificati, e il testo di aiuto di ciascun modulo dice come. Le semplificazioni che più incidono sulle conclusioni di questo percorso: TCP senza SACK, ACK ritardati o timestamp, e un BBR ridotto; BGP su UDP, solo eBGP, un router per AS; DNS senza ripiego su TCP, EDNS o DNSSEC; un CSMA/CA a tick senza cattura; Raft senza snapshot, cambio di configurazione o letture linearizzabili.
+I protocolli sono semplificati, e il testo di aiuto di ciascun modulo dice come. Le semplificazioni che più incidono sulle conclusioni di questo percorso: TCP senza SACK, ACK ritardati o timestamp, e un BBR ridotto; BGP solo eBGP e con un router per AS; DNS senza ripiego su TCP, EDNS o DNSSEC; un CSMA/CA a tick senza cattura; Raft senza snapshot, cambio di configurazione o letture linearizzabili.
 
 ## Minacce alla validità
 

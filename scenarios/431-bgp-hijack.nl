@@ -17,7 +17,8 @@ about  traffic to the attacker. Count who answers: the Counters of srv and fake 
 about
 about  Defence: rerun with rov=1. Every router then checks announcements against a route origin
 about  authorization (10.1.0.0/24, origin AS 65001, maximum length 24), as with RPKI, and rejects
-about  both the wrong origin and the too-specific prefixes.
+about  both the wrong origin and the too-specific prefixes. (The checks at the end of the run
+about  describe rov=0; with rov=1 the real server answers all twelve pings and fake none.)
 about[it]  BGP crede a ciò che gli si dice. L'AS 65001 possiede 10.1.0.0/24 e ospita il server srv
 about[it]  (10.1.0.10). Gli AS sono in fila: 65001 - 65002 - 65003 - 65066, con un client nel 65002 e
 about[it]  un osservatore nel 65003. L'AS 65066 è malevolo e ha una propria macchina "fake"
@@ -33,7 +34,9 @@ about[it]  (icmp.echo_served).
 about[it]
 about[it]  Difesa: riprova con rov=1. Ogni router confronta gli annunci con una route origin
 about[it]  authorization (10.1.0.0/24, origine AS 65001, lunghezza massima 24), come con RPKI, e
-about[it]  rifiuta sia l'origine sbagliata sia i prefissi troppo specifici.
+about[it]  rifiuta sia l'origine sbagliata sia i prefissi troppo specifici. (Le verifiche a fine
+about[it]  esecuzione descrivono rov=0; con rov=1 il vero server risponde a tutti e dodici i ping e
+about[it]  fake a nessuno.)
 param  rov 0 Route origin validation on every router (1 = on)
 param[it] rov Validazione dell'origine su ogni router (1 = attiva)
 param+ keepalive 3s BGP keepalive interval

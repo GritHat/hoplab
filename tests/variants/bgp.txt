@@ -1,0 +1,43 @@
+# BGP labs: every parameter value a student would naturally try.
+# One run per line:  PASS|FAIL  scenario  key=value ...
+# PASS/FAIL is the outcome of the lab's `expect` lines, guaranteed for seeds 1..5.
+# A FAIL line is an experiment whose point is that the default outcome no
+# longer holds; the comment says what happens instead.
+
+PASS  331-bgp-basics
+PASS  331-bgp-basics  keepalive=1s
+PASS  331-bgp-basics  keepalive=2s
+PASS  331-bgp-basics  keepalive=5s
+PASS  331-bgp-basics  keepalive=10s
+PASS  331-bgp-basics  keepalive=30s
+# prepend towards r1: 1 ties the two paths (router id decides), 2 and more move
+# r1's traffic for AS 65003 through AS 65002 from the start
+PASS  331-bgp-basics  prepend=1
+PASS  331-bgp-basics  prepend=2
+PASS  331-bgp-basics  prepend=3
+PASS  331-bgp-basics  prepend=2 keepalive=1s
+
+PASS  430-bgp-policies
+PASS  430-bgp-policies  keepalive=1s
+PASS  430-bgp-policies  keepalive=10s
+# policy=0: no business relations, everything is exported: after the peering
+# link fails hc1 still reaches hc2, through the customer m (6 replies, no error)
+FAIL  430-bgp-policies  policy=0
+
+PASS  431-bgp-hijack
+PASS  431-bgp-hijack  keepalive=1s
+PASS  431-bgp-hijack  keepalive=10s
+# rov=1: the forged announcements are rejected, the real server answers every
+# ping (srv serves 12, fake 0)
+FAIL  431-bgp-hijack  rov=1
+
+# regression only (not in the catalog): sessions over TCP survive lossy links,
+# a silent crash is detected by the hold timer, a restart re-establishes, and
+# a four-octet AS number crosses the session
+PASS  tests/labs/bgp-lossy.nl
+PASS  tests/labs/bgp-lossy.nl  loss=0
+PASS  tests/labs/bgp-lossy.nl  loss=0.2
+PASS  tests/labs/bgp-lossy.nl  loss=0.3
+PASS  tests/labs/bgp-lossy.nl  keepalive=1s
+PASS  tests/labs/bgp-lossy.nl  keepalive=5s
+PASS  tests/labs/bgp-lossy.nl  loss=0.2 bw=100k
