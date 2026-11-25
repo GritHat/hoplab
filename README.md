@@ -21,13 +21,11 @@
   <img src="media/preview.gif" width="860" alt="A ping crossing a router in hoplab: ARP first, then ICMP, shown on the map, as a sequence diagram and dissected byte by byte">
 </p>
 
-<!-- VIDEO: upload media/hoplab-demo.mp4 to YouTube (title, description and tags are in
-     docs/video.md), then replace the href below with the YouTube URL. -->
 <p align="center">
-  <a href="media/hoplab-demo.mp4">
+  <a href="https://www.youtube.com/watch?v=bQqE4w2FR7c">
     <img src="media/thumbnail.png" width="480" alt="Watch the one-minute demo video">
   </a><br>
-  <sub>▶ One-minute demo (with its own soundtrack, <i>Round Trip</i>, synthesised by <code>tools/media/music.py</code>)</sub>
+  <sub>▶ One-minute demo on YouTube (with its own soundtrack, <i>Round Trip</i>, synthesised by <code>tools/media/music.py</code>)</sub>
 </p>
 
 hoplab emulates a network inside one program: hosts, routers and switches

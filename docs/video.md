@@ -44,50 +44,10 @@ every bar of each phrase and falls back, like a congestion window; drums, a
 half-time bridge on Dm–Am–E, a last chorus, and an ending that thins out to
 the two pings. `python3 tools/media/music.py out.wav 75` renders any length.
 
-## Publishing the video
+## The published video
 
-The video is in the repository but is not on YouTube: uploading needs your
-account. After uploading `media/hoplab-demo.mp4` with `media/thumbnail.png`,
-replace the link marked `VIDEO` near the top of `README.md` (and the same link
-in `README.it.md`) with the YouTube URL.
-
-Suggested metadata:
-
-**Title**
-
-> hoplab — a network laboratory in your terminal (every packet, every layer, 78 labs)
-
-**Description**
-
-> hoplab emulates a whole network inside one terminal program: hosts, routers
-> and switches exchange real, byte-exact frames over links with delay, loss and
-> queues. Watch packets cross the map, open any of them down to the bytes, read
-> every node's tables, plot what the protocols measure, break things and see
-> what happens.
->
-> 30+ protocols and tools — ARP, switching, VLANs, spanning tree, IPv4, ICMP,
-> IPv6, RIP, OSPF, BGP, NAT, queue management (RED, CoDel, fair queueing), UDP, TCP
-> congestion control (Reno, CUBIC, BBR), load balancing, DNS, DHCP, HTTP, error
-> correcting codes, medium access, Raft, gossip/SWIM, vector clocks, two-phase
-> commit, Chord, CRDTs — 78 ready-made labs in four levels, and a study guide
-> from the first ping to consensus algorithms. One window, tiled windows as
-> separate processes, or several machines. C11, no dependencies, English and
-> Italian.
->
-> 0:00 hoplab
-> 0:03 ARP and ping across a router, as a map, a sequence diagram, and byte by byte
-> 0:18 TCP congestion control: the sawtooth
-> 0:28 OSPF
-> 0:36 Raft leader election
-> 0:46 Catalog and study guide
-> 1:00 One process per node, joined by UDP tunnels
->
-> Source: <repository URL>
-> Music: "Round Trip", synthesised by a script in the repository.
-
-**Tags**: computer networks, networking course, TCP, congestion control, OSPF,
-BGP, Raft, distributed systems, network simulator, terminal, TUI, C, education
-
-(Adjust the chapter times to the final cut: `record.py` prints the length, and
-the segment durations are at the top of the script.)
-</content>
+The demo is on YouTube: <https://www.youtube.com/watch?v=bQqE4w2FR7c>. The same file is kept here as
+`media/hoplab-demo.mp4`. The title, description, chapters and tags used for
+the upload, in English and Italian, are in [`youtube.txt`](youtube.txt); if
+the video is recorded again (new labs, new numbers), update that file and the
+description on YouTube with it.

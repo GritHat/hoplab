@@ -1,0 +1,79 @@
+hoplab — text for the YouTube upload of media/hoplab-demo.mp4 (1:16)
+Thumbnail: media/thumbnail.png
+
+Chapters: YouTube needs the first one at 0:00, at least three, each at least
+10 seconds long, so the short OSPF and Raft parts share one chapter.
+
+======================================================================
+ENGLISH
+======================================================================
+
+TITLE
+
+hoplab — a network laboratory in your terminal (every packet, every layer, 78 labs)
+
+DESCRIPTION
+
+hoplab emulates a whole network inside one terminal program: hosts, routers and switches exchange real, byte-exact frames over links with delay, loss and queues. Watch packets cross the map, open any of them down to the bytes, read every node's tables, plot what the protocols measure, break things and see what happens.
+
+Source code, labs and study guide:
+https://github.com/GritHat/hoplab
+
+What is in it
+• 30+ protocols and tools: ARP, switching, VLANs, spanning tree and RSTP, IPv4 and IPv6 (Neighbor Discovery, SLAAC, path MTU), RIP and RIPng, OSPF and OSPFv3, BGP with multiprotocol extensions, NAT, queue management (RED, CoDel, fair queueing), UDP, TCP with SACK and congestion control (Reno, CUBIC, BBR), load balancing, DNS, DHCP and DHCPv6, HTTP, error-correcting codes, medium access, Raft, gossip and SWIM, vector clocks, two-phase commit, Chord, CRDTs
+• 78 ready-made labs in four levels, from the first ping to consensus algorithms
+• a study guide by level and topic, readable at three depths, in English and Italian
+• one window, tiled windows as separate processes, or several machines
+• C11, no dependencies: make && ./hoplab
+
+Chapters
+0:00 Real frames on an emulated network: ARP, ping, sequence diagram, packet dissection
+0:18 TCP congestion control: the sawtooth, live
+0:28 Routing and consensus: OSPF floods link state, Raft elects a leader
+0:46 The catalog of labs and the study guide
+1:00 One process per node, joined by UDP tunnels
+
+Music: "Round Trip", written for this video and synthesised by a script in the repository (tools/media/music.py).
+The whole video is recorded from the real program by tools/media/record.py.
+
+TAGS
+
+computer networks, networking course, network simulator, network emulator, terminal, TUI, C, TCP, congestion control, BBR, IPv6, OSPF, BGP, DNS, Raft, distributed systems, education, open source
+
+======================================================================
+ITALIANO
+======================================================================
+
+TITOLO
+
+hoplab — un laboratorio di reti nel terminale (ogni pacchetto, ogni livello, 78 laboratori)
+
+DESCRIZIONE
+
+hoplab emula un'intera rete dentro un solo programma da terminale: host, router e switch si scambiano frame reali, esatti al byte, su collegamenti con ritardo, perdita e code. Si guardano i pacchetti attraversare la mappa, si apre ciascuno fino ai byte, si leggono le tabelle di ogni nodo, si tracciano i grafici di ciò che i protocolli misurano, si rompe qualcosa e si osserva che cosa succede.
+
+Codice sorgente, laboratori e guida di studio:
+https://github.com/GritHat/hoplab
+
+Che cosa contiene
+• oltre 30 protocolli e strumenti: ARP, switching, VLAN, spanning tree e RSTP, IPv4 e IPv6 (Neighbor Discovery, SLAAC, path MTU), RIP e RIPng, OSPF e OSPFv3, BGP con estensioni multiprotocollo, NAT, gestione delle code (RED, CoDel, fair queueing), UDP, TCP con SACK e controllo di congestione (Reno, CUBIC, BBR), bilanciamento del carico, DNS, DHCP e DHCPv6, HTTP, codici a correzione d'errore, accesso al mezzo, Raft, gossip e SWIM, orologi vettoriali, commit a due fasi, Chord, CRDT
+• 78 laboratori pronti su quattro livelli, dal primo ping agli algoritmi di consenso
+• una guida di studio per livello e argomento, leggibile a tre profondità, in italiano e in inglese
+• una finestra, finestre affiancate come processi separati, oppure più macchine
+• C11, senza dipendenze: make && ./hoplab
+
+Il video è in inglese; l'interfaccia del programma è disponibile anche in italiano (HOPLAB_LANG=it).
+
+Capitoli
+0:00 Frame reali su una rete emulata: ARP, ping, diagramma di sequenza, analisi dei pacchetti
+0:18 Controllo di congestione di TCP: il dente di sega, dal vivo
+0:28 Instradamento e consenso: OSPF diffonde lo stato dei collegamenti, Raft elegge un leader
+0:46 Il catalogo dei laboratori e la guida di studio
+1:00 Un processo per nodo, uniti da tunnel UDP
+
+Musica: «Round Trip», scritta per questo video e sintetizzata da uno script del repository (tools/media/music.py).
+L'intero video è registrato dal programma reale con tools/media/record.py.
+
+TAG
+
+reti di calcolatori, corso di reti, simulatore di reti, emulatore di reti, terminale, TUI, C, TCP, controllo di congestione, BBR, IPv6, OSPF, BGP, DNS, Raft, sistemi distribuiti, didattica, open source

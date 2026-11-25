@@ -22,10 +22,10 @@
 </p>
 
 <p align="center">
-  <a href="media/hoplab-demo.mp4">
+  <a href="https://www.youtube.com/watch?v=bQqE4w2FR7c">
     <img src="media/thumbnail.png" width="480" alt="Guarda il video dimostrativo di un minuto">
   </a><br>
-  <sub>▶ Dimostrazione di un minuto (in inglese, con la sua colonna sonora, <i>Round Trip</i>, sintetizzata da <code>tools/media/music.py</code>)</sub>
+  <sub>▶ Dimostrazione di un minuto su YouTube (in inglese, con la sua colonna sonora, <i>Round Trip</i>, sintetizzata da <code>tools/media/music.py</code>)</sub>
 </p>
 
 hoplab emula una rete dentro un solo programma: host, router e switch si
