@@ -1,14 +1,21 @@
 /*
- * tcp.c - TCP: connections (three-way handshake, sliding window, cumulative
- *         ACKs, out-of-order reassembly, flow control with window scaling and
- *         zero-window probes, RFC 6298 retransmission timer with Karn's rule,
- *         fast retransmit / fast recovery, FIN and RST), pluggable congestion
- *         control (tahoe, reno, newreno, cubic, simplified bbr), ECN, the
- *         dissector, and the `tcp` tool (bulk sender and sink).
+ * tcp.c - TCP: connections (three-way handshake, sliding window, out-of-order
+ *         reassembly, flow control with window scaling and zero-window
+ *         probes, delayed ACKs, Nagle, RFC 6298 retransmission timer with
+ *         Karn's rule, FIN and RST), selective acknowledgements (RFC 2018,
+ *         D-SACK RFC 2883) with the loss recovery of RFC 6675, NewReno
+ *         recovery (RFC 6582) when the peer has no SACK, pluggable congestion
+ *         control (tahoe, reno, newreno, cubic, bbr v1), ECN, the dissector,
+ *         and the `tcp` tool (bulk sender and sink).
  *
- * Simplifications: no SACK, no delayed ACKs (every segment is acknowledged),
- * no Nagle, no timestamps (one RTT measurement at a time), no path-MTU
- * discovery, TIME_WAIT lasts one second.
+ * The sender keeps a scoreboard with one record per segment in flight
+ * (SACKed, lost, retransmitted, when it was sent and what had been
+ * delivered by then). The same records drive loss recovery, RTT sampling
+ * and the delivery-rate samples that BBR needs.
+ *
+ * Not implemented: timestamps (so no PAWS and no RTT from retransmissions),
+ * path-MTU discovery, tail-loss probes, SACK reneging; TIME_WAIT lasts one
+ * second; BBR has no long-term (policer) sampling.
  */
 #include "nl_int.h"
 
@@ -38,7 +45,7 @@ static const char *const ST_NAME[] = { "CLOSED", "SYN_SENT", "SYN_RCVD", "ESTABL
 enum { CC_TAHOE, CC_RENO, CC_NEWRENO, CC_CUBIC, CC_BBR };
 static const char *const CC_NAME[] = { "tahoe", "reno", "newreno", "cubic", "bbr" };
 
-enum { BBR_STARTUP, BBR_DRAIN, BBR_PROBE_BW };
+enum { BBR_STARTUP, BBR_DRAIN, BBR_PROBE_BW, BBR_PROBE_RTT };
 
 #define OOO_MAX   64
 #define MAX_LIS   8
@@ -46,6 +53,25 @@ enum { BBR_STARTUP, BBR_DRAIN, BBR_PROBE_BW };
 #define TICK      NL_MS(200)
 
 typedef struct { uint32_t seq; int len; uint8_t *data; } ooo_seg;
+
+/* Scoreboard record: one transmitted segment not yet cumulatively acknowledged */
+typedef struct {
+    uint32_t seq;
+    int      len;                       /* a FIN takes one sequence number */
+    uint8_t  sacked, lost, retx, ever_retx, fin, app_limited;
+    nl_time  xmit;                      /* last (re)transmission */
+    uint64_t delivered;                 /* connection state when it was sent: */
+    nl_time  delivered_time, first_tx;  /* for the delivery-rate sample */
+} txseg;
+
+/* What one ACK tells: the delivery-rate sample and the RTT */
+typedef struct {
+    int      have, app_limited, newly_acked;
+    uint64_t prior_delivered;
+    nl_time  send_elapsed, ack_elapsed, rack;
+    nl_time  rtt;                       /* of the first segment acknowledged: for the RTO */
+    nl_time  rtt_min;                   /* smallest over the segments delivered: for RTprop */
+} rsamp;
 
 struct nl_tcp {
     nl_node *n;
@@ -68,11 +94,17 @@ struct nl_tcp {
 
     /* retransmission */
     nl_time  srtt, rttvar, rto, rto_min;
-    int      rtt_valid, timing, backoff, tries;
-    uint32_t rtt_seq;
-    nl_time  rtt_time;
-    nl_ev    rto_timer, persist_timer, wait_timer, tick_timer, pace_timer, drain_timer;
+    int      rtt_valid, backoff, tries;
+    nl_time  rtt_time;                  /* when the SYN left */
+    nl_ev    rto_timer, persist_timer, wait_timer, tick_timer, pace_timer, drain_timer, delack_timer;
     int      persist_backoff;
+    txseg   *sq;                        /* scoreboard, in sequence order */
+    int      sq_n, sq_cap;
+    int      sack_want, sack_peer, sack_ok, nagle;
+    int      pseudo;                    /* without SACK: duplicate ACKs = segments that left the network */
+    int      rto_recovery;              /* retransmitting after a timeout */
+    int      force_retx;                /* the retransmission that starts recovery ignores the window */
+    int      partial_acks;              /* in this NewReno recovery */
 
     /* congestion control */
     int      cc, iw, init_ssthresh;
@@ -83,19 +115,28 @@ struct nl_tcp {
     nl_time  epoch;
     int      ecn_ok, ecn_want, ece_latch, cwr_pending;
     uint32_t ecn_recover;
-    /* bbr (simplified) */
-    int      bbr_state, bbr_phase, bbr_full_cnt;
-    double   bbr_bw, bbr_full_bw, bbr_bws[10], pace_rate;     /* bytes/s */
-    int      bbr_nbw;
-    nl_time  bbr_rtprop, bbr_rtprop_t, bbr_round_t, bbr_phase_t, next_tx;
-    uint32_t bbr_round_end;
-    uint64_t delivered, bbr_round_deliv;
+    /* delivery-rate estimation */
+    uint64_t delivered, app_limited;
+    nl_time  delivered_time, first_tx_time;
+    /* bbr */
+    int      bbr_state, bbr_cycle, bbr_full_cnt, bbr_filled, bbr_pc, bbr_probe_rtt_round, idle_restart;
+    double   bbr_pacing_gain, bbr_cwnd_gain, bbr_full_bw, bbr_prior_cwnd, pace_rate;   /* rates in bytes/s */
+    double   bbr_bw_r[10];
+    uint64_t bbr_bw_round[10], bbr_round, bbr_next_round, bbr_pc_end;
+    nl_time  bbr_rtprop, bbr_rtprop_stamp, bbr_cycle_stamp, bbr_probe_rtt_done, next_tx;
 
     /* receiver */
     uint32_t irs, rcv_nxt;
     int      rwnd_max, last_adv;
     ooo_seg  ooo[OOO_MAX];
     int      nooo;
+    uint32_t sack_recent[4];            /* out-of-order arrivals, newest first (RFC 2018 block order) */
+    int      nsack_recent, dsack_pending;
+    uint32_t dsack_lo, dsack_hi;
+    uint32_t rx_blk[8];                 /* SACK blocks of the segment being processed */
+    int      rx_nblk;
+    nl_time  delack;                    /* delayed-ACK timer, 0 = acknowledge every segment */
+    int      ack_pending;
     uint8_t *rbuf;                      /* only with a slow reader (readrate) */
     int      rlen, eof_pending;
     double   read_rate;                 /* bytes/s, 0 = the application reads at once */
@@ -173,6 +214,10 @@ static void conn_destroy(nl_tcp *c)
     nl_cancel(&c->tick_timer);
     nl_cancel(&c->pace_timer);
     nl_cancel(&c->drain_timer);
+    nl_cancel(&c->delack_timer);
+    free(c->sq);
+    c->sq = NULL;
+    c->sq_n = c->sq_cap = 0;
     for (i = 0; i < c->nooo; i++)
         free(c->ooo[i].data);
     c->nooo = 0;
@@ -214,17 +259,21 @@ static void conn_opts(nl_tcp *c, const char *opts)
         if (strcmp(cc, CC_NAME[i]) == 0)
             c->cc = i;
     c->mss = (int)nl_arg_int(&a, "mss", 1460);
-    c->rwnd_max = (int)nl_arg_int(&a, "rwnd", 1 << 20);
+    c->rwnd_max = (int)nl_arg_rate(&a, "rwnd", 1 << 20);     /* sizes accept k and M */
     if (c->rwnd_max < 256) c->rwnd_max = 256;
     if (c->rwnd_max > (1 << 24)) c->rwnd_max = 1 << 24;
-    c->scap = (int)nl_arg_int(&a, "sndbuf", 256 * 1024);
+    c->scap = (int)nl_arg_rate(&a, "sndbuf", 256 * 1024);
     if (c->scap < 2048) c->scap = 2048;
+    if (c->scap > (1 << 24)) c->scap = 1 << 24;
     c->ecn_want = (int)nl_arg_int(&a, "ecn", 0);
     c->iw = (int)nl_arg_int(&a, "iw", 10);
     if (c->iw < 1) c->iw = 1;
     c->init_ssthresh = (int)nl_arg_int(&a, "ssthresh", 0);
     c->rto_min = nl_arg_time(&a, "rto_min", NL_MS(200));
     c->read_rate = nl_arg_rate(&a, "readrate", 0);
+    c->sack_want = (int)nl_arg_int(&a, "sack", 1) && c->cc != CC_TAHOE;    /* Tahoe predates SACK */
+    c->nagle = (int)nl_arg_int(&a, "nagle", 1);
+    c->delack = nl_arg_time(&a, "delack", NL_MS(40));
     while ((c->rwnd_max >> c->rcv_wscale) > 65535)
         c->rcv_wscale++;
 }
@@ -316,9 +365,67 @@ static void raw_xmit(nl_node *n, nl_ip src, nl_ip dst, uint16_t sport, uint16_t 
     nl_ip_send(n, &tx, b, hl + len);
 }
 
+/* SACK option for an ACK: the D-SACK block if any, then the block holding
+ * the most recent arrival, then the others, newest first (RFC 2018). */
+static int sack_option(nl_tcp *c, uint8_t *opt)
+{
+    uint32_t lo[OOO_MAX], hi[OOO_MAX], out[8];
+    int n = 0, nout = 0, first = 0, i, k, r;
+
+    for (i = 0; i < c->nooo; i++) {                     /* sorted intervals... */
+        uint32_t a = c->ooo[i].seq, b = a + (uint32_t)c->ooo[i].len;
+        for (k = n; k > 0 && SEQ_LT(a, lo[k - 1]); k--) {
+            lo[k] = lo[k - 1];
+            hi[k] = hi[k - 1];
+        }
+        lo[k] = a;
+        hi[k] = b;
+        n++;
+    }
+    for (i = 0, k = 0; i < n; i++) {                    /* ...merged */
+        if (k > 0 && SEQ_LEQ(lo[i], hi[k - 1])) {
+            if (SEQ_GT(hi[i], hi[k - 1]))
+                hi[k - 1] = hi[i];
+        } else {
+            lo[k] = lo[i];
+            hi[k] = hi[i];
+            k++;
+        }
+    }
+    n = k;
+    if (c->dsack_pending) {
+        out[0] = c->dsack_lo;
+        out[1] = c->dsack_hi;
+        nout = first = 1;
+        c->dsack_pending = 0;
+    }
+    for (r = 0; r <= c->nsack_recent && nout < 4; r++)
+        for (i = 0; i < n && nout < 4; i++) {
+            /* pass r < nsack_recent: the block of the r-th newest arrival; last pass: all the rest */
+            if (r < c->nsack_recent && !(SEQ_GEQ(c->sack_recent[r], lo[i]) && SEQ_LT(c->sack_recent[r], hi[i])))
+                continue;
+            for (k = first; k < nout; k++)
+                if (out[2 * k] == lo[i])
+                    break;
+            if (k < nout)
+                continue;
+            out[2 * nout] = lo[i];
+            out[2 * nout + 1] = hi[i];
+            nout++;
+        }
+    if (!nout)
+        return 0;
+    opt[0] = opt[1] = 1;                                /* NOP NOP */
+    opt[2] = 5;
+    opt[3] = (uint8_t)(2 + 8 * nout);
+    for (i = 0; i < 2 * nout; i++)
+        nl_put32(opt + 4 + 4 * i, out[i]);
+    return 4 + 8 * nout;
+}
+
 static void seg_xmit(nl_tcp *c, uint32_t seq, int flags, const uint8_t *data, int len)
 {
-    uint8_t opt[8] = { 0 };
+    uint8_t opt[40] = { 0 };
     int optlen = 0, win = rcv_window(c);
 
     if (flags & TH_SYN) {
@@ -327,6 +434,11 @@ static void seg_xmit(nl_tcp *c, uint32_t seq, int flags, const uint8_t *data, in
         opt[4] = 1;                                     /* NOP */
         opt[5] = 3; opt[6] = 3; opt[7] = (uint8_t)c->rcv_wscale;   /* window scale */
         optlen = 8;
+        if ((flags & TH_ACK) ? c->sack_ok : c->sack_want) {
+            opt[8] = opt[9] = 1;
+            opt[10] = 4; opt[11] = 2;                   /* SACK permitted */
+            optlen = 12;
+        }
         if (win > 65535)
             win = 65535;
         if (c->ecn_want)
@@ -340,6 +452,10 @@ static void seg_xmit(nl_tcp *c, uint32_t seq, int flags, const uint8_t *data, in
             flags |= TH_CWR;
             c->cwr_pending = 0;
         }
+        if (c->sack_ok && (c->nooo || c->dsack_pending))
+            optlen = sack_option(c, opt);
+        c->ack_pending = 0;                             /* every segment carries the ACK */
+        nl_cancel(&c->delack_timer);
     }
     raw_xmit(c->n, c->lip, c->rip, c->lport, c->rport, seq, c->rcv_nxt, flags, win, opt, optlen, data, len,
              (uint8_t)(c->ecn_ok && len > 0 ? 2 : 0));
@@ -350,6 +466,15 @@ static void send_ack(nl_tcp *c)
     seg_xmit(c, c->snd_nxt, TH_ACK, NULL, 0);
 }
 
+static void delack_fire(void *ctx)
+{
+    nl_tcp *c = ctx;
+
+    c->delack_timer = 0;
+    if (c->state != ST_CLOSED && c->ack_pending)
+        send_ack(c);
+}
+
 static void rto_arm(nl_tcp *c)
 {
     nl_time t = c->rto << c->backoff;
@@ -358,21 +483,74 @@ static void rto_arm(nl_tcp *c)
     c->rto_timer = nl_after(c->n, t > RTO_MAX ? RTO_MAX : t, rto_fire, c);
 }
 
-/* Retransmit the first unacknowledged segment */
-static void retx_one(nl_tcp *c)
-{
-    int len = c->slen < c->mss ? c->slen : c->mss;
-    int out = (int)(c->snd_max - c->snd_una);
+/* ------------------------------------------------------------------ */
+/* Scoreboard: one record per segment in flight                       */
+/* ------------------------------------------------------------------ */
 
-    if (len > out)
-        len = out;
-    c->timing = 0;                      /* Karn: never time a retransmitted segment */
-    c->retx++;
-    nl_count(c->n, "tcp.retransmits", 1);
-    if (len > 0)
-        seg_xmit(c, c->snd_una, TH_ACK | TH_PSH, c->sbuf, len);
-    else if (c->fin_sent && !c->fin_acked)
-        seg_xmit(c, c->fin_seq, TH_FIN | TH_ACK, NULL, 0);
+static txseg *sq_push(nl_tcp *c, uint32_t seq, int len)
+{
+    txseg *s;
+
+    if (c->sq_n == c->sq_cap) {
+        int ncap = c->sq_cap ? c->sq_cap * 2 : 64;
+        txseg *nq = realloc(c->sq, (size_t)ncap * sizeof(*nq));
+        if (!nq)
+            return NULL;
+        c->sq = nq;
+        c->sq_cap = ncap;
+    }
+    s = &c->sq[c->sq_n++];
+    memset(s, 0, sizeof(*s));
+    s->seq = seq;
+    s->len = len;
+    return s;
+}
+
+/* RFC 6675 "pipe": bytes we believe are still in the network. Without
+ * SACK every duplicate ACK stands for one segment that left it. */
+static int pipe_bytes(const nl_tcp *c)
+{
+    long pipe = 0;
+    int i;
+
+    for (i = 0; i < c->sq_n; i++) {
+        const txseg *s = &c->sq[i];
+        if (s->sacked)
+            continue;
+        if (!s->lost)
+            pipe += s->len;
+        if (s->retx)
+            pipe += s->len;
+    }
+    pipe -= (long)c->pseudo * c->mss;
+    return pipe < 0 ? 0 : (int)pipe;
+}
+
+/* A segment is going out: remember when, and what had been delivered by
+ * then (delivery-rate estimation, draft-cheng-iccrg-delivery-rate-estimation).
+ * idle = nothing else was in flight. */
+static void seg_stamp(nl_tcp *c, txseg *s, int idle)
+{
+    if (idle || !c->delivered_time)
+        c->first_tx_time = c->delivered_time = nl_now();
+    s->xmit = nl_now();
+    s->delivered = c->delivered;
+    s->delivered_time = c->delivered_time;
+    s->first_tx = c->first_tx_time;
+    s->app_limited = c->app_limited != 0;
+}
+
+static void seg_send(nl_tcp *c, const txseg *s)
+{
+    int off = (int)(s->seq - c->snd_una);
+
+    if (s->fin) {
+        seg_xmit(c, s->seq, TH_FIN | TH_ACK, NULL, 0);
+        return;
+    }
+    nl_log(c->n, NL_L_TRANSPORT, 3, 0, T_DATA "TCP" T_RESET " :%u → seq=%u len=%d%s%s", c->lport, s->seq - c->iss,
+           s->len, s->retx ? "  " : "", s->retx ? _("retransmission") : "");
+    seg_xmit(c, s->seq, TH_ACK | (off + s->len >= c->slen ? TH_PSH : 0), c->sbuf + off, s->len);
 }
 
 static void persist_fire(void *ctx)
@@ -385,9 +563,14 @@ static void persist_fire(void *ctx)
     /* one byte past the closed window: the answer carries the current window */
     nl_log(c->n, NL_L_TRANSPORT, 2, 0, T_DATA "TCP" T_RESET " :%u %s", c->lport, _("zero-window probe"));
     nl_count(c->n, "tcp.zero_window_probes", 1);
+    if (c->sq_n == 0) {
+        txseg *s = sq_push(c, c->snd_una, 1);
+        if (s) {
+            seg_stamp(c, s, 1);
+            c->snd_nxt = c->snd_max = c->snd_una + 1;
+        }
+    }
     seg_xmit(c, c->snd_una, TH_ACK, c->sbuf, 1);
-    if (SEQ_LT(c->snd_max, c->snd_una + 1))
-        c->snd_max = c->snd_una + 1;
     if (c->persist_backoff < 5)
         c->persist_backoff++;
     c->persist_timer = nl_after(c->n, NL_MS(500) << c->persist_backoff, persist_fire, c);
@@ -402,65 +585,117 @@ static void pace_fire(void *ctx)
         tcp_output(c);
 }
 
+/* Pacing (bbr): may a segment of len bytes leave now? */
+static int pace_ok(nl_tcp *c, int len)
+{
+    if (c->pace_rate <= 0)
+        return 1;
+    if (nl_now() < c->next_tx) {
+        if (!c->pace_timer)
+            c->pace_timer = nl_after(c->n, c->next_tx - nl_now(), pace_fire, c);
+        return 0;
+    }
+    c->next_tx = (nl_now() > c->next_tx ? nl_now() : c->next_tx) + (nl_time)(len * 1e6 / c->pace_rate);
+    return 1;
+}
+
+/* Send what the windows allow, in the order of RFC 6675 NextSeg(): first
+ * the segments known to be lost, then new data. */
 static void tcp_output(nl_tcp *c)
 {
+    int i, pipe = 0, lost_waiting = 0, unsent;
+
     if (c->state < ST_ESTABLISHED || c->state == ST_TIME_WAIT)
         return;
     for (;;) {
-        int off = (int)(c->snd_nxt - c->snd_una), avail = c->slen - off;
-        double wnd = c->cwnd < (double)c->snd_wnd ? c->cwnd : (double)c->snd_wnd;
-        int can = (int)wnd - off, len;
+        txseg *s = NULL;
+        int sent = (int)(c->snd_nxt - c->snd_una) - (c->fin_sent ? 1 : 0), avail = c->slen - sent, len;
+        long wroom;
 
-        if (avail <= 0)
-            break;
-        if (can <= 0)
-            break;
-        len = avail < c->mss ? avail : c->mss;
-        if (len > can) {
-            /* avoid silly small segments unless nothing is in flight */
-            if (off > 0 && can < c->mss)
-                break;
-            len = can;
-        }
-        if (c->pace_rate > 0) {
-            if (nl_now() < c->next_tx) {
-                if (!c->pace_timer)
-                    c->pace_timer = nl_after(c->n, c->next_tx - nl_now(), pace_fire, c);
+        pipe = pipe_bytes(c);
+        for (i = 0; i < c->sq_n; i++)
+            if (c->sq[i].lost && !c->sq[i].retx && !c->sq[i].sacked) {
+                s = &c->sq[i];
                 break;
             }
-            c->next_tx = (nl_now() > c->next_tx ? nl_now() : c->next_tx) +
-                         (nl_time)(len * 1e6 / c->pace_rate);
-        }
-        if (SEQ_LT(c->snd_nxt, c->snd_max)) {
+        lost_waiting = s != NULL;
+        if (s) {
+            if (pipe > 0 && pipe + s->len > (int)c->cwnd && !c->force_retx)
+                break;
+            if (!c->force_retx && !pace_ok(c, s->len))
+                break;
+            c->force_retx = 0;
+            seg_stamp(c, s, pipe == 0);
+            s->retx = s->ever_retx = 1;
             c->retx++;
             nl_count(c->n, "tcp.retransmits", 1);
-        } else if (!c->timing) {
-            c->timing = 1;
-            c->rtt_seq = c->snd_nxt + (uint32_t)len;
-            c->rtt_time = nl_now();
+            if (c->sack_ok && c->in_recovery)
+                nl_count(c->n, "tcp.sack_retransmits", 1);
+            seg_send(c, s);
+            if (!c->rto_timer)
+                rto_arm(c);
+            continue;
         }
-        seg_xmit(c, c->snd_nxt, TH_ACK | (len == avail ? TH_PSH : 0), c->sbuf + off, len);
+        if (avail <= 0 || c->fin_sent)
+            break;
+        len = avail < c->mss ? avail : c->mss;
+        wroom = (long)c->snd_wnd - sent;
+        if (wroom <= 0)
+            break;
+        if (pipe > 0 && pipe + len > (int)c->cwnd)
+            break;
+        if (len > wroom) {
+            /* avoid silly small segments unless nothing is in flight */
+            if (sent > 0 && wroom < c->mss)
+                break;
+            len = (int)wroom;
+        }
+        /* Nagle: a small segment waits while earlier data is unacknowledged */
+        if (c->nagle && len < c->mss && sent > 0 && !c->fin_pending)
+            break;
+        if (!pace_ok(c, len))
+            break;
+        if (pipe == 0 && c->app_limited)
+            c->idle_restart = 1;
+        s = sq_push(c, c->snd_nxt, len);
+        if (!s)
+            break;
+        seg_stamp(c, s, pipe == 0);
+        seg_send(c, s);
         c->snd_nxt += (uint32_t)len;
-        if (SEQ_GT(c->snd_nxt, c->snd_max))
-            c->snd_max = c->snd_nxt;
+        c->snd_max = c->snd_nxt;
         if (!c->rto_timer)
             rto_arm(c);
     }
+    /* nothing left to send although the window would allow more: the
+     * delivery-rate samples taken from now on are application-limited */
+    unsent = c->slen - ((int)(c->snd_nxt - c->snd_una) - (c->fin_sent ? 1 : 0));
+    if (!lost_waiting && unsent <= 0 && pipe < (int)c->cwnd) {
+        c->app_limited = c->delivered + (uint64_t)pipe;
+        if (!c->app_limited)
+            c->app_limited = 1;
+    }
+
     if (c->fin_pending && !c->fin_sent && (int)(c->snd_nxt - c->snd_una) == c->slen) {
-        c->fin_seq = c->snd_nxt;
-        c->fin_sent = 1;
-        seg_xmit(c, c->snd_nxt, TH_FIN | TH_ACK, NULL, 0);
-        c->snd_nxt++;
-        if (SEQ_GT(c->snd_nxt, c->snd_max))
+        txseg *s = sq_push(c, c->snd_nxt, 1);
+
+        if (s) {
+            s->fin = 1;
+            seg_stamp(c, s, pipe == 0);
+            c->fin_seq = c->snd_nxt;
+            c->fin_sent = 1;
+            seg_send(c, s);
+            c->snd_nxt++;
             c->snd_max = c->snd_nxt;
-        if (c->state == ST_ESTABLISHED)
-            c->state = ST_FIN_WAIT_1;
-        else if (c->state == ST_CLOSE_WAIT)
-            c->state = ST_LAST_ACK;
-        nl_log(c->n, NL_L_TRANSPORT, 2, 0, T_DATA "TCP" T_RESET " :%u → %s:%u FIN (%s)", c->lport,
-               nl_ip_str(c->rip), c->rport, ST_NAME[c->state]);
-        if (!c->rto_timer)
-            rto_arm(c);
+            if (c->state == ST_ESTABLISHED)
+                c->state = ST_FIN_WAIT_1;
+            else if (c->state == ST_CLOSE_WAIT)
+                c->state = ST_LAST_ACK;
+            nl_log(c->n, NL_L_TRANSPORT, 2, 0, T_DATA "TCP" T_RESET " :%u → %s:%u FIN (%s)", c->lport,
+                   nl_ip_str(c->rip), c->rport, ST_NAME[c->state]);
+            if (!c->rto_timer)
+                rto_arm(c);
+        }
     }
     if (c->snd_wnd == 0 && c->slen > 0 && c->snd_una == c->snd_max && !c->persist_timer) {
         c->persist_backoff = 0;
@@ -472,71 +707,215 @@ static void tcp_output(nl_tcp *c)
 /* Congestion control                                                 */
 /* ------------------------------------------------------------------ */
 
+#define BBR_HIGH_GAIN   2.885390                /* 2 / ln 2 */
+#define BBR_BW_ROUNDS   10
+#define BBR_RTPROP_WIN  NL_SEC(10)
+#define BBR_PROBE_RTT_T NL_MS(200)
+#define BBR_MIN_PIPE    4                       /* segments */
+
+static const char *const BBR_NAME[] = { "STARTUP", "DRAIN", "PROBE_BW", "PROBE_RTT" };
+
+static double bbr_btlbw(const nl_tcp *c)
+{
+    double bw = 0;
+    int i;
+
+    for (i = 0; i < BBR_BW_ROUNDS; i++)
+        if (c->bbr_bw_r[i] > bw && c->bbr_bw_round[i] + BBR_BW_ROUNDS > c->bbr_round)
+            bw = c->bbr_bw_r[i];
+    return bw;
+}
+
+/* The amount of data the model wants in flight at a given gain */
+static double bbr_inflight(const nl_tcp *c, double gain)
+{
+    double bw = bbr_btlbw(c);
+
+    if (!c->bbr_rtprop || bw <= 0)
+        return (double)c->iw * c->mss;
+    return gain * bw * (double)c->bbr_rtprop / 1e6 + 3.0 * c->mss;
+}
+
+static void bbr_save_cwnd(nl_tcp *c)
+{
+    if (!c->in_recovery && !c->rto_recovery && c->bbr_state != BBR_PROBE_RTT)
+        c->bbr_prior_cwnd = c->cwnd;
+    else if (c->cwnd > c->bbr_prior_cwnd)
+        c->bbr_prior_cwnd = c->cwnd;
+}
+
+static void bbr_advance_cycle(nl_tcp *c)
+{
+    static const double cycle[8] = { 1.25, 0.75, 1, 1, 1, 1, 1, 1 };
+
+    c->bbr_cycle_stamp = nl_now();
+    c->bbr_cycle = (c->bbr_cycle + 1) % 8;
+    c->bbr_pacing_gain = cycle[c->bbr_cycle];
+}
+
+static void bbr_enter_probe_bw(nl_tcp *c)
+{
+    c->bbr_state = BBR_PROBE_BW;
+    c->bbr_pacing_gain = 1.0;
+    c->bbr_cwnd_gain = 2.0;
+    c->bbr_cycle = 7 - (int)nl_rand(7);         /* any phase but the 0.75 one */
+    bbr_advance_cycle(c);
+}
+
+static void bbr_enter_startup(nl_tcp *c)
+{
+    c->bbr_state = BBR_STARTUP;
+    c->bbr_pacing_gain = c->bbr_cwnd_gain = BBR_HIGH_GAIN;
+}
+
+static void bbr_log(nl_tcp *c, const char *why)
+{
+    char name[24];
+
+    snprintf(name, sizeof(name), "tcp.bbr_%s", c->bbr_state == BBR_STARTUP ? "startup"
+             : c->bbr_state == BBR_DRAIN ? "drain" : c->bbr_state == BBR_PROBE_BW ? "probe_bw" : "probe_rtt");
+    nl_count(c->n, name, 1);
+    nl_log(c->n, NL_L_TRANSPORT, 2, 0, T_DATA "TCP" T_RESET " :%u bbr → " T_BOLD "%s" T_RESET "  %s  " T_DIM
+           "BtlBw %s  RTprop %s", c->lport, BBR_NAME[c->bbr_state], why, nl_rate_str(bbr_btlbw(c) * 8),
+           nl_time_str(c->bbr_rtprop));
+}
+
+/* BBR v1 (Cardwell, Cheng, Gunn, Yeganeh, Jacobson, "BBR: Congestion-Based
+ * Congestion Control", 2016; draft-cardwell-iccrg-bbr-congestion-control-00).
+ * Called for every ACK with the delivery-rate sample it produced. */
+static void bbr_on_ack(nl_tcp *c, const rsamp *rs, int prior_inflight, int newly_lost)
+{
+    double rate = -1, bw, target;
+    int pipe = pipe_bytes(c), expired, round_start = 0;
+
+    if (c->app_limited && c->delivered > c->app_limited)
+        c->app_limited = 0;
+    if (rs->have) {
+        nl_time interval = rs->send_elapsed > rs->ack_elapsed ? rs->send_elapsed : rs->ack_elapsed;
+
+        /* an interval shorter than the minimum RTT would overestimate */
+        if (interval > 0 && interval >= c->bbr_rtprop && c->delivered > rs->prior_delivered)
+            rate = (double)(c->delivered - rs->prior_delivered) * 1e6 / (double)interval;
+        if (rs->prior_delivered >= c->bbr_next_round) {         /* a round trip has passed */
+            c->bbr_next_round = c->delivered;
+            c->bbr_round++;
+            round_start = 1;
+            if (c->bbr_pc && rs->prior_delivered >= c->bbr_pc_end)
+                c->bbr_pc = 0;
+        }
+    }
+    bw = bbr_btlbw(c);
+    if (rate > 0 && (rate >= bw || !rs->app_limited)) {         /* windowed max over 10 rounds */
+        int k = (int)(c->bbr_round % BBR_BW_ROUNDS);
+        if (c->bbr_bw_round[k] != c->bbr_round) {
+            c->bbr_bw_round[k] = c->bbr_round;
+            c->bbr_bw_r[k] = 0;
+        }
+        if (rate > c->bbr_bw_r[k])
+            c->bbr_bw_r[k] = rate;
+        bw = bbr_btlbw(c);
+    }
+
+    if (c->bbr_state == BBR_PROBE_BW) {                         /* gain cycling */
+        int full = nl_now() - c->bbr_cycle_stamp > c->bbr_rtprop, next;
+
+        if (c->bbr_pacing_gain == 1.0)
+            next = full;
+        else if (c->bbr_pacing_gain > 1.0)
+            next = full && (newly_lost > 0 || prior_inflight >= (int)bbr_inflight(c, c->bbr_pacing_gain));
+        else
+            next = full || prior_inflight <= (int)bbr_inflight(c, 1.0);
+        if (next)
+            bbr_advance_cycle(c);
+    }
+    if (!c->bbr_filled && round_start && !rs->app_limited) {    /* has the pipe been filled? */
+        if (bw >= c->bbr_full_bw * 1.25) {
+            c->bbr_full_bw = bw;
+            c->bbr_full_cnt = 0;
+        } else if (++c->bbr_full_cnt >= 3) {
+            c->bbr_filled = 1;
+        }
+    }
+    if (c->bbr_state == BBR_STARTUP && c->bbr_filled) {
+        c->bbr_state = BBR_DRAIN;
+        c->bbr_pacing_gain = 1.0 / BBR_HIGH_GAIN;
+        c->bbr_cwnd_gain = BBR_HIGH_GAIN;
+        bbr_log(c, _("the delivery rate stopped growing: the pipe is full, drain the queue"));
+    }
+    if (c->bbr_state == BBR_DRAIN && pipe <= (int)bbr_inflight(c, 1.0)) {
+        bbr_enter_probe_bw(c);
+        bbr_log(c, _("queue drained: cruise and probe for more bandwidth"));
+    }
+
+    expired = c->bbr_rtprop && nl_now() > c->bbr_rtprop_stamp + BBR_RTPROP_WIN;
+    if (rs->rtt_min >= 0 && (!c->bbr_rtprop || rs->rtt_min <= c->bbr_rtprop || expired)) {
+        c->bbr_rtprop = rs->rtt_min;
+        c->bbr_rtprop_stamp = nl_now();
+    }
+    if (c->bbr_state != BBR_PROBE_RTT && expired && !c->idle_restart) {
+        bbr_save_cwnd(c);
+        c->bbr_state = BBR_PROBE_RTT;
+        c->bbr_pacing_gain = c->bbr_cwnd_gain = 1.0;
+        c->bbr_probe_rtt_done = 0;
+        bbr_log(c, _("no new minimum RTT for 10 s: empty the pipe to measure it"));
+    }
+    if (c->bbr_state == BBR_PROBE_RTT) {
+        c->app_limited = c->delivered + (uint64_t)pipe;
+        if (!c->app_limited)
+            c->app_limited = 1;
+        if (!c->bbr_probe_rtt_done && pipe <= BBR_MIN_PIPE * c->mss) {
+            c->bbr_probe_rtt_done = nl_now() + BBR_PROBE_RTT_T;
+            c->bbr_probe_rtt_round = 0;
+            c->bbr_next_round = c->delivered;
+        } else if (c->bbr_probe_rtt_done) {
+            if (round_start)
+                c->bbr_probe_rtt_round = 1;
+            if (c->bbr_probe_rtt_round && nl_now() > c->bbr_probe_rtt_done) {
+                c->bbr_rtprop_stamp = nl_now();
+                if (c->cwnd < c->bbr_prior_cwnd)
+                    c->cwnd = c->bbr_prior_cwnd;
+                if (c->bbr_filled)
+                    bbr_enter_probe_bw(c);
+                else
+                    bbr_enter_startup(c);
+                bbr_log(c, _("minimum RTT refreshed"));
+            }
+        }
+    }
+    c->idle_restart = 0;
+
+    if (bw > 0 && (c->bbr_filled || c->bbr_pacing_gain * bw > c->pace_rate))
+        c->pace_rate = c->bbr_pacing_gain * bw;
+
+    target = bbr_inflight(c, c->bbr_cwnd_gain);
+    if (newly_lost > 0) {
+        c->cwnd -= newly_lost;
+        if (c->cwnd < c->mss)
+            c->cwnd = c->mss;
+    }
+    if (c->bbr_pc) {                                            /* packet conservation */
+        if (c->cwnd < (double)pipe + rs->newly_acked)
+            c->cwnd = (double)pipe + rs->newly_acked;
+    } else if (c->bbr_filled) {
+        c->cwnd = c->cwnd + rs->newly_acked < target ? c->cwnd + rs->newly_acked : target;
+    } else if (c->cwnd < target || c->delivered < (uint64_t)c->iw * (uint64_t)c->mss) {
+        c->cwnd += rs->newly_acked;
+    }
+    if (c->cwnd < (double)BBR_MIN_PIPE * c->mss)
+        c->cwnd = (double)BBR_MIN_PIPE * c->mss;
+    if (c->bbr_state == BBR_PROBE_RTT && c->cwnd > (double)BBR_MIN_PIPE * c->mss)
+        c->cwnd = (double)BBR_MIN_PIPE * c->mss;
+}
+
 static void cc_init(nl_tcp *c)
 {
     c->cwnd = (double)c->iw * c->mss;
     c->ssthresh = c->init_ssthresh > 0 ? (double)c->init_ssthresh * c->mss : 1e12;
-    c->bbr_state = BBR_STARTUP;
-    c->bbr_round_end = c->snd_nxt;
-    c->bbr_round_t = nl_now();
-}
-
-static void bbr_update(nl_tcp *c, uint32_t ack)
-{
-    static const double cycle[8] = { 1.25, 0.75, 1, 1, 1, 1, 1, 1 };
-    double pg = 2.89, cg = 2.89, bdp;
-    int i;
-
-    if (SEQ_GEQ(ack, c->bbr_round_end)) {               /* one round trip completed */
-        nl_time dt = nl_now() - c->bbr_round_t;
-
-        if (dt > 0 && c->delivered > c->bbr_round_deliv) {
-            double rate = (double)(c->delivered - c->bbr_round_deliv) * 1e6 / (double)dt;
-
-            c->bbr_bws[c->bbr_nbw++ % 10] = rate;
-            c->bbr_bw = 0;
-            for (i = 0; i < 10 && i < c->bbr_nbw; i++)
-                if (c->bbr_bws[i] > c->bbr_bw)
-                    c->bbr_bw = c->bbr_bws[i];
-            if (c->bbr_state == BBR_STARTUP) {
-                if (c->bbr_bw >= c->bbr_full_bw * 1.25) {
-                    c->bbr_full_bw = c->bbr_bw;
-                    c->bbr_full_cnt = 0;
-                } else if (++c->bbr_full_cnt >= 3) {
-                    c->bbr_state = BBR_DRAIN;
-                    nl_log(c->n, NL_L_TRANSPORT, 2, 0, T_DATA "TCP" T_RESET " bbr: %s (%s) → DRAIN",
-                           _("bottleneck bandwidth found"), nl_rate_str(c->bbr_bw * 8));
-                }
-            }
-        }
-        c->bbr_round_end = c->snd_max;
-        c->bbr_round_t = nl_now();
-        c->bbr_round_deliv = c->delivered;
+    if (c->cc == CC_BBR) {
+        bbr_enter_startup(c);
+        nl_count(c->n, "tcp.bbr_startup", 1);
+        c->pace_rate = BBR_HIGH_GAIN * c->cwnd * 1e6 / (double)(c->rtt_valid && c->srtt > 0 ? c->srtt : NL_MS(1));
     }
-    if (!c->bbr_bw || !c->bbr_rtprop)
-        return;                                         /* no model yet: keep the initial window */
-    bdp = c->bbr_bw * (double)c->bbr_rtprop / 1e6;
-    if (c->bbr_state == BBR_DRAIN) {
-        pg = 1 / 2.89;
-        cg = 2.89;
-        if ((double)(c->snd_max - c->snd_una) <= bdp) {
-            c->bbr_state = BBR_PROBE_BW;
-            c->bbr_phase = (int)nl_rand(6) + 2;
-            c->bbr_phase_t = nl_now();
-        }
-    }
-    if (c->bbr_state == BBR_PROBE_BW) {
-        if (nl_now() - c->bbr_phase_t >= c->bbr_rtprop) {
-            c->bbr_phase = (c->bbr_phase + 1) % 8;
-            c->bbr_phase_t = nl_now();
-        }
-        pg = cycle[c->bbr_phase];
-        cg = 2.0;
-    }
-    c->pace_rate = pg * c->bbr_bw;
-    c->cwnd = cg * bdp;
-    if (c->cwnd < 4.0 * c->mss)
-        c->cwnd = 4.0 * c->mss;
 }
 
 static void cubic_ack(nl_tcp *c, int acked)
@@ -566,14 +945,10 @@ static void cubic_ack(nl_tcp *c, int acked)
     c->cwnd = segs * c->mss;
 }
 
-/* New data acknowledged outside recovery */
-static void cc_ack(nl_tcp *c, int acked, uint32_t ack)
+/* New data acknowledged outside recovery (loss-based algorithms) */
+static void cc_ack(nl_tcp *c, int acked)
 {
-    if (c->cc == CC_BBR) {
-        bbr_update(c, ack);
-        return;
-    }
-    if (c->cwnd < c->ssthresh) {                        /* slow start */
+    if (c->cwnd < c->ssthresh) {                        /* slow start, byte counting (RFC 3465, L = 2) */
         c->cwnd += acked < 2 * c->mss ? acked : 2 * c->mss;
         if (c->cwnd > c->ssthresh)
             c->cwnd = c->ssthresh;
@@ -584,11 +959,9 @@ static void cc_ack(nl_tcp *c, int acked, uint32_t ack)
     }
 }
 
-/* Multiplicative decrease; returns the new ssthresh */
-static void cc_reduce(nl_tcp *c)
+/* Multiplicative decrease: sets ssthresh */
+static void cc_reduce(nl_tcp *c, double flight)
 {
-    double flight = (double)(c->snd_max - c->snd_una);
-
     if (c->cc == CC_BBR)
         return;                                         /* loss is not a congestion signal for bbr */
     if (c->cc == CC_CUBIC) {
@@ -610,31 +983,42 @@ static void cc_sample(nl_tcp *c)
         nl_sample(c->n, "ssthresh", c->ssthresh / c->mss);
 }
 
-static void fast_retransmit(nl_tcp *c)
+/* Loss detected by duplicate ACKs or SACK: enter fast recovery (Tahoe:
+ * start again from one segment). flight = bytes outstanding before the
+ * loss was noticed. */
+static void enter_recovery(nl_tcp *c, int newly_acked, double flight)
 {
+    double before = c->cwnd;
+    int i;
+
     c->fast_retx++;
     nl_count(c->n, "tcp.fast_retransmits", 1);
-    cc_reduce(c);
-    nl_log(c->n, NL_L_TRANSPORT, 2, 0, T_WARN "TCP" T_RESET " :%u %s seq=%u (%s, cwnd %.1f → ssthresh %.1f)",
-           c->lport, _("3 duplicate ACKs: fast retransmit"), c->snd_una - c->iss, CC_NAME[c->cc],
-           c->cwnd / c->mss, c->ssthresh < 1e11 ? c->ssthresh / c->mss : 0.0);
+    cc_reduce(c, flight);
     c->recover = c->snd_max;
     if (c->cc == CC_TAHOE) {
+        for (i = 0; i < c->sq_n; i++)
+            if (!c->sq[i].sacked) {
+                c->sq[i].lost = 1;
+                c->sq[i].retx = 0;
+            }
         c->cwnd = c->mss;
-        c->dupacks = 0;
-        c->snd_nxt = c->snd_una;        /* back to slow start from the hole */
-        if (c->fin_sent && !c->fin_acked)
-            c->fin_sent = 0;
-        c->timing = 0;
-        rto_arm(c);
-        cc_sample(c);
-        tcp_output(c);
-        return;
+        c->dupacks = c->pseudo = 0;
+    } else {
+        if (c->cc == CC_BBR) {
+            bbr_save_cwnd(c);
+            c->cwnd = (double)pipe_bytes(c) + (newly_acked > c->mss ? newly_acked : c->mss);
+            c->bbr_pc = 1;
+            c->bbr_pc_end = c->delivered;
+        } else {
+            c->cwnd = c->ssthresh;
+        }
+        c->in_recovery = 1;
+        c->force_retx = 1;
+        c->partial_acks = 0;
     }
-    c->in_recovery = 1;
-    if (c->cc != CC_BBR)
-        c->cwnd = c->ssthresh + 3.0 * c->mss;
-    retx_one(c);
+    nl_log(c->n, NL_L_TRANSPORT, 2, 0, T_WARN "TCP" T_RESET " :%u %s seq=%u (%s%s, cwnd %.1f → %.1f)", c->lport,
+           c->sack_ok ? _("SACK shows a hole: fast retransmit") : _("3 duplicate ACKs: fast retransmit"),
+           c->snd_una - c->iss, CC_NAME[c->cc], c->sack_ok ? "+sack" : "", before / c->mss, c->cwnd / c->mss);
     rto_arm(c);
     cc_sample(c);
 }
@@ -642,6 +1026,7 @@ static void fast_retransmit(nl_tcp *c)
 static void rto_fire(void *ctx)
 {
     nl_tcp *c = ctx;
+    int i;
 
     c->rto_timer = 0;
     if (c->state == ST_CLOSED)
@@ -669,23 +1054,28 @@ static void rto_fire(void *ctx)
     }
     c->timeouts++;
     nl_count(c->n, "tcp.timeouts", 1);
-    cc_reduce(c);
+    cc_reduce(c, (double)pipe_bytes(c));
+    if (c->cc == CC_BBR)
+        bbr_save_cwnd(c);
     nl_log(c->n, NL_L_TRANSPORT, 2, 0, T_ERR "TCP" T_RESET " :%u %s seq=%u (RTO %s, cwnd %.1f → 1)", c->lport,
            _("retransmission timeout"), c->snd_una - c->iss, nl_time_str(c->rto << c->backoff),
            c->cwnd / c->mss);
+    /* everything not SACKed is presumed lost and goes out again, in order,
+     * as the window reopens from one segment */
+    for (i = 0; i < c->sq_n; i++)
+        if (!c->sq[i].sacked) {
+            c->sq[i].lost = 1;
+            c->sq[i].retx = 0;
+        }
     c->cwnd = c->mss;
-    c->dupacks = 0;
+    c->dupacks = c->pseudo = 0;
     c->in_recovery = 0;
+    c->rto_recovery = 1;
+    c->bbr_pc = 0;
     c->recover = c->snd_max;
     c->epoch = 0;
-    c->pace_rate = 0;
-    c->timing = 0;
     if (c->backoff < 6)
         c->backoff++;
-    /* go back: everything from snd_una is sent again as the window allows */
-    c->snd_nxt = c->snd_una;
-    if (c->fin_sent && !c->fin_acked)
-        c->fin_sent = 0;
     cc_sample(c);
     rto_arm(c);
     tcp_output(c);
@@ -707,10 +1097,6 @@ static void rtt_sample(nl_tcp *c, nl_time r)
         c->rto = c->rto_min;
     if (c->rto > RTO_MAX)
         c->rto = RTO_MAX;
-    if (!c->bbr_rtprop || r <= c->bbr_rtprop || nl_now() - c->bbr_rtprop_t > NL_SEC(10)) {
-        c->bbr_rtprop = r;
-        c->bbr_rtprop_t = nl_now();
-    }
 }
 
 static void tick_fire(void *ctx)
@@ -725,6 +1111,11 @@ static void tick_fire(void *ctx)
     if (c->rtt_valid)
         nl_sample(c->n, "rtt (ms)", c->srtt / 1000.0);
     nl_sample(c->n, "throughput (kbit/s)", (double)c->tick_acked * 8.0 / ((double)TICK / 1e6) / 1000.0);
+    if (c->cc == CC_BBR) {
+        nl_sample(c->n, "bbr btlbw (kbit/s)", bbr_btlbw(c) * 8.0 / 1000.0);
+        nl_sample(c->n, "bbr rtprop (ms)", c->bbr_rtprop / 1000.0);
+        nl_sample(c->n, "pacing (kbit/s)", c->pace_rate * 8.0 / 1000.0);
+    }
     c->tick_acked = 0;
     if (c->slen > 0 || c->snd_una != c->snd_max)
         c->tick_timer = nl_after(c->n, TICK, tick_fire, c);
@@ -811,12 +1202,23 @@ static void rx_deliver(nl_tcp *c, const uint8_t *d, int len)
     }
 }
 
+/* Data received twice: report it in the next ACK (D-SACK, RFC 2883) */
+static void dsack(nl_tcp *c, uint32_t lo, uint32_t hi)
+{
+    if (c->sack_ok) {
+        c->dsack_lo = lo;
+        c->dsack_hi = hi;
+        c->dsack_pending = 1;
+    }
+}
+
 static void rx_data(nl_tcp *c, uint32_t seq, const uint8_t *d, int len)
 {
     int win = rcv_window(c), i, again;
 
     if (SEQ_LT(seq, c->rcv_nxt)) {                      /* trim what we already have */
         int skip = (int)(c->rcv_nxt - seq);
+        dsack(c, seq, skip >= len ? seq + (uint32_t)len : c->rcv_nxt);
         if (skip >= len)
             return;
         seq += (uint32_t)skip;
@@ -829,8 +1231,14 @@ static void rx_data(nl_tcp *c, uint32_t seq, const uint8_t *d, int len)
         return;
     if (seq != c->rcv_nxt) {                            /* a hole before it: keep for later */
         for (i = 0; i < c->nooo; i++)
-            if (c->ooo[i].seq == seq)
+            if (c->ooo[i].seq == seq) {
+                dsack(c, seq, seq + (uint32_t)len);
                 return;
+            }
+        memmove(c->sack_recent + 1, c->sack_recent, 3 * sizeof(c->sack_recent[0]));
+        c->sack_recent[0] = seq;
+        if (c->nsack_recent < 4)
+            c->nsack_recent++;
         if (c->nooo < OOO_MAX) {
             ooo_seg *s = &c->ooo[c->nooo];
             s->data = malloc((size_t)len);
@@ -888,7 +1296,36 @@ static void parse_options(nl_tcp *c, const uint8_t *opt, int len)
         } else if (kind == 3 && l == 3) {
             c->snd_wscale = opt[i + 2] > 14 ? 14 : opt[i + 2];
             c->ws_ok = 1;
+        } else if (kind == 4 && l == 2) {
+            c->sack_peer = 1;
         }
+        i += l;
+    }
+}
+
+/* SACK blocks of an ACK (absolute sequence numbers) into c->rx_blk */
+static void parse_sack(nl_tcp *c, const uint8_t *opt, int len)
+{
+    int i = 0, k;
+
+    c->rx_nblk = 0;
+    while (i < len) {
+        int kind = opt[i], l;
+
+        if (kind == 0)
+            break;
+        if (kind == 1) {
+            i++;
+            continue;
+        }
+        if (i + 1 >= len || (l = opt[i + 1]) < 2 || i + l > len)
+            break;
+        if (kind == 5)
+            for (k = 0; k + 8 <= l - 2 && c->rx_nblk < 4; k += 8) {
+                c->rx_blk[2 * c->rx_nblk] = nl_get32(opt + i + 2 + k);
+                c->rx_blk[2 * c->rx_nblk + 1] = nl_get32(opt + i + 6 + k);
+                c->rx_nblk++;
+            }
         i += l;
     }
 }
@@ -906,9 +1343,9 @@ static void established(nl_tcp *c)
         c->rwnd_max = 65535;
     cc_init(c);
     nl_count(c->n, "tcp.connections", 1);
-    nl_log(c->n, NL_L_TRANSPORT, 2, 0, T_OK "TCP" T_RESET " :%u ⇄ %s:%u %s (MSS %d, %s%s)", c->lport,
+    nl_log(c->n, NL_L_TRANSPORT, 2, 0, T_OK "TCP" T_RESET " :%u ⇄ %s:%u %s (MSS %d, %s%s%s)", c->lport,
            nl_ip_str(c->rip), c->rport, _("connection established"), c->mss, CC_NAME[c->cc],
-           c->ecn_ok ? ", ECN" : "");
+           c->sack_ok ? ", SACK" : "", c->ecn_ok ? ", ECN" : "");
     if (!c->active) {
         c->ops = c->lops;
         c->ctx = c->lops && c->lops->on_accept ? c->lops->on_accept(c, c->lctx) : c->lctx;
@@ -920,85 +1357,64 @@ static void established(nl_tcp *c)
         c->ops->on_connect(c, c->ctx);
 }
 
-static void ack_input(nl_tcp *c, uint32_t ack, int flags, int len, uint32_t wnd)
+/* A segment has been delivered (cumulatively acknowledged or SACKed):
+ * account for it and let it contribute to the rate and RTT samples */
+static void deliver(nl_tcp *c, const txseg *s, rsamp *rs, int rtt_ok)
 {
-    int window_changed = wnd != c->snd_wnd;
+    nl_time now = nl_now();
 
+    c->delivered += (uint64_t)s->len;
+    c->delivered_time = now;
+    rs->newly_acked += s->len;
+    if (!rs->have || s->delivered > rs->prior_delivered) {
+        rs->have = 1;
+        rs->prior_delivered = s->delivered;
+        rs->app_limited = s->app_limited;
+        rs->send_elapsed = s->xmit - s->first_tx;
+        rs->ack_elapsed = now - s->delivered_time;
+        c->first_tx_time = s->xmit;
+    }
+    if (!s->ever_retx) {                /* Karn: never time a retransmitted segment */
+        if (rtt_ok && (rs->rtt < 0 || now - s->xmit < rs->rtt))
+            rs->rtt = now - s->xmit;
+        if (rs->rtt_min < 0 || now - s->xmit < rs->rtt_min)
+            rs->rtt_min = now - s->xmit;
+        if (s->xmit > rs->rack)
+            rs->rack = s->xmit;
+    }
+}
+
+/* RFC 6675 IsLost(): a hole is lost when enough data above it has been
+ * SACKed (DupThresh = 3). Returns the bytes newly marked. */
+static int sack_mark_lost(nl_tcp *c)
+{
+    int i, cnt = 0, newly = 0;
+    long bytes = 0;
+
+    for (i = c->sq_n - 1; i >= 0; i--) {
+        txseg *s = &c->sq[i];
+        if (s->sacked) {
+            cnt++;
+            bytes += s->len;
+        } else if (!s->lost && (cnt >= 3 || bytes > 2L * c->mss)) {
+            s->lost = 1;
+            s->retx = 0;
+            newly += s->len;
+        }
+    }
+    return newly;
+}
+
+static void ack_input(nl_tcp *c, uint32_t ack, int flags, int len, uint32_t wnd, const uint32_t *blk, int nblk)
+{
+    int window_changed = wnd != c->snd_wnd, advanced = 0, data_acked = 0, removed = 0, new_sack = 0;
+    int newly_lost = 0, is_dup, prior_inflight = pipe_bytes(c), ecn_cut = 0, i, b;
+    rsamp rs;
+
+    memset(&rs, 0, sizeof(rs));
+    rs.rtt = rs.rtt_min = -1;
     if (SEQ_GT(ack, c->snd_max))
         return;
-    if (SEQ_GT(ack, c->snd_una)) {
-        int acked = (int)(ack - c->snd_una), data_acked = acked;
-
-        if (c->fin_sent && ack == c->fin_seq + 1) {
-            c->fin_acked = 1;
-            data_acked--;
-        }
-        if (data_acked > c->slen)
-            data_acked = c->slen;
-        if (data_acked > 0) {
-            memmove(c->sbuf, c->sbuf + data_acked, (size_t)(c->slen - data_acked));
-            c->slen -= data_acked;
-        }
-        c->snd_una = ack;
-        if (SEQ_LT(c->snd_nxt, c->snd_una))
-            c->snd_nxt = c->snd_una;
-        if (wnd == 0 && c->snd_wnd != 0 && c->slen > 0) {
-            nl_count(c->n, "tcp.zero_windows", 1);
-            nl_log(c->n, NL_L_TRANSPORT, 2, 0, T_WARN "TCP" T_RESET " :%u %s", c->lport,
-                   _("the receiver advertises window 0: sender blocked by flow control"));
-        }
-        c->snd_wnd = wnd;
-        if (wnd > 0)
-            nl_cancel(&c->persist_timer);
-        c->bytes_acked += (uint64_t)data_acked;
-        c->tick_acked += (uint64_t)data_acked;
-        c->delivered += (uint64_t)data_acked;
-        nl_count(c->n, "tcp.bytes_acked", data_acked);
-        if (c->timing && SEQ_GEQ(ack, c->rtt_seq)) {
-            c->timing = 0;
-            rtt_sample(c, nl_now() - c->rtt_time);
-        }
-        c->backoff = c->tries = 0;
-
-        if ((flags & TH_ECE) && c->ecn_ok && SEQ_GT(ack, c->ecn_recover) && !c->in_recovery) {
-            cc_reduce(c);
-            if (c->cc != CC_BBR)
-                c->cwnd = c->ssthresh;
-            c->ecn_recover = c->snd_max;
-            c->cwr_pending = 1;
-            nl_count(c->n, "tcp.ecn_reductions", 1);
-            nl_log(c->n, NL_L_TRANSPORT, 2, 0, T_WARN "TCP" T_RESET " :%u %s (cwnd → %.1f)", c->lport,
-                   _("ECN echo: congestion signalled without loss"), c->cwnd / c->mss);
-            cc_sample(c);
-        } else if (c->in_recovery) {
-            if (SEQ_GEQ(ack, c->recover) || c->cc == CC_RENO) {
-                c->in_recovery = 0;                     /* full ACK (classic Reno: any new ACK) */
-                if (c->cc != CC_BBR)
-                    c->cwnd = c->ssthresh;
-                cc_sample(c);
-            } else {                                    /* partial ACK: the next hole */
-                retx_one(c);
-                if (c->cc != CC_BBR) {
-                    c->cwnd -= data_acked;
-                    c->cwnd += c->mss;
-                    if (c->cwnd < c->mss)
-                        c->cwnd = c->mss;
-                }
-            }
-            if (c->cc == CC_BBR)
-                bbr_update(c, ack);
-        } else if (data_acked > 0) {
-            cc_ack(c, data_acked, ack);
-        }
-        c->dupacks = 0;
-        if (c->snd_una == c->snd_max)
-            nl_cancel(&c->rto_timer);
-        else
-            rto_arm(c);
-        if (data_acked > 0 && c->ops && c->ops->on_sent)
-            c->ops->on_sent(c, c->ctx, data_acked);
-        return;
-    }
     if (wnd == 0 && c->snd_wnd != 0 && c->slen > 0) {
         nl_count(c->n, "tcp.zero_windows", 1);
         nl_log(c->n, NL_L_TRANSPORT, 2, 0, T_WARN "TCP" T_RESET " :%u %s", c->lport,
@@ -1007,24 +1423,186 @@ static void ack_input(nl_tcp *c, uint32_t ack, int flags, int len, uint32_t wnd)
     c->snd_wnd = wnd;
     if (wnd > 0)
         nl_cancel(&c->persist_timer);
-    if (ack == c->snd_una && len == 0 && !(flags & (TH_SYN | TH_FIN)) && c->snd_una != c->snd_max &&
-        !window_changed) {
-        nl_count(c->n, "tcp.dup_acks", 1);
-        c->dupacks++;
-        if (c->in_recovery) {
-            if (c->cc != CC_BBR)
-                c->cwnd += c->mss;                      /* a segment left the network */
-        } else if (c->dupacks == 3 && SEQ_GT(c->snd_una, c->recover)) {
-            fast_retransmit(c);
+
+    if (SEQ_GT(ack, c->snd_una)) {                      /* the cumulative ACK moves */
+        advanced = 1;
+        data_acked = (int)(ack - c->snd_una);
+        while (removed < c->sq_n && SEQ_LEQ(c->sq[removed].seq + (uint32_t)c->sq[removed].len, ack)) {
+            const txseg *s = &c->sq[removed];
+            if (s->fin) {
+                c->fin_acked = 1;
+                data_acked--;
+            }
+            if (!s->sacked)
+                deliver(c, s, &rs, removed == 0);
+            removed++;
+        }
+        memmove(c->sq, c->sq + removed, (size_t)(c->sq_n - removed) * sizeof(c->sq[0]));
+        c->sq_n -= removed;
+        if (c->pseudo > 0 && removed > 1) {             /* already counted when their duplicate ACKs came */
+            uint64_t twice = (uint64_t)(c->pseudo < removed - 1 ? c->pseudo : removed - 1) * (uint64_t)c->mss;
+            c->delivered -= twice < c->delivered ? twice : 0;
+            rs.newly_acked = rs.newly_acked > (int)twice ? rs.newly_acked - (int)twice : 0;
+        }
+        if (c->sq_n && SEQ_LT(c->sq[0].seq, ack)) {     /* the ACK falls inside a segment */
+            int cut = (int)(ack - c->sq[0].seq);
+            c->sq[0].seq = ack;
+            c->sq[0].len -= cut;
+            if (!c->sq[0].sacked) {
+                c->delivered += (uint64_t)cut;
+                rs.newly_acked += cut;
+            }
+        }
+        if (data_acked > c->slen)
+            data_acked = c->slen;
+        if (data_acked > 0) {
+            memmove(c->sbuf, c->sbuf + data_acked, (size_t)(c->slen - data_acked));
+            c->slen -= data_acked;
+        }
+        c->snd_una = ack;
+        nl_log(c->n, NL_L_TRANSPORT, 3, 0, T_ACK "TCP" T_RESET " :%u ← ack=%u (%d B %s, %d %s)", c->lport,
+               ack - c->iss, data_acked, _("acknowledged"), c->sq_n, _("segments still in flight"));
+        c->bytes_acked += (uint64_t)data_acked;
+        c->tick_acked += (uint64_t)data_acked;
+        nl_count(c->n, "tcp.bytes_acked", data_acked);
+        c->backoff = c->tries = 0;
+    }
+
+    for (b = 0; c->sack_ok && b < nblk; b++) {          /* selective acknowledgements */
+        uint32_t lo = blk[2 * b], hi = blk[2 * b + 1];
+
+        if (!SEQ_GT(hi, lo))
+            continue;
+        /* D-SACK (RFC 2883): the first block reports data received twice */
+        if (b == 0 && (SEQ_LEQ(hi, ack) || (nblk > 1 && SEQ_GEQ(lo, blk[2]) && SEQ_LEQ(hi, blk[3])))) {
+            nl_count(c->n, "tcp.dsack_rcvd", 1);
+            nl_log(c->n, NL_L_TRANSPORT, 3, 0, T_DATA "TCP" T_RESET " :%u D-SACK %u-%u: %s", c->lport,
+                   lo - c->iss, hi - c->iss, _("the receiver got this twice (a retransmission was not needed)"));
+            continue;
+        }
+        if (SEQ_GT(hi, c->snd_max) || SEQ_LEQ(hi, ack))
+            continue;
+        nl_count(c->n, "tcp.sack_blocks_rcvd", 1);
+        for (i = 0; i < c->sq_n; i++) {
+            txseg *s = &c->sq[i];
+            if (!s->sacked && SEQ_GEQ(s->seq, lo) && SEQ_LEQ(s->seq + (uint32_t)s->len, hi)) {
+                s->sacked = 1;
+                deliver(c, s, &rs, 1);
+                s->lost = s->retx = 0;
+                new_sack = 1;
+            }
         }
     }
+    if (rs.rtt >= 0)
+        rtt_sample(c, rs.rtt);
+
+    /* a duplicate ACK says that a segment arrived while an earlier one is missing */
+    is_dup = !advanced && c->snd_una != c->snd_max &&
+             (c->sack_ok ? new_sack : (len == 0 && !(flags & (TH_SYN | TH_FIN)) && !window_changed));
+    if (is_dup) {
+        nl_count(c->n, "tcp.dup_acks", 1);
+        c->dupacks++;
+        /* some segment arrived, we cannot tell which; after a timeout the
+         * duplicate ACKs answer our own duplicates and say nothing */
+        if (!c->sack_ok && !c->rto_recovery) {
+            c->pseudo++;
+            c->delivered += (uint64_t)c->mss;
+            c->delivered_time = nl_now();
+            rs.newly_acked += c->mss;
+        }
+    }
+    if (advanced) {
+        c->dupacks = 0;
+        /* segments that duplicate ACKs had announced are now acknowledged by
+         * number; those sent later and already announced stay counted */
+        if (c->pseudo > 0 && removed > 1)
+            c->pseudo = c->pseudo > removed - 1 ? c->pseudo - (removed - 1) : 0;
+        if (c->pseudo > c->sq_n)
+            c->pseudo = c->sq_n;
+        if ((c->in_recovery || c->rto_recovery) && SEQ_GEQ(ack, c->recover)) {
+            if (c->in_recovery)
+                nl_log(c->n, NL_L_TRANSPORT, 3, 0, T_OK "TCP" T_RESET " :%u %s", c->lport,
+                       _("every hole is repaired: fast recovery ends"));
+            c->in_recovery = c->rto_recovery = 0;
+            c->bbr_pc = 0;
+            if (c->cc == CC_BBR && c->cwnd < c->bbr_prior_cwnd)
+                c->cwnd = c->bbr_prior_cwnd;
+            cc_sample(c);
+        }
+    }
+
+    /* which segments are lost? */
+    if (c->sack_ok) {
+        nl_time reo = c->rtt_valid ? c->srtt / 4 : NL_MS(1);
+
+        newly_lost = sack_mark_lost(c);
+        /* a retransmission is lost again when segments sent well after it
+         * have been delivered (the idea of RACK, RFC 8985) */
+        for (i = 0; rs.rack && i < c->sq_n; i++) {
+            txseg *s = &c->sq[i];
+            if (s->retx && !s->sacked && s->xmit + reo < rs.rack) {
+                s->retx = 0;
+                nl_count(c->n, "tcp.lost_retransmits", 1);
+            }
+        }
+    } else if (c->sq_n) {
+        txseg *s = &c->sq[0];
+
+        if (is_dup && c->dupacks == 3 && !c->in_recovery && SEQ_GT(c->snd_una, c->recover) && !s->lost) {
+            s->lost = 1;
+            s->retx = 0;
+            newly_lost = s->len;
+        } else if (advanced && c->in_recovery) {        /* partial ACK */
+            if (c->cc == CC_RENO) {
+                c->in_recovery = 0;                     /* classic Reno: any new ACK ends recovery */
+                c->pseudo = 0;
+            } else if (!s->lost) {                      /* NewReno: the next hole */
+                s->lost = 1;
+                s->retx = 0;
+                newly_lost = s->len;
+                c->force_retx = 1;
+                c->partial_acks++;
+            }
+        }
+    }
+    if (newly_lost && !c->in_recovery && (c->cc != CC_RENO || c->sack_ok || is_dup))
+        enter_recovery(c, rs.newly_acked, (double)prior_inflight);
+
+    if (advanced && (flags & TH_ECE) && c->ecn_ok && SEQ_GT(ack, c->ecn_recover) && !c->in_recovery) {
+        cc_reduce(c, (double)prior_inflight);
+        if (c->cc != CC_BBR)
+            c->cwnd = c->ssthresh;
+        c->ecn_recover = c->snd_max;
+        c->cwr_pending = 1;
+        ecn_cut = 1;
+        nl_count(c->n, "tcp.ecn_reductions", 1);
+        nl_log(c->n, NL_L_TRANSPORT, 2, 0, T_WARN "TCP" T_RESET " :%u %s (cwnd → %.1f)", c->lport,
+               _("ECN echo: congestion signalled without loss"), c->cwnd / c->mss);
+        cc_sample(c);
+    }
+    if (c->cc == CC_BBR) {
+        if (rs.newly_acked > 0 || newly_lost > 0)
+            bbr_on_ack(c, &rs, prior_inflight, newly_lost);
+    } else if (advanced && data_acked > 0 && !c->in_recovery && !ecn_cut) {
+        cc_ack(c, data_acked);
+    }
+
+    /* NewReno, "impatient" variant (RFC 6582): only the first partial ACK
+     * restarts the timer, so that a recovery with many holes ends in a
+     * timeout instead of dragging on for one round trip per hole */
+    if (c->snd_una == c->snd_max)
+        nl_cancel(&c->rto_timer);
+    else if (advanced && (c->sack_ok || !c->in_recovery || c->partial_acks <= 1))
+        rto_arm(c);
+    if (data_acked > 0 && c->ops && c->ops->on_sent)
+        c->ops->on_sent(c, c->ctx, data_acked);
 }
 
 static void tcp_input(nl_node *n, void *ctx, const nl_ipmeta *m)
 {
     tcp_node *tn = ctx;
     const uint8_t *h = m->l4;
-    int hl, len, flags, i;
+    int hl, len, flags, i, in_order = 0;
     uint16_t sport, dport;
     uint32_t seq, ack, wnd;
     nl_tcp *c;
@@ -1079,6 +1657,7 @@ static void tcp_input(nl_node *n, void *ctx, const nl_ipmeta *m)
         c->rcv_nxt = seq + 1;
         c->snd_wnd = nl_get16(h + 14);
         parse_options(c, h + 20, hl - 20);
+        c->sack_ok = c->sack_want && c->sack_peer;
         if (!c->ws_ok)
             c->rcv_wscale = 0;
         if ((flags & (TH_ECE | TH_CWR)) == (TH_ECE | TH_CWR) && c->ecn_want)
@@ -1113,6 +1692,7 @@ static void tcp_input(nl_node *n, void *ctx, const nl_ipmeta *m)
         c->snd_una = ack;
         c->snd_wnd = nl_get16(h + 14);
         parse_options(c, h + 20, hl - 20);
+        c->sack_ok = c->sack_want && c->sack_peer;
         if ((flags & TH_ECE) && c->ecn_want)
             c->ecn_ok = 1;
         if (c->tries == 0)
@@ -1152,7 +1732,8 @@ static void tcp_input(nl_node *n, void *ctx, const nl_ipmeta *m)
         nl_count(n, "tcp.ce_received", 1);
     }
     if (flags & TH_ACK) {
-        ack_input(c, ack, flags, len, wnd);
+        parse_sack(c, h + 20, hl - 20);
+        ack_input(c, ack, flags, len, wnd, c->rx_blk, c->rx_nblk);
         if (c->state == ST_CLOSED)
             return;
         if (c->fin_acked) {
@@ -1177,10 +1758,13 @@ static void tcp_input(nl_node *n, void *ctx, const nl_ipmeta *m)
 
     if (len > 0 && c->state != ST_CLOSE_WAIT && c->state != ST_LAST_ACK && c->state != ST_CLOSING) {
         uint32_t before = c->rcv_nxt;
+        int holes = c->nooo;
 
         rx_data(c, seq, h + hl, len);
         if (c->state == ST_CLOSED)
             return;
+        /* plain in-order data, nothing missing before or after: its ACK may wait */
+        in_order = seq == before && c->rcv_nxt != before && !holes && !c->nooo && !c->dsack_pending;
         if (c->rcv_nxt == before && seq != before && SEQ_GT(seq, before))
             nl_log(n, NL_L_TRANSPORT, 3, m->pkt_id, T_ACK "TCP" T_RESET " :%u %s seq=%u, %s %u → dup ACK",
                    c->lport, _("out of order"), seq - c->irs, _("expected"), before - c->irs);
@@ -1206,7 +1790,13 @@ static void tcp_input(nl_node *n, void *ctx, const nl_ipmeta *m)
         if (c->state == ST_CLOSED)
             return;
     } else if (len > 0 || (flags & TH_FIN)) {
-        send_ack(c);
+        /* delayed ACK (RFC 1122, RFC 5681): at least every second segment,
+         * and at once for anything out of the ordinary */
+        if ((flags & TH_FIN) || !in_order || c->delack <= 0 || (c->ecn_ok && (m->tos & 3) == 3) ||
+            rcv_window(c) < 2 * c->mss || ++c->ack_pending >= 2)
+            send_ack(c);
+        else if (!c->delack_timer)
+            c->delack_timer = nl_after(c->n, c->delack, delack_fire, c);
     }
     tcp_output(c);
 }
@@ -1360,8 +1950,52 @@ nl_node *nl_tcp_node(const nl_tcp *c) { return c->n; }
 /* The `tcp` tool: bulk sender and sink                               */
 /* ------------------------------------------------------------------ */
 
-typedef struct { nl_node *n; long long total, queued; nl_time t0, t_conn; char dest[24]; char cc[12]; } xfer;
+typedef struct {
+    nl_node *n;
+    nl_tcp  *c;
+    long long total, queued;            /* total < 0: send until the deadline */
+    nl_time  t0, t_conn, duration, warmup;
+    nl_time  t_mark;                    /* start of the steady-state measurement */
+    uint64_t acked_mark;
+    nl_ev    deadline, start;
+    nl_ip    dst;
+    int      port;
+    char     dest[24], cc[12], opts[200];
+} xfer;
 typedef struct { nl_node *n; unsigned long long bytes; nl_time t0; } sink_conn;
+
+/* Steady-state rates of the transfers that ended, for Jain's fairness index */
+static struct { nl_node *n; int port; double kbps; } g_flows[32];
+static int g_nflows;
+
+static void fairness(nl_node *n, int port, double kbps)
+{
+    double sum = 0, sq = 0, j;
+    int i, k = 0;
+
+    if (g_nflows < (int)(sizeof(g_flows) / sizeof(g_flows[0]))) {
+        g_flows[g_nflows].n = n;
+        g_flows[g_nflows].port = port;
+        g_flows[g_nflows].kbps = kbps;
+        g_nflows++;
+    }
+    for (i = 0; i < g_nflows; i++)
+        if (g_flows[i].port == port) {
+            sum += g_flows[i].kbps;
+            sq += g_flows[i].kbps * g_flows[i].kbps;
+            k++;
+        }
+    if (k < 2 || sq <= 0)
+        return;
+    j = sum * sum / (k * sq);                           /* 1 = equal shares, 1/k = one flow has it all */
+    for (i = 0; i < g_nflows; i++)
+        if (g_flows[i].port == port) {
+            nl_count_set(g_flows[i].n, "tcp.jain_pct", j * 100.0);
+            nl_count_set(g_flows[i].n, "tcp.share_pct", sum > 0 ? g_flows[i].kbps * 100.0 / sum : 0);
+        }
+    nl_log(n, NL_L_APP, 1, 0, T_INFO "tcp:" T_RESET " %s %d %s = " T_BOLD "%.3f" T_RESET " (%s)", _("Jain's fairness index over"),
+           k, _("flows"), j, _("1 = equal shares"));
+}
 
 static void xfer_fill(nl_tcp *c, xfer *x)
 {
@@ -1371,15 +2005,37 @@ static void xfer_fill(nl_tcp *c, xfer *x)
     if (!pat[1])
         for (i = 0; i < (int)sizeof(pat); i++)
             pat[i] = (uint8_t)('A' + i % 26);
-    while (x->queued < x->total) {
-        long long left = x->total - x->queued;
+    /* the first part of a transfer (handshake, slow start) is left out of the steady-state rate */
+    if (!x->t_mark && (x->total < 0 ? nl_now() - x->t_conn >= x->warmup
+                                    : (long long)c->bytes_acked * 4 >= x->total)) {
+        x->t_mark = nl_now();
+        x->acked_mark = c->bytes_acked;
+    }
+    while (x->total < 0 || x->queued < x->total) {
+        long long left = x->total < 0 ? (long long)sizeof(pat) : x->total - x->queued;
         w = nl_tcp_write(c, pat, left < (long long)sizeof(pat) ? (int)left : (int)sizeof(pat));
         if (w <= 0)
             break;
         x->queued += w;
     }
-    if (x->queued >= x->total)
+    if (x->total >= 0 && x->queued >= x->total)
         nl_tcp_close(c);
+}
+
+static void xfer_deadline(void *ctx)
+{
+    xfer *x = ctx;
+
+    tcp_node *tn = nl_mod_get(x->n, &tcp_mod);
+    nl_tcp *c;
+
+    x->deadline = 0;
+    for (c = tn ? tn->conns : NULL; c && c != x->c; c = c->next)
+        ;
+    if (!c)
+        return;                                         /* the connection died with a crash */
+    x->total = x->queued;                               /* what is queued is still delivered */
+    nl_tcp_close(c);
 }
 
 static void xfer_connect(nl_tcp *c, void *ctx)
@@ -1387,8 +2043,14 @@ static void xfer_connect(nl_tcp *c, void *ctx)
     xfer *x = ctx;
 
     x->t_conn = nl_now();
-    nl_log(x->n, NL_L_APP, 1, 0, T_OK "tcp send %s:" T_RESET " %s (%s), %lld B", x->dest,
-           _("connected"), nl_time_str(x->t_conn - x->t0), x->total);
+    if (x->total < 0) {
+        nl_log(x->n, NL_L_APP, 1, 0, T_OK "tcp send %s:" T_RESET " %s (%s), %s %s", x->dest, _("connected"),
+               nl_time_str(x->t_conn - x->t0), _("sending for"), nl_time_str(x->duration));
+        x->deadline = nl_after(x->n, x->duration, xfer_deadline, x);
+    } else {
+        nl_log(x->n, NL_L_APP, 1, 0, T_OK "tcp send %s:" T_RESET " %s (%s), %lld B", x->dest,
+               _("connected"), nl_time_str(x->t_conn - x->t0), x->total);
+    }
     xfer_fill(c, x);
 }
 
@@ -1403,20 +2065,26 @@ static void xfer_close(nl_tcp *c, void *ctx, int reason)
     xfer *x = ctx;
     double secs = (double)(nl_now() - x->t0) / 1e6;
 
-    if (reason == NL_TCP_CLOSED_FIN && c->bytes_acked >= (uint64_t)x->total) {
-        double kbps = secs > 0 ? (double)x->total * 8.0 / secs / 1000.0 : 0;
+    nl_cancel(&x->deadline);
+    if (reason == NL_TCP_CLOSED_FIN && x->total >= 0 && c->bytes_acked >= (uint64_t)x->total) {
+        double kbps = secs > 0 ? (double)x->total * 8.0 / secs / 1000.0 : 0, steady = kbps;
 
-        nl_log(x->n, NL_L_APP, 1, 0, T_OK "tcp send %s: %s" T_RESET " %lld B, %.3f s, %s  " T_DIM
-               "(%s, %u %s, %u fast, %u %s)", x->dest, _("done"), x->total, secs, nl_rate_str(kbps * 1000.0),
-               x->cc, c->retx, _("retransmissions"), c->fast_retx, c->timeouts, _("timeouts"));
+        if (x->t_mark && nl_now() > x->t_mark)
+            steady = (double)(c->bytes_acked - x->acked_mark) * 8.0 / ((double)(nl_now() - x->t_mark) / 1e6) / 1000.0;
+        nl_log(x->n, NL_L_APP, 1, 0, T_OK "tcp send %s: %s" T_RESET " %lld B, %.3f s, %s, %s %s  " T_DIM
+               "(%s%s, %u %s, %u fast, %u %s)", x->dest, _("done"), x->total, secs, nl_rate_str(kbps * 1000.0),
+               _("steady"), nl_rate_str(steady * 1000.0), x->cc, c->sack_ok ? "+sack" : "", c->retx,
+               _("retransmissions"), c->fast_retx, c->timeouts, _("timeouts"));
         nl_count(x->n, "tcp.send_done", 1);
         nl_count_set(x->n, "tcp.goodput_kbps", kbps);
+        nl_count_set(x->n, "tcp.steady_kbps", steady);
         nl_count_set(x->n, "tcp.time_ms", secs * 1000.0);
+        fairness(x->n, x->port, steady);
     } else {
         nl_log(x->n, NL_L_APP, 1, 0, T_ERR "tcp send %s: %s" T_RESET " (%s), %llu / %lld B", x->dest, _("failed"),
                reason == NL_TCP_CLOSED_REFUSED ? _("connection refused")
                : reason == NL_TCP_CLOSED_TIMEOUT ? _("timeout") : _("connection reset"),
-               (unsigned long long)c->bytes_acked, x->total);
+               (unsigned long long)c->bytes_acked, x->total < 0 ? x->queued : x->total);
         nl_count(x->n, "tcp.send_failed", 1);
     }
     free(x);
@@ -1425,6 +2093,25 @@ static void xfer_close(nl_tcp *c, void *ctx, int reason)
 static const nl_tcp_ops xfer_ops = {
     .on_connect = xfer_connect, .on_sent = xfer_sent, .on_close = xfer_close,
 };
+
+static void xfer_start(void *ctx)
+{
+    xfer *x = ctx;
+
+    x->start = 0;
+    x->t0 = nl_now();
+    if (x->total < 0)
+        nl_log(x->n, NL_L_APP, 1, 0, T_INFO "tcp send %s" T_RESET " (%s:%d): %s, %s", x->dest, nl_ip_str(x->dst),
+               x->port, nl_time_str(x->duration), x->cc);
+    else
+        nl_log(x->n, NL_L_APP, 1, 0, T_INFO "tcp send %s" T_RESET " (%s:%d): %lld B, %s", x->dest,
+               nl_ip_str(x->dst), x->port, x->total, x->cc);
+    x->c = nl_tcp_connect(x->n, x->dst, (uint16_t)x->port, &xfer_ops, x, x->opts);
+    if (!x->c) {
+        nl_count(x->n, "tcp.send_failed", 1);
+        free(x);
+    }
+}
 
 static void *sink_accept(nl_tcp *c, void *lctx)
 {
@@ -1517,6 +2204,7 @@ static int tcp_run(nl_node *n, const nl_args *a)
     if (strcmp(what, "send") == 0) {
         const char *target = nl_arg_pos(a, 1), *b = nl_arg_str(a, "bytes", "1M");
         double total = 0;
+        nl_time jitter;
         nl_ip dst;
         xfer *x;
 
@@ -1531,16 +2219,19 @@ static int tcp_run(nl_node *n, const nl_args *a)
             return -1;
         x->n = n;
         x->total = (long long)total;
-        x->t0 = nl_now();
+        x->duration = nl_arg_time(a, "duration", 0);
+        if (x->duration > 0) {                          /* send for a time instead of a size */
+            x->total = -1;
+            x->warmup = nl_arg_time(a, "warmup", x->duration / 4);
+        }
+        x->dst = dst;
+        x->port = (int)nl_arg_int(a, "port", 5001);
         snprintf(x->dest, sizeof(x->dest), "%s", target);
         snprintf(x->cc, sizeof(x->cc), "%s", nl_arg_str(a, "cc", "reno"));
-        join_opts(a, 2, opts, sizeof(opts));
-        nl_log(n, NL_L_APP, 1, 0, T_INFO "tcp send %s" T_RESET " (%s:%d): %lld B, %s", target, nl_ip_str(dst),
-               (int)nl_arg_int(a, "port", 5001), x->total, x->cc);
-        if (!nl_tcp_connect(n, dst, (uint16_t)nl_arg_int(a, "port", 5001), &xfer_ops, x, opts)) {
-            free(x);
-            return -1;
-        }
+        join_opts(a, 2, x->opts, sizeof(x->opts));
+        jitter = nl_arg_time(a, "jitter", 0);
+        /* a random start offset: two flows started "together" do not stay in lockstep */
+        x->start = nl_after(n, jitter > 0 ? (nl_time)(nl_rand01() * (double)jitter) : 0, xfer_start, x);
         return 0;
     }
     nl_log(n, NL_L_APP, 1, 0, T_ERR "tcp: %s '%s' (sink, send)", _("unknown command"), what);
@@ -1602,11 +2293,27 @@ static int tcp_panel(nl_node *n, int x, int y, int w, int h, int detail)
                   c->state == ST_ESTABLISHED ? T_OK : T_WARN, ST_NAME[c->state]);
         if (row < h)
             tui_print(x + 2, y + row++, w - 2, TS(C_TEXT, C_DEFAULT, 0),
-                      T_DIM "%s" T_RESET " cwnd %.1f  ssthresh %s%.1f" T_RESET "  %s",
-                      CC_NAME[c->cc], c->cwnd / c->mss, c->ssthresh < 1e11 ? "" : T_DIM,
+                      T_DIM "%s%s" T_RESET " cwnd %.1f  ssthresh %s%.1f" T_RESET "  %s",
+                      CC_NAME[c->cc], c->sack_ok ? "+sack" : "", c->cwnd / c->mss, c->ssthresh < 1e11 ? "" : T_DIM,
                       c->ssthresh < 1e11 ? c->ssthresh / c->mss : 0.0,
-                      c->in_recovery ? T_WARN "fast recovery" : c->cwnd < c->ssthresh ? "slow start"
+                      c->in_recovery ? T_WARN "fast recovery" : c->rto_recovery ? T_ERR "after timeout"
+                      : c->cc == CC_BBR ? BBR_NAME[c->bbr_state] : c->cwnd < c->ssthresh ? "slow start"
                       : "congestion avoidance");
+        if (c->cc == CC_BBR && row < h)
+            tui_print(x + 2, y + row++, w - 2, TS(C_TEXT, C_DEFAULT, 0),
+                      T_DIM "BtlBw" T_RESET " %s  " T_DIM "RTprop" T_RESET " %s  " T_DIM "pacing" T_RESET " %s (×%.2f)",
+                      nl_rate_str(bbr_btlbw(c) * 8), nl_time_str(c->bbr_rtprop), nl_rate_str(c->pace_rate * 8),
+                      c->bbr_pacing_gain);
+        if (detail >= 2 && c->sq_n && row < h) {
+            int i2, sacked = 0, lost = 0;
+            for (i2 = 0; i2 < c->sq_n; i2++) {
+                sacked += c->sq[i2].sacked;
+                lost += c->sq[i2].lost && !c->sq[i2].sacked;
+            }
+            tui_print(x + 2, y + row++, w - 2, TS(C_TEXT, C_DEFAULT, 0),
+                      T_DIM "in flight" T_RESET " %d seg  " T_DIM "pipe" T_RESET " %.1f  " T_ACK "sacked" T_RESET
+                      " %d  " T_ERR "lost" T_RESET " %d", c->sq_n, (double)pipe_bytes(c) / c->mss, sacked, lost);
+        }
         if (detail >= 2 && row < h)
             tui_print(x + 2, y + row++, w - 2, TS(C_TEXT, C_DEFAULT, 0),
                       T_DIM "srtt" T_RESET " %.1f ms  " T_DIM "rto" T_RESET " %.0f ms  " T_DIM "retx" T_RESET
@@ -1632,34 +2339,55 @@ static int tcp_panel(nl_node *n, int x, int y, int w, int h, int detail)
 static const nl_module tcp_mod = {
     .name = "tcp", .title = N_("TCP — reliable byte streams, flow and congestion control"),
     .layer = NL_L_TRANSPORT,
-    .usage = N_("run NODE tcp sink [port=5001] [rwnd=BYTES] [readrate=RATE]\n"
-                "run NODE tcp send DEST [port=5001] [bytes=1M] [cc=reno|tahoe|newreno|cubic|bbr]\n"
-                "             [ecn=1] [mss=1460] [iw=10] [ssthresh=SEGMENTS] [rto_min=200ms]\n"
+    .usage = N_("run NODE tcp sink [port=5001] [rwnd=BYTES] [readrate=RATE] [sack=1] [delack=40ms]\n"
+                "run NODE tcp send DEST [port=5001] [bytes=1M | duration=TIME] [cc=reno|tahoe|newreno|cubic|bbr]\n"
+                "             [sack=1] [ecn=1] [nagle=1] [delack=40ms] [mss=1460] [iw=10] [sndbuf=256k]\n"
+                "             [ssthresh=SEGMENTS] [rto_min=200ms] [jitter=TIME] [warmup=TIME]\n"
                 "  sink accepts connections and discards the data; readrate makes it a slow\n"
-                "  reader (flow control). send transfers `bytes` and reports time and goodput.\n"
-                "  Not implemented: SACK, delayed ACKs, timestamps; bbr is a simplified model."),
+                "  reader (flow control). send transfers `bytes`, or sends for `duration`, and\n"
+                "  reports time, goodput and the steady-state rate (after the first quarter);\n"
+                "  when several transfers to the same port end, Jain's fairness index too.\n"
+                "  sack=0 falls back to NewReno recovery; delack=0 acknowledges every segment;\n"
+                "  jitter delays the start by a random time up to TIME.\n"
+                "  Not implemented: timestamps, path-MTU discovery, tail-loss probes; bbr is\n"
+                "  version 1 without long-term (policer) sampling; tahoe never uses SACK."),
     .theory = N_("TCP turns the unreliable, unordered packet service of IP into a reliable byte stream "
                  "between two ports. A connection starts with the three-way handshake (SYN, SYN+ACK, ACK) "
-                 "in which the two ends choose initial sequence numbers and exchange options such as the "
-                 "maximum segment size. Every byte has a sequence number; the receiver answers with "
-                 "cumulative acknowledgements (\"I have everything before N\") and buffers segments that "
-                 "arrive out of order. A segment that is not acknowledged before the retransmission "
-                 "timeout (RTO, computed from the smoothed round-trip time and its variance, doubled at "
-                 "each expiry) is sent again; three duplicate ACKs reveal a hole earlier and trigger a "
-                 "fast retransmit. The connection ends when each side has sent a FIN and seen it "
-                 "acknowledged.\n\n"
+                 "in which the two ends choose initial sequence numbers and exchange options: the "
+                 "maximum segment size, the window scale, and whether selective acknowledgements are "
+                 "permitted. Every byte has a sequence number; the receiver answers with cumulative "
+                 "acknowledgements (\"I have everything before N\"), delayed so that one ACK covers two "
+                 "segments, and buffers segments that arrive out of order. A segment that is not "
+                 "acknowledged before the retransmission timeout (RTO, computed from the smoothed "
+                 "round-trip time and its variance, doubled at each expiry) is sent again. The connection "
+                 "ends when each side has sent a FIN and seen it acknowledged.\n\n"
+                 "Waiting for the timer is slow, so the sender reads the ACKs for signs of loss. With "
+                 "selective acknowledgements (SACK) every ACK also lists the blocks received beyond the "
+                 "hole; the sender keeps a scoreboard of what is SACKed, declares a segment lost when "
+                 "three segments' worth of data above it have arrived, and retransmits every hole of the "
+                 "window in one round trip, sending whenever its estimate of the data still in the "
+                 "network (the pipe) is below the congestion window. Without SACK it only has duplicate "
+                 "ACKs: three of them trigger a fast retransmit of the first hole, and NewReno repairs "
+                 "the following ones one per round trip, each revealed by a partial ACK.\n\n"
                  "Two windows limit the sender. The receive window, advertised in every segment, is "
                  "flow control: it keeps a fast sender from overrunning a slow reader, and when it drops "
                  "to zero the sender probes periodically until it reopens. The congestion window (cwnd) "
                  "is the sender's own estimate of what the network can carry. It grows exponentially in "
                  "slow start up to ssthresh, then linearly in congestion avoidance (additive increase); a "
                  "loss halves it (multiplicative decrease), giving the classic sawtooth. Tahoe restarts "
-                 "from one segment after every loss; Reno adds fast recovery; NewReno repairs several "
-                 "losses in one window using partial ACKs; CUBIC grows the window as a cubic function of "
-                 "the time since the last loss, which suits fast long-distance paths; BBR ignores loss "
-                 "and instead models the path, pacing packets at the measured bottleneck rate and probing "
-                 "periodically for more. With ECN, routers mark packets instead of dropping them and the "
-                 "receiver echoes the mark, so the sender slows down without losing data."),
+                 "from one segment after every loss; Reno adds fast recovery; CUBIC grows the window as a "
+                 "cubic function of the time since the last loss, which suits fast long-distance paths. "
+                 "With ECN, routers mark packets instead of dropping them and the receiver echoes the "
+                 "mark, so the sender slows down without losing data.\n\n"
+                 "BBR does not treat loss as the signal. From every ACK it computes a delivery-rate "
+                 "sample and keeps two estimates of the path: the bottleneck bandwidth (the largest rate "
+                 "seen in the last ten round trips) and the round-trip propagation time (the smallest RTT "
+                 "seen in the last ten seconds). It paces packets at gain x bandwidth and caps the data "
+                 "in flight at a multiple of bandwidth x RTT. STARTUP doubles the rate every round until "
+                 "the bandwidth stops growing, DRAIN empties the queue that this created, PROBE_BW "
+                 "cruises with an eight-phase gain cycle (1.25 to look for more bandwidth, 0.75 to drain "
+                 "what that left, then six phases at 1), and every ten seconds without a new minimum, "
+                 "PROBE_RTT cuts the window to four segments for 200 ms to measure the RTT again."),
     .run = tcp_run, .stop = tcp_stop, .crash = tcp_crash, .recover = tcp_recover, .panel = tcp_panel,
 };
 NL_MODULE(tcp_mod)
@@ -1674,7 +2402,7 @@ static void dis_tcp(nl_dissect *o, const uint8_t *d, int len, int off)
         { TH_SYN, "SYN" }, { TH_FIN, "FIN" }, { TH_RST, "RST" }, { TH_PSH, "PSH" }, { TH_ACK, "ACK" },
         { TH_ECE, "ECE" }, { TH_CWR, "CWR" },
     };
-    char fl[48] = "", optbuf[96] = "";
+    char fl[48] = "", optbuf[200] = "";
     uint16_t sp, dp;
     int hl, flags, plen, i;
     size_t k = 0;
@@ -1711,6 +2439,17 @@ static void dis_tcp(nl_dissect *o, const uint8_t *d, int len, int off)
             k += (size_t)snprintf(optbuf + k, sizeof(optbuf) - k, "MSS=%u ", nl_get16(d + i + 2));
         else if (kind == 3 && l == 3)
             k += (size_t)snprintf(optbuf + k, sizeof(optbuf) - k, "WS=%u ", d[i + 2]);
+        else if (kind == 4 && l == 2)
+            k += (size_t)snprintf(optbuf + k, sizeof(optbuf) - k, "SACK_PERM ");
+        else if (kind == 5 && l >= 10) {
+            int j;
+            k += (size_t)snprintf(optbuf + k, sizeof(optbuf) - k, "SACK=");
+            for (j = 2; j + 8 <= l && k < sizeof(optbuf); j += 8)
+                k += (size_t)snprintf(optbuf + k, sizeof(optbuf) - k, "%s%u-%u", j > 2 ? "," : "",
+                                      nl_get32(d + i + j), nl_get32(d + i + j + 4));
+            if (k < sizeof(optbuf))
+                k += (size_t)snprintf(optbuf + k, sizeof(optbuf) - k, " ");
+        }
         else if (kind != 1)
             k += (size_t)snprintf(optbuf + k, sizeof(optbuf) - k, "opt%d ", kind);
         if (k >= sizeof(optbuf))

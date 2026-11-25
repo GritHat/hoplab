@@ -731,7 +731,7 @@ msgstr ""
 msgid "{a}◀ ACK %u{0} {y}duplicate{0}: it only acknowledges packets already confirmed {m}(base = seq %d){0} → ignored"
 msgstr ""
 
-#: go_back_n_send.c:293 selective_repeat_send.c:306
+#: go_back_n_send.c:293 selective_repeat_send.c:306 src/tcp.c:1464
 msgid "acknowledged"
 msgstr ""
 
@@ -1162,7 +1162,7 @@ msgstr ""
 msgid "in the buffer (acknowledged)"
 msgstr ""
 
-#: selective_repeat_recv.c:299 src/bgp.c:719 src/tcp.c:1186
+#: selective_repeat_recv.c:299 src/bgp.c:719 src/tcp.c:1770
 msgid "expected"
 msgstr ""
 
@@ -1267,7 +1267,7 @@ msgstr ""
 #: src/clock.c:291 src/clock.c:314 src/dhcp.c:265 src/dhcp.c:273
 #: src/dhcp.c:286 src/dhcp.c:591 src/dns.c:941 src/dns.c:971 src/gossip.c:564
 #: src/gossip.c:566 src/ip6.c:1110 src/ospf.c:480 src/ospf.c:497
-#: src/ospf.c:574 src/rip.c:328 src/stack.c:867 src/tcp.c:1463 src/twopc.c:213
+#: src/ospf.c:574 src/rip.c:328 src/stack.c:867 src/tcp.c:2150 src/twopc.c:213
 #: src/twopc.c:387
 msgid "from"
 msgstr ""
@@ -1309,7 +1309,7 @@ msgid "no route to destination"
 msgstr ""
 
 #: src/apps.c:198 src/apps.c:415 src/apps.c:647 src/apps.c:770 src/lb.c:897
-#: src/stack.c:608 src/tcp.c:1524
+#: src/stack.c:608 src/tcp.c:2212
 msgid "unknown destination"
 msgstr ""
 
@@ -1441,7 +1441,7 @@ msgstr ""
 msgid "datagrams"
 msgstr ""
 
-#: src/apps.c:927 src/tcp.c:1186
+#: src/apps.c:927 src/tcp.c:1770
 msgid "out of order"
 msgstr ""
 
@@ -1809,7 +1809,7 @@ msgstr ""
 msgid "does not answer: removed from my tables"
 msgstr ""
 
-#: src/chord.c:424 src/dns.c:1397 src/http.c:385 src/main.c:310 src/tcp.c:1416
+#: src/chord.c:424 src/dns.c:1397 src/http.c:385 src/main.c:310 src/tcp.c:2084
 msgid "failed"
 msgstr ""
 
@@ -2014,7 +2014,7 @@ msgid "broadcast"
 msgstr ""
 
 #: src/clock.c:470 src/http.c:464 src/main.c:410 src/qdisc.c:977 src/stp.c:675
-#: src/tcp.c:1546 src/twopc.c:462
+#: src/tcp.c:2237 src/twopc.c:462
 msgid "unknown command"
 msgstr ""
 
@@ -2510,7 +2510,7 @@ msgstr ""
 msgid "no answer from server"
 msgstr ""
 
-#: src/dns.c:1299 src/http.c:387 src/tcp.c:1418 src/twopc.c:536
+#: src/dns.c:1299 src/http.c:387 src/tcp.c:2086 src/twopc.c:536
 msgid "timeout"
 msgstr ""
 
@@ -3176,11 +3176,11 @@ msgstr ""
 msgid "TCP connections"
 msgstr ""
 
-#: src/http.c:386 src/tcp.c:1417
+#: src/http.c:386 src/tcp.c:2085
 msgid "connection refused"
 msgstr ""
 
-#: src/http.c:388 src/tcp.c:1418
+#: src/http.c:388 src/tcp.c:2086
 msgid "connection reset"
 msgstr ""
 
@@ -3246,7 +3246,7 @@ msgid "reachable → stale"
 msgstr ""
 
 #: src/ip6.c:692 src/ip6.c:1405 src/stack.c:722 src/stack.c:1137
-#: src/tcp.c:1231
+#: src/tcp.c:1821
 msgid "no route to"
 msgstr ""
 
@@ -3473,7 +3473,7 @@ msgstr ""
 msgid "requests / remapped flows"
 msgstr ""
 
-#: src/lb.c:669
+#: src/lb.c:669 src/tcp.c:1997
 msgid "flows"
 msgstr ""
 
@@ -5391,125 +5391,183 @@ msgid ""
 "A port must not start forwarding while the rest of the network may still hold an old view, or a temporary loop would form. So a port that becomes root or designated waits in the listening state and then in the learning state, one forward delay each, before forwarding: with the standard timers that is 30 seconds, the reason a PC plugged into a switch port once had to wait for the network (and the reason for portfast on ports that face hosts). Information is refreshed by the hello BPDUs and carries an age; when nothing has been heard on a port for max age, the information is discarded and the election is repeated. A failed link is noticed at once by the bridges attached to it, a failed bridge only through this timeout, so recovery takes between two forward delays and max age plus two forward delays. After a change, bridges are told to flush their forwarding tables (topology change notification), because stations may now be reached through a different port. Rapid STP (802.1w) replaces the timers with an explicit handshake between neighbours and converges in well under a second; today data centres often avoid spanning tree altogether with routed fabrics and ECMP."
 msgstr ""
 
-#: src/tcp.c:386
+#: src/tcp.c:552
+msgid "retransmission"
+msgstr ""
+
+#: src/tcp.c:564
 msgid "zero-window probe"
 msgstr ""
 
-#: src/tcp.c:508
-msgid "bottleneck bandwidth found"
+#: src/tcp.c:843
+msgid "the delivery rate stopped growing: the pipe is full, drain the queue"
 msgstr ""
 
-#: src/tcp.c:619
+#: src/tcp.c:847
+msgid "queue drained: cruise and probe for more bandwidth"
+msgstr ""
+
+#: src/tcp.c:860
+msgid "no new minimum RTT for 10 s: empty the pipe to measure it"
+msgstr ""
+
+#: src/tcp.c:881
+msgid "minimum RTT refreshed"
+msgstr ""
+
+#: src/tcp.c:1020
+msgid "SACK shows a hole: fast retransmit"
+msgstr ""
+
+#: src/tcp.c:1020
 msgid "3 duplicate ACKs: fast retransmit"
 msgstr ""
 
-#: src/tcp.c:652
+#: src/tcp.c:1037
 msgid "no answer to SYN: giving up"
 msgstr ""
 
-#: src/tcp.c:666
+#: src/tcp.c:1051
 msgid "too many retransmissions: connection dropped"
 msgstr ""
 
-#: src/tcp.c:674
+#: src/tcp.c:1061
 msgid "retransmission timeout"
 msgstr ""
 
-#: src/tcp.c:751
+#: src/tcp.c:1142
 msgid "connection closed (TIME_WAIT)"
 msgstr ""
 
-#: src/tcp.c:784
+#: src/tcp.c:1175
 msgid "window update"
 msgstr ""
 
-#: src/tcp.c:910
+#: src/tcp.c:1347
 msgid "connection established"
 msgstr ""
 
-#: src/tcp.c:948 src/tcp.c:1005
+#: src/tcp.c:1421
 msgid "the receiver advertises window 0: sender blocked by flow control"
 msgstr ""
 
-#: src/tcp.c:971
+#: src/tcp.c:1464
+msgid "segments still in flight"
+msgstr ""
+
+#: src/tcp.c:1480
+msgid "the receiver got this twice (a retransmission was not needed)"
+msgstr ""
+
+#: src/tcp.c:1525
+msgid "every hole is repaired: fast recovery ends"
+msgstr ""
+
+#: src/tcp.c:1580
 msgid "ECN echo: congestion signalled without loss"
 msgstr ""
 
-#: src/tcp.c:1038
+#: src/tcp.c:1616
 msgid "wrong checksum: segment discarded"
 msgstr ""
 
-#: src/tcp.c:1062
+#: src/tcp.c:1640
 msgid "no listener on port"
 msgstr ""
 
-#: src/tcp.c:1103
+#: src/tcp.c:1682
 msgid "connection refused (RST)"
 msgstr ""
 
-#: src/tcp.c:1103
+#: src/tcp.c:1682
 msgid "connection reset by peer"
 msgstr ""
 
-#: src/tcp.c:1150
+#: src/tcp.c:1730
 msgid "packet marked CE by a router: echoing ECE"
 msgstr ""
 
-#: src/tcp.c:1166
+#: src/tcp.c:1747
 msgid "connection closed"
 msgstr ""
 
-#: src/tcp.c:1251
+#: src/tcp.c:1841
 msgid "opening a connection"
 msgstr ""
 
-#: src/tcp.c:1391
+#: src/tcp.c:1996
+msgid "Jain's fairness index over"
+msgstr ""
+
+#: src/tcp.c:1997
+msgid "1 = equal shares"
+msgstr ""
+
+#: src/tcp.c:2047 src/tcp.c:2052
 msgid "connected"
 msgstr ""
 
-#: src/tcp.c:1410
+#: src/tcp.c:2048
+msgid "sending for"
+msgstr ""
+
+#: src/tcp.c:2075
 msgid "done"
 msgstr ""
 
-#: src/tcp.c:1411
+#: src/tcp.c:2076
+msgid "steady"
+msgstr ""
+
+#: src/tcp.c:2077
 msgid "retransmissions"
 msgstr ""
 
-#: src/tcp.c:1411
+#: src/tcp.c:2077
 msgid "timeouts"
 msgstr ""
 
-#: src/tcp.c:1514
+#: src/tcp.c:2201
 msgid "listening on TCP port"
 msgstr ""
 
-#: src/tcp.c:1622
+#: src/tcp.c:2329
 msgid "no connections"
 msgstr ""
 
-#: src/tcp.c:1624
+#: src/tcp.c:2331
 msgid "sink received"
 msgstr ""
 
-#: src/tcp.c:1633
+#: src/tcp.c:2340
 msgid "TCP — reliable byte streams, flow and congestion control"
 msgstr ""
 
-#: src/tcp.c:1635
+#: src/tcp.c:2342
 msgid ""
-"run NODE tcp sink [port=5001] [rwnd=BYTES] [readrate=RATE]\n"
-"run NODE tcp send DEST [port=5001] [bytes=1M] [cc=reno|tahoe|newreno|cubic|bbr]\n"
-"             [ecn=1] [mss=1460] [iw=10] [ssthresh=SEGMENTS] [rto_min=200ms]\n"
+"run NODE tcp sink [port=5001] [rwnd=BYTES] [readrate=RATE] [sack=1] [delack=40ms]\n"
+"run NODE tcp send DEST [port=5001] [bytes=1M | duration=TIME] [cc=reno|tahoe|newreno|cubic|bbr]\n"
+"             [sack=1] [ecn=1] [nagle=1] [delack=40ms] [mss=1460] [iw=10] [sndbuf=256k]\n"
+"             [ssthresh=SEGMENTS] [rto_min=200ms] [jitter=TIME] [warmup=TIME]\n"
 "  sink accepts connections and discards the data; readrate makes it a slow\n"
-"  reader (flow control). send transfers `bytes` and reports time and goodput.\n"
-"  Not implemented: SACK, delayed ACKs, timestamps; bbr is a simplified model."
+"  reader (flow control). send transfers `bytes`, or sends for `duration`, and\n"
+"  reports time, goodput and the steady-state rate (after the first quarter);\n"
+"  when several transfers to the same port end, Jain's fairness index too.\n"
+"  sack=0 falls back to NewReno recovery; delack=0 acknowledges every segment;\n"
+"  jitter delays the start by a random time up to TIME.\n"
+"  Not implemented: timestamps, path-MTU discovery, tail-loss probes; bbr is\n"
+"  version 1 without long-term (policer) sampling; tahoe never uses SACK."
 msgstr ""
 
-#: src/tcp.c:1641
+#: src/tcp.c:2354
 msgid ""
-"TCP turns the unreliable, unordered packet service of IP into a reliable byte stream between two ports. A connection starts with the three-way handshake (SYN, SYN+ACK, ACK) in which the two ends choose initial sequence numbers and exchange options such as the maximum segment size. Every byte has a sequence number; the receiver answers with cumulative acknowledgements (\"I have everything before N\") and buffers segments that arrive out of order. A segment that is not acknowledged before the retransmission timeout (RTO, computed from the smoothed round-trip time and its variance, doubled at each expiry) is sent again; three duplicate ACKs reveal a hole earlier and trigger a fast retransmit. The connection ends when each side has sent a FIN and seen it acknowledged.\n"
+"TCP turns the unreliable, unordered packet service of IP into a reliable byte stream between two ports. A connection starts with the three-way handshake (SYN, SYN+ACK, ACK) in which the two ends choose initial sequence numbers and exchange options: the maximum segment size, the window scale, and whether selective acknowledgements are permitted. Every byte has a sequence number; the receiver answers with cumulative acknowledgements (\"I have everything before N\"), delayed so that one ACK covers two segments, and buffers segments that arrive out of order. A segment that is not acknowledged before the retransmission timeout (RTO, computed from the smoothed round-trip time and its variance, doubled at each expiry) is sent again. The connection ends when each side has sent a FIN and seen it acknowledged.\n"
 "\n"
-"Two windows limit the sender. The receive window, advertised in every segment, is flow control: it keeps a fast sender from overrunning a slow reader, and when it drops to zero the sender probes periodically until it reopens. The congestion window (cwnd) is the sender's own estimate of what the network can carry. It grows exponentially in slow start up to ssthresh, then linearly in congestion avoidance (additive increase); a loss halves it (multiplicative decrease), giving the classic sawtooth. Tahoe restarts from one segment after every loss; Reno adds fast recovery; NewReno repairs several losses in one window using partial ACKs; CUBIC grows the window as a cubic function of the time since the last loss, which suits fast long-distance paths; BBR ignores loss and instead models the path, pacing packets at the measured bottleneck rate and probing periodically for more. With ECN, routers mark packets instead of dropping them and the receiver echoes the mark, so the sender slows down without losing data."
+"Waiting for the timer is slow, so the sender reads the ACKs for signs of loss. With selective acknowledgements (SACK) every ACK also lists the blocks received beyond the hole; the sender keeps a scoreboard of what is SACKed, declares a segment lost when three segments' worth of data above it have arrived, and retransmits every hole of the window in one round trip, sending whenever its estimate of the data still in the network (the pipe) is below the congestion window. Without SACK it only has duplicate ACKs: three of them trigger a fast retransmit of the first hole, and NewReno repairs the following ones one per round trip, each revealed by a partial ACK.\n"
+"\n"
+"Two windows limit the sender. The receive window, advertised in every segment, is flow control: it keeps a fast sender from overrunning a slow reader, and when it drops to zero the sender probes periodically until it reopens. The congestion window (cwnd) is the sender's own estimate of what the network can carry. It grows exponentially in slow start up to ssthresh, then linearly in congestion avoidance (additive increase); a loss halves it (multiplicative decrease), giving the classic sawtooth. Tahoe restarts from one segment after every loss; Reno adds fast recovery; CUBIC grows the window as a cubic function of the time since the last loss, which suits fast long-distance paths. With ECN, routers mark packets instead of dropping them and the receiver echoes the mark, so the sender slows down without losing data.\n"
+"\n"
+"BBR does not treat loss as the signal. From every ACK it computes a delivery-rate sample and keeps two estimates of the path: the bottleneck bandwidth (the largest rate seen in the last ten round trips) and the round-trip propagation time (the smallest RTT seen in the last ten seconds). It paces packets at gain x bandwidth and caps the data in flight at a multiple of bandwidth x RTT. STARTUP doubles the rate every round until the bandwidth stops growing, DRAIN empties the queue that this created, PROBE_BW cruises with an eight-phase gain cycle (1.25 to look for more bandwidth, 0.75 to drain what that left, then six phases at 1), and every ten seconds without a new minimum, PROBE_RTT cuts the window to four segments for 200 ms to measure the RTT again."
 msgstr ""
 
 #: src/twopc.c:93
