@@ -687,8 +687,49 @@ Time series (`nl_sample`) are not counters and cannot be tested.
   nodes it hosts.
 
 An expectation that names an unknown node, or uses an unknown operator,
-fails. At most 32 expectations; later ones are ignored. Write expectations
-for the default parameter values.
+fails. At most 32 expectations; later ones are ignored.
+
+### Expectations that depend on parameters: `check`
+
+A lab with parameters has more than one right outcome: with `qdisc=prio` the
+voice flow loses nothing, with `qdisc=droptail` it must lose a lot. An
+`expect` line compares one counter with a constant and cannot say that. The
+`check` module can: it evaluates an expression over the counters of any node
+at a chosen moment and stores the result in a counter of its own, which an
+ordinary `expect` then tests.
+
+```
+at 14900ms run r1 check overload  "$bulk * 1.046 + 82k > $bw"
+at 14900ms run r1 check protected "(is_$qdisc != is_prio && is_$qdisc != is_fq) || v1:cbr.sent - v2:sink.received <= 3"
+expect r1 check.protected == 1
+```
+
+```
+run NODE check NAME "EXPRESSION"        ->  counter check.NAME on NODE
+```
+
+| In an expression | Meaning |
+|---|---|
+| `h2:sink.lost` | the counter `sink.lost` of node `h2`, now (0 if it does not exist yet) |
+| `42`, `0.3`, `1e-3`, `50%` | numbers |
+| `500k`, `2M`, `1G` | numbers with a multiplier |
+| `20ms`, `3s`, `100us` | times, in milliseconds (`3s` is 3000) |
+| `+ - * /`, `< <= > >= == !=`, `&& \|\| !`, `( )` | the usual operators; a comparison is worth 1 or 0, so `2 + ($ttl < 6)` is legal |
+| `min(a,b) max(a,b) pow(a,b) abs(a) exp(a) log2(a) sqrt(a)` | functions |
+| `is_$algo == is_rr` | bare words are text and can only be compared with `==` and `!=`; prefix the parameter so that the word starts with a letter |
+
+A result of 1 or 0 is logged as a passed or failed check (level 1); any other
+value is a measurement, kept for a later check: take a snapshot with
+`at 5s run r1 check before "h2:sink.received"` and use `r1:check.before`
+afterwards. Parameters are substituted before the expression is read, as
+everywhere else. Run the check on a node that is alive at that moment (a
+crashed node runs nothing).
+
+Write the expectations so that they hold for every value a student may
+reasonably give to the parameters: `tests/run-variants.sh` runs the lines of
+`tests/variants/*.txt` (`PASS  scenario  key=value ...`) with five seeds and
+reports any that disagrees; `tests/try.sh` and `tests/counters.sh` help while
+designing them.
 
 An expectation can be limited to one configuration of the lab with a trailing
 `if A == B` or `if A != B` (a plain text comparison, normally of a parameter

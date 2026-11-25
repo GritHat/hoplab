@@ -1,0 +1,57 @@
+# Italian translation of netlab: check
+msgid ""
+msgstr ""
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "a number is needed, not the word"
+msgstr "serve un numero, non la parola"
+
+msgid "missing ) before"
+msgstr "manca ) prima di"
+
+msgid "unknown node"
+msgstr "nodo sconosciuto"
+
+msgid "unknown function"
+msgstr "funzione sconosciuta"
+
+msgid "unexpected"
+msgstr "inatteso:"
+
+msgid "end of the expression"
+msgstr "fine dell'espressione"
+
+msgid "words can only be compared with == or !=:"
+msgstr "le parole si confrontano solo con == o !=:"
+
+msgid "usage: run NODE check NAME \"EXPRESSION\""
+msgstr "uso: run NODO check NOME \"ESPRESSIONE\""
+
+msgid "the expression is just the word"
+msgstr "l'espressione è soltanto la parola"
+
+msgid "check — state what a lab should show, as an expression over counters"
+msgstr "check — enuncia che cosa deve mostrare un laboratorio, come espressione sui contatori"
+
+msgid ""
+"run NODE check NAME \"EXPRESSION\"\n"
+"  Evaluates the expression now and stores the result in the counter check.NAME\n"
+"  (1 or 0 for a condition; any other number is a measurement for a later check).\n"
+"  NODE:counter reads a counter; numbers take k M G and ms s us (times in ms);\n"
+"  bare words compare as text (is_$algo == is_rr); + - * /  < <= > >= == !=\n"
+"  && || !  ( )  min(a,b) max(a,b) pow(a,b) abs(a) exp(a) log2(a) sqrt(a).\n"
+"  Pair it with:  expect NODE check.NAME == 1"
+msgstr ""
+"run NODO check NOME \"ESPRESSIONE\"\n"
+"  Valuta l'espressione adesso e ne salva il risultato nel contatore check.NOME\n"
+"  (1 o 0 per una condizione; ogni altro numero è una misura per una verifica successiva).\n"
+"  NODO:contatore legge un contatore; i numeri accettano k M G e ms s us (tempi in ms);\n"
+"  le parole nude si confrontano come testo (is_$algo == is_rr); + - * /  < <= > >= == !=\n"
+"  && || !  ( )  min(a,b) max(a,b) pow(a,b) abs(a) exp(a) log2(a) sqrt(a).\n"
+"  Si usa insieme a:  expect NODO check.NOME == 1"
+
+msgid "A lab is an experiment, and an experiment has a prediction. Most predictions depend on the conditions: the queue discipline chosen, the protocol, the amount of noise. A check writes the prediction down in terms of what the nodes counted, for whatever value the parameters have, so that running the lab with different settings tests the explanation instead of contradicting it."
+msgstr "Un laboratorio è un esperimento, e un esperimento ha una previsione. La maggior parte delle previsioni dipende dalle condizioni: la disciplina di coda scelta, il protocollo, la quantità di rumore. Un check mette per iscritto la previsione in termini di ciò che i nodi hanno contato, per qualunque valore abbiano i parametri, così che eseguire il laboratorio con impostazioni diverse metta alla prova la spiegazione invece di contraddirla."
