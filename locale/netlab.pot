@@ -1262,13 +1262,13 @@ msgid "reply"
 msgstr ""
 
 #: src/apps.c:118 src/apps.c:127 src/apps.c:163 src/apps.c:181 src/apps.c:505
-#: src/apps.c:518 src/apps.c:594 src/apps.c:606 src/bgp.c:718 src/chord.c:528
-#: src/chord.c:598 src/clock.c:163 src/clock.c:274 src/clock.c:283
+#: src/apps.c:518 src/apps.c:594 src/apps.c:606 src/bgp.c:718 src/chord.c:595
+#: src/chord.c:674 src/clock.c:163 src/clock.c:274 src/clock.c:283
 #: src/clock.c:291 src/clock.c:314 src/dhcp.c:265 src/dhcp.c:273
-#: src/dhcp.c:286 src/dhcp.c:591 src/dns.c:941 src/dns.c:971 src/gossip.c:564
-#: src/gossip.c:566 src/ip6.c:1110 src/ospf.c:480 src/ospf.c:497
-#: src/ospf.c:574 src/rip.c:328 src/stack.c:867 src/tcp.c:2355 src/twopc.c:213
-#: src/twopc.c:387
+#: src/dhcp.c:286 src/dhcp.c:591 src/dns.c:941 src/dns.c:971 src/gossip.c:612
+#: src/gossip.c:614 src/ip6.c:1110 src/ospf.c:480 src/ospf.c:497
+#: src/ospf.c:574 src/rip.c:328 src/stack.c:867 src/tcp.c:2355 src/twopc.c:295
+#: src/twopc.c:599
 msgid "from"
 msgstr ""
 
@@ -1352,7 +1352,7 @@ msgstr ""
 msgid "destination not reached"
 msgstr ""
 
-#: src/apps.c:323 src/chord.c:370 src/rip.c:295
+#: src/apps.c:323 src/chord.c:426 src/rip.c:295
 msgid "hops"
 msgstr ""
 
@@ -1765,136 +1765,162 @@ msgid ""
 "Not modelled here: iBGP (there is one router per AS and neighbors are directly connected), MED, communities, aggregation and route-flap damping; each UPDATE carries one prefix."
 msgstr ""
 
-#: src/chord.c:222
+#: src/chord.c:227
 msgid "stored"
 msgstr ""
 
-#: src/chord.c:222
+#: src/chord.c:227
 msgid "stored a copy of"
 msgstr ""
 
-#: src/chord.c:268
+#: src/chord.c:261
+msgid "my neighbours changed"
+msgstr ""
+
+#: src/chord.c:262
+msgid "keys copied again to my successors"
+msgstr ""
+
+#: src/chord.c:272
+msgid "identifier"
+msgstr ""
+
+#: src/chord.c:273
+msgid "is also the identifier of"
+msgstr ""
+
+#: src/chord.c:273
+msgid "moving to"
+msgstr ""
+
+#: src/chord.c:274
+msgid "with few bits two names can hash to the same point"
+msgstr ""
+
+#: src/chord.c:319
 msgid "forwarded to"
 msgstr ""
 
-#: src/chord.c:320
+#: src/chord.c:371
 msgid "new successor"
 msgstr ""
 
-#: src/chord.c:328
+#: src/chord.c:379
 msgid "answered by"
 msgstr ""
 
-#: src/chord.c:331
+#: src/chord.c:382
 msgid "not found on"
 msgstr ""
 
-#: src/chord.c:352
+#: src/chord.c:408
 msgid "joined the ring"
 msgstr ""
 
-#: src/chord.c:353 src/chord.c:747 src/chord.c:769
+#: src/chord.c:409 src/chord.c:823 src/chord.c:845
 msgid "successor"
 msgstr ""
 
-#: src/chord.c:369 src/chord.c:471
+#: src/chord.c:425 src/chord.c:527
 msgid "key"
 msgstr ""
 
-#: src/chord.c:370
+#: src/chord.c:426
 msgid "owner"
 msgstr ""
 
-#: src/chord.c:400
+#: src/chord.c:456
 msgid "does not answer: removed from my tables"
 msgstr ""
 
-#: src/chord.c:424 src/dns.c:1397 src/http.c:396 src/main.c:310 src/tcp.c:2288
+#: src/chord.c:480 src/dns.c:1397 src/http.c:396 src/main.c:310 src/tcp.c:2288
 msgid "failed"
 msgstr ""
 
-#: src/chord.c:424
+#: src/chord.c:480
 msgid "my successor is now"
 msgstr ""
 
-#: src/chord.c:472
+#: src/chord.c:528
 msgid "no answer, giving up"
 msgstr ""
 
-#: src/chord.c:481
+#: src/chord.c:537
 msgid "no answer, trying again"
 msgstr ""
 
-#: src/chord.c:482
+#: src/chord.c:538
 msgid "target"
 msgstr ""
 
-#: src/chord.c:565
+#: src/chord.c:641
 msgid "new predecessor"
 msgstr ""
 
-#: src/chord.c:599
+#: src/chord.c:675
 msgid "not here"
 msgstr ""
 
-#: src/chord.c:638
+#: src/chord.c:714
 msgid "new ring created"
 msgstr ""
 
-#: src/chord.c:675
+#: src/chord.c:751
 msgid "unknown node to join through"
 msgstr ""
 
-#: src/chord.c:689
+#: src/chord.c:765
 msgid "usage: put key=K value=V | get key=K | lookup key=K"
 msgstr ""
 
-#: src/chord.c:695 src/http.c:452
+#: src/chord.c:771 src/http.c:452
 msgid "too many requests in progress"
 msgstr ""
 
-#: src/chord.c:745
+#: src/chord.c:821
 msgid "node id"
 msgstr ""
 
-#: src/chord.c:746
+#: src/chord.c:822
 msgid "  joining..."
 msgstr ""
 
-#: src/chord.c:748 src/chord.c:769
+#: src/chord.c:824 src/chord.c:845
 msgid "predecessor"
 msgstr ""
 
-#: src/chord.c:769
+#: src/chord.c:845
 msgid "me"
 msgstr ""
 
-#: src/chord.c:778
+#: src/chord.c:854
 msgid "successor list"
 msgstr ""
 
-#: src/chord.c:781
+#: src/chord.c:857
 msgid "finger table"
 msgstr ""
 
-#: src/chord.c:791
+#: src/chord.c:867
 msgid "stored keys"
 msgstr ""
 
-#: src/chord.c:821
+#: src/chord.c:897
 msgid "Chord: a distributed hash table on an identifier ring"
 msgstr ""
 
-#: src/chord.c:822
+#: src/chord.c:898
 msgid ""
 "run NODE chord [join=NODE] [bits=8] [stabilize=500ms] [succlist=3]\n"
 "run NODE chord put key=K value=V\n"
 "run NODE chord get key=K\n"
 "run NODE chord lookup key=K          only find the node responsible for K\n"
-"  Without join= the node creates a new ring; the others join through any member."
+"  Without join= the node creates a new ring; the others join through any member.\n"
+"  succlist=r: a node remembers its next r successors and every pair exists in r copies,\n"
+"  on its owner and on the owner's next r - 1 successors (r=1: no fallback, no replica)."
 msgstr ""
 
-#: src/chord.c:827
+#: src/chord.c:905
 msgid ""
 "A distributed hash table stores key-value pairs on many machines with no central directory: any node can find the machine responsible for a key, and nodes may come and go. Chord does it with consistent hashing: nodes and keys are hashed onto the same circle of 2^m identifiers, and a key belongs to its successor, the first node met going clockwise from the key's identifier. When a node joins or leaves, only the keys of one arc of the circle change owner.\n"
 "\n"
@@ -1902,7 +1928,7 @@ msgid ""
 "\n"
 "Correctness depends only on successor pointers; fingers are an optimisation. A new node asks any member to look up its own identifier and adopts the answer as its successor. Then every node periodically runs stabilize - ask your successor for its predecessor, adopt it if it sits between the two of you, and notify your successor that you exist - and fix_fingers, which refreshes one finger at a time with a lookup. These background tasks repair the ring after joins without any global coordination.\n"
 "\n"
-"Failures are handled with a successor list: each node remembers its next r successors, so that when the first one stops answering it falls back on the second, and lookups route around dead fingers. Data survives because every pair is replicated on the r successors of its owner: the node that inherits the arc of a dead one already holds a copy. Here lookups are recursive (each hop forwards the query, the last one answers the origin directly), liveness is checked with pings every stabilization round, and a node that restarts has lost its memory and joins again as a new one."
+"Failures are handled with a successor list: each node remembers its next r successors, so that when the first one stops answering it falls back on the second, and lookups route around dead fingers. Data survives because every pair exists in r copies, on its owner and on the owner's next r - 1 successors: the node that inherits the arc of a dead one already holds a copy, and whenever its neighbourhood changes a node copies the keys it owns to its new successors, so that r copies exist again before the next failure. With r = 1 there is a single copy and a single successor pointer: every crash loses the keys of the dead node. Two names that hash to the same identifier (likely with few bits) are detected and one of them moves to the next position. Here lookups are recursive (each hop forwards the query, the last one answers the origin directly), liveness is checked with pings every stabilization round, and a node that restarts has lost its memory and joins again as a new one."
 msgstr ""
 
 #: src/clock.c:162 src/core.c:457 src/fec.c:790 src/mac.c:522 src/mac.c:549
@@ -1981,11 +2007,11 @@ msgstr ""
 msgid "broadcast order"
 msgstr ""
 
-#: src/clock.c:393 src/clock.c:435 src/crdt.c:306 src/gossip.c:648
+#: src/clock.c:393 src/clock.c:435 src/crdt.c:389 src/gossip.c:718
 msgid "unknown peer"
 msgstr ""
 
-#: src/clock.c:400 src/crdt.c:313
+#: src/clock.c:400 src/crdt.c:396
 msgid "this node must be in its own peers list"
 msgstr ""
 
@@ -2014,7 +2040,7 @@ msgid "broadcast"
 msgstr ""
 
 #: src/clock.c:470 src/http.c:491 src/main.c:410 src/qdisc.c:977 src/stp.c:675
-#: src/tcp.c:2449 src/twopc.c:462
+#: src/tcp.c:2449 src/twopc.c:674
 msgid "unknown command"
 msgstr ""
 
@@ -2111,108 +2137,124 @@ msgstr ""
 msgid "node recovered"
 msgstr ""
 
-#: src/crdt.c:182
+#: src/crdt.c:224
 msgid "state sent to"
 msgstr ""
 
-#: src/crdt.c:228
+#: src/crdt.c:286
 msgid "my write"
 msgstr ""
 
-#: src/crdt.c:228
+#: src/crdt.c:286
 msgid "is replaced by"
 msgstr ""
 
-#: src/crdt.c:228
+#: src/crdt.c:286
 msgid "written on"
 msgstr ""
 
-#: src/crdt.c:229
+#: src/crdt.c:287
 msgid "last writer wins, the other update is silently lost"
 msgstr ""
 
-#: src/crdt.c:261
+#: src/crdt.c:326
 msgid "state from"
 msgstr ""
 
-#: src/crdt.c:262
+#: src/crdt.c:327
 msgid "nothing new"
 msgstr ""
 
-#: src/crdt.c:268 src/crdt.c:271 src/crdt.c:274
+#: src/crdt.c:334 src/crdt.c:337 src/crdt.c:340
 msgid "merge with"
 msgstr ""
 
-#: src/crdt.c:269 src/crdt.c:424 src/crdt.c:441
+#: src/crdt.c:335 src/crdt.c:533 src/crdt.c:553
 msgid "counter"
 msgstr ""
 
-#: src/crdt.c:272 src/crdt.c:431
+#: src/crdt.c:338 src/crdt.c:542
 msgid "set"
 msgstr ""
 
-#: src/crdt.c:275 src/crdt.c:438
+#: src/crdt.c:341 src/crdt.c:550
 msgid "register"
 msgstr ""
 
-#: src/crdt.c:334
-msgid "a G-Counter can only grow (use type=pncounter)"
+#: src/crdt.c:377 src/nat.c:409
+msgid "unknown type"
 msgstr ""
 
-#: src/crdt.c:342
-msgid "local counter value"
-msgstr ""
-
-#: src/crdt.c:347
-msgid "the set is full"
-msgstr ""
-
-#: src/crdt.c:353 src/crdt.c:436
-msgid "tag"
-msgstr ""
-
-#: src/crdt.c:364
-msgid "observed tags removed"
-msgstr ""
-
-#: src/crdt.c:375
-msgid "timestamp"
-msgstr ""
-
-#: src/crdt.c:378
-msgid "usage: inc [by=N] | dec [by=N] | add X | remove X | set V"
+#: src/crdt.c:420
+msgid "operation"
 msgstr ""
 
 #: src/crdt.c:421
+msgid "does not exist for the type of this replica"
+msgstr ""
+
+#: src/crdt.c:432
+msgid "a G-Counter can only grow (use type=pncounter)"
+msgstr ""
+
+#: src/crdt.c:441
+msgid "local counter value"
+msgstr ""
+
+#: src/crdt.c:446
+msgid "the set is full"
+msgstr ""
+
+#: src/crdt.c:452 src/crdt.c:547
+msgid "tag"
+msgstr ""
+
+#: src/crdt.c:463
+msgid "observed tags removed"
+msgstr ""
+
+#: src/crdt.c:474
+msgid "timestamp"
+msgstr ""
+
+#: src/crdt.c:477
+msgid "usage: inc [by=N] | dec [by=N] | add X | remove X | set V"
+msgstr ""
+
+#: src/crdt.c:527
 msgid "replica"
 msgstr ""
 
-#: src/crdt.c:422
+#: src/crdt.c:530
 msgid "gossip"
 msgstr ""
 
-#: src/crdt.c:422 src/gossip.c:446
+#: src/crdt.c:530 src/gossip.c:481
 msgid "rounds"
 msgstr ""
 
-#: src/crdt.c:423
+#: src/crdt.c:531
 msgid "merges"
 msgstr ""
 
-#: src/crdt.c:468
+#: src/crdt.c:580
 msgid "CRDTs: replicas that converge without coordination"
 msgstr ""
 
-#: src/crdt.c:469
+#: src/crdt.c:581
 msgid ""
 "run NODE crdt peers=n1,n2,n3 [type=gcounter|pncounter|orset|lww] [sync=500ms] [skew=TIME]\n"
 "run NODE crdt inc [by=N] | dec [by=N]     counter\n"
 "run NODE crdt add X | remove X            observed-remove set\n"
 "run NODE crdt set V                       last-writer-wins register\n"
-"  Every node needs the same peers list. skew shifts the clock used by the register."
+"  Every node needs the same peers list. type selects what the replica hosts and which\n"
+"  operations it accepts: gcounter (inc), pncounter (inc, dec), orset (add, remove), lww\n"
+"  (set); several types separated by commas host one object of each (type=orset,lww).\n"
+"  skew shifts the clock used by the register. crdt.converged is 1 when the last state\n"
+"  heard from every peer was identical to the local one."
 msgstr ""
 
-#: src/crdt.c:474
+#: src/crdt.c:590
 msgid ""
 "Replicating data on several machines forces a choice when the network splits: refuse updates until the replicas can agree (consistency), or accept them everywhere and reconcile later (availability). Conflict-free replicated data types make the second choice safe by construction: replicas accept updates locally, exchange state in any order, any number of times, and are guaranteed to converge to the same value once they have seen the same updates. This property is strong eventual consistency.\n"
 "\n"
@@ -2510,7 +2552,7 @@ msgstr ""
 msgid "no answer from server"
 msgstr ""
 
-#: src/dns.c:1299 src/http.c:398 src/tcp.c:2290 src/twopc.c:536
+#: src/dns.c:1299 src/http.c:398 src/tcp.c:2290 src/twopc.c:751
 msgid "timeout"
 msgstr ""
 
@@ -2890,195 +2932,207 @@ msgid ""
 "The trade-off is rate against residual errors: every redundant bit costs airtime, and which code wins depends on the error rate and on whether errors come alone or in bursts. Simplifications here: frames are coded whole, the interleaver spans one frame, and Reed-Solomon uses fixed (255,223) blocks, the last one shortened."
 msgstr ""
 
-#: src/gossip.c:237
+#: src/gossip.c:248
 msgid "declares DEAD"
 msgstr ""
 
-#: src/gossip.c:238
+#: src/gossip.c:249
 msgid "suspicion not refuted in time"
 msgstr ""
 
-#: src/gossip.c:239
-msgid "(false positive: it is alive but unreachable)"
-msgstr ""
-
-#: src/gossip.c:241
+#: src/gossip.c:251
 msgid "learns by gossip that this member is dead:"
 msgstr ""
 
-#: src/gossip.c:255
+#: src/gossip.c:265
 msgid "someone thinks I am dead: refuting"
 msgstr ""
 
-#: src/gossip.c:255
+#: src/gossip.c:265
 msgid "someone suspects me: refuting"
 msgstr ""
 
-#: src/gossip.c:256
+#: src/gossip.c:266
 msgid "announcing incarnation"
 msgstr ""
 
-#: src/gossip.c:265
+#: src/gossip.c:275
 msgid "learns about member"
 msgstr ""
 
-#: src/gossip.c:275
-msgid "is back among the living"
+#: src/gossip.c:287
+msgid "was never down: it was declared dead by mistake, while unreachable"
 msgstr ""
 
-#: src/gossip.c:275
-msgid "refuted the suspicion: alive"
-msgstr ""
-
-#: src/gossip.c:276
+#: src/gossip.c:288 src/gossip.c:293
 msgid "incarnation"
 msgstr ""
 
-#: src/gossip.c:286
+#: src/gossip.c:291
+msgid "restarted and is back among the living"
+msgstr ""
+
+#: src/gossip.c:292
+msgid "refuted the suspicion: alive"
+msgstr ""
+
+#: src/gossip.c:304
 msgid "hears that this member is suspected:"
 msgstr ""
 
-#: src/gossip.c:322
+#: src/gossip.c:340
 msgid "no ack from"
 msgstr ""
 
-#: src/gossip.c:323
+#: src/gossip.c:341
 msgid "asking other members to probe it (ping-req)"
 msgstr ""
 
-#: src/gossip.c:357
+#: src/gossip.c:375
 msgid "SUSPECTS"
 msgstr ""
 
-#: src/gossip.c:358
+#: src/gossip.c:376
 msgid "no ack, neither direct nor through helpers"
 msgstr ""
 
-#: src/gossip.c:440 src/gossip.c:751
+#: src/gossip.c:471 src/gossip.c:822
 msgid "round"
 msgstr ""
 
-#: src/gossip.c:441
+#: src/gossip.c:472 src/gossip.c:489
 msgid "nodes know"
 msgstr ""
 
-#: src/gossip.c:446
+#: src/gossip.c:481
 msgid "everybody knows after"
 msgstr ""
 
-#: src/gossip.c:472
+#: src/gossip.c:489
+msgid "the rumor died out: every informed node lost interest"
+msgstr ""
+
+#: src/gossip.c:490 src/gossip.c:830
+msgid "residue"
+msgstr ""
+
+#: src/gossip.c:517
 msgid "rumors known"
 msgstr ""
 
-#: src/gossip.c:519
+#: src/gossip.c:564
 msgid "new member joined:"
 msgstr ""
 
-#: src/gossip.c:540
+#: src/gossip.c:585
 msgid "probing on its behalf"
 msgstr ""
 
-#: src/gossip.c:549
+#: src/gossip.c:594
 msgid "answered through"
 msgstr ""
 
-#: src/gossip.c:549
+#: src/gossip.c:594
 msgid "alive after all (the direct path lost a packet)"
 msgstr ""
 
-#: src/gossip.c:563
+#: src/gossip.c:611
 msgid "NEW rumor"
 msgstr ""
 
-#: src/gossip.c:564
+#: src/gossip.c:612
 msgid "pulled, hop"
 msgstr ""
 
-#: src/gossip.c:564
+#: src/gossip.c:612
 msgid "pushed, hop"
 msgstr ""
 
-#: src/gossip.c:567
+#: src/gossip.c:615
 msgid "already known"
 msgstr ""
 
-#: src/gossip.c:579
+#: src/gossip.c:649
 msgid "loses interest, stops pushing"
 msgstr ""
 
-#: src/gossip.c:579
+#: src/gossip.c:649
 msgid "peers already knew"
 msgstr ""
 
-#: src/gossip.c:594
+#: src/gossip.c:664
 msgid "is missing"
 msgstr ""
 
-#: src/gossip.c:595
+#: src/gossip.c:665
 msgid "sending it (pull answer)"
 msgstr ""
 
-#: src/gossip.c:637
+#: src/gossip.c:707
 msgid "the peer list is missing (peers=n1,n2,...)"
 msgstr ""
 
-#: src/gossip.c:668
+#: src/gossip.c:738
 msgid "peers"
 msgstr ""
 
-#: src/gossip.c:669
+#: src/gossip.c:739
 msgid "round every"
 msgstr ""
 
-#: src/gossip.c:688
+#: src/gossip.c:758
 msgid "too many rumors"
 msgstr ""
 
-#: src/gossip.c:691
+#: src/gossip.c:761
 msgid "starts a rumor"
 msgstr ""
 
-#: src/gossip.c:701
+#: src/gossip.c:772
 msgid "usage: gossip rumor text=TEXT | gossip members"
 msgstr ""
 
-#: src/gossip.c:724
+#: src/gossip.c:795
 msgid "restarted: rejoining with incarnation"
 msgstr ""
 
-#: src/gossip.c:751
+#: src/gossip.c:822
 msgid "mode"
 msgstr ""
 
-#: src/gossip.c:752
+#: src/gossip.c:823
 msgid "messages"
 msgstr ""
 
-#: src/gossip.c:759
+#: src/gossip.c:830
+msgid "reached"
+msgstr ""
+
+#: src/gossip.c:834
 msgid "(no rumor heard yet)"
 msgstr ""
 
-#: src/gossip.c:762
+#: src/gossip.c:837
 msgid "my incarnation"
 msgstr ""
 
-#: src/gossip.c:762
+#: src/gossip.c:837
 msgid "period"
 msgstr ""
 
-#: src/gossip.c:762
+#: src/gossip.c:837
 msgid "suspicion"
 msgstr ""
 
-#: src/gossip.c:785
+#: src/gossip.c:860
 msgid "nodes that know the rumor"
 msgstr ""
 
-#: src/gossip.c:857
+#: src/gossip.c:936
 msgid "Gossip — epidemic dissemination and SWIM failure detection"
 msgstr ""
 
-#: src/gossip.c:859
+#: src/gossip.c:938
 msgid ""
 "run NODE gossip peers=n1,n2,... [mode=push|pull|pushpull] [fanout=2] [interval=200ms] [stop=3]\n"
 "                [swim=1] [period=1s] [timeout=300ms] [suspect=4s] [helpers=3]\n"
@@ -3086,10 +3140,14 @@ msgid ""
 "  stop: a node stops pushing a rumor after that many peers answered \"I knew it\".\n"
 "  swim=1 adds membership and failure detection.\n"
 "run NODE gossip rumor text=TEXT   start spreading a rumor from NODE\n"
+"  The origin counts who heard it (each node reports once to the origin: a census, not part\n"
+"  of the epidemic) and sets gossip.reached, gossip.residue, gossip.rounds, gossip.complete.\n"
+"  gossip.guarantee_ok = 1 when the mode kept its promise: pull and push-pull reached\n"
+"  everybody; push ended, complete or with a residue.\n"
 "run NODE gossip members           print the membership view of NODE"
 msgstr ""
 
-#: src/gossip.c:866
+#: src/gossip.c:949
 msgid ""
 "Gossip (epidemic) protocols spread information the way a rumor or a virus spreads: at every round each node talks to a few peers chosen at random. Nobody coordinates and nobody knows the whole topology, yet the number of informed nodes roughly doubles each round, so N nodes are reached in O(log N) rounds with O(N log N) messages. Random choice is also what makes the scheme robust: lost messages and crashed nodes only slow it down a little, there is no single point whose failure stops it.\n"
 "\n"
@@ -4252,10 +4310,6 @@ msgstr ""
 msgid "which is the outside interface? (out=IFACE)"
 msgstr ""
 
-#: src/nat.c:409
-msgid "unknown type"
-msgstr ""
-
 #: src/nat.c:415
 msgid "on"
 msgstr ""
@@ -4683,228 +4737,280 @@ msgid ""
 "Scheduling divides the link among flows. Strict priority always serves the highest non-empty band, chosen here by the DSCP field: ideal for a little delay-sensitive traffic such as voice, at the risk of starving the lower bands. Fair queueing gives every flow its own queue and serves them in turn; deficit round robin does it in constant time by granting each flow a quantum of bytes per round and carrying the unused part over, so a flow that sends too much only hurts itself. A token bucket shaper limits a flow to a long-term rate while allowing bursts up to the bucket size: tokens accumulate at the configured rate, a packet leaves only when enough tokens are available, and the excess waits (shaping) instead of being dropped (policing). Modern systems combine the ideas: fq_codel and CAKE run CoDel inside each fair queue."
 msgstr ""
 
-#: src/raft.c:208
-msgid "committed entry"
+#: src/raft.c:187 src/raft.c:247 src/raft.c:572 src/raft.c:949
+msgid "read refused"
 msgstr ""
 
-#: src/raft.c:209
-msgid "stored on a majority, applied"
+#: src/raft.c:188
+msgid "cannot confirm leadership: no majority answers, I may be a deposed leader"
 msgstr ""
 
-#: src/raft.c:211
-msgid "applied entry"
+#: src/raft.c:189
+msgid "no leader reachable"
 msgstr ""
 
-#: src/raft.c:234
-msgid "steps down: a higher term exists"
-msgstr ""
-
-#: src/raft.c:304
-msgid "elected LEADER for term"
-msgstr ""
-
-#: src/raft.c:305 src/twopc.c:535 src/twopc.c:544
-msgid "votes"
-msgstr ""
-
-#: src/raft.c:324 src/raft.c:639
-msgid "election timeout"
-msgstr ""
-
-#: src/raft.c:325
-msgid "candidate for term"
-msgstr ""
-
-#: src/raft.c:325
-msgid "asking for votes"
-msgstr ""
-
-#: src/raft.c:347
-msgid "election timeout: pre-vote for term"
-msgstr ""
-
-#: src/raft.c:382
-msgid "forwarded command dropped: not the leader any more"
-msgstr ""
-
-#: src/raft.c:386
-msgid "command from"
-msgstr ""
-
-#: src/raft.c:387 src/raft.c:672
-msgid "appended at index"
-msgstr ""
-
-#: src/raft.c:405
-msgid "would vote"
-msgstr ""
-
-#: src/raft.c:405
-msgid "no (a leader is alive or the log is behind)"
-msgstr ""
-
-#: src/raft.c:441
-msgid "vote granted"
-msgstr ""
-
-#: src/raft.c:442
-msgid "refused: stale term"
-msgstr ""
-
-#: src/raft.c:443
-msgid "refused: candidate's log is behind mine"
-msgstr ""
-
-#: src/raft.c:444
-msgid "refused: already voted in this term"
-msgstr ""
-
-#: src/raft.c:455
-msgid "vote"
-msgstr ""
-
-#: src/raft.c:479
-msgid "recognises leader"
-msgstr ""
-
-#: src/raft.c:499
-msgid "log does not match"
-msgstr ""
-
-#: src/raft.c:499
-msgid "retry from"
-msgstr ""
-
-#: src/raft.c:514
-msgid "discarding uncommitted entries"
-msgstr ""
-
-#: src/raft.c:515
-msgid "they conflict with the leader's log"
-msgstr ""
-
-#: src/raft.c:528
-msgid "appended"
-msgstr ""
-
-#: src/raft.c:528 src/raft.c:727
-msgid "log length"
-msgstr ""
-
-#: src/raft.c:561
-msgid "rejected (log mismatch)"
-msgstr ""
-
-#: src/raft.c:600
-msgid "the member list is missing (peers=n1,n2,...)"
-msgstr ""
-
-#: src/raft.c:614
-msgid "unknown member"
-msgstr ""
-
-#: src/raft.c:622
-msgid "this node is not in the member list"
-msgstr ""
-
-#: src/raft.c:629
-msgid "bad election range (example: election=1000-2000ms)"
-msgstr ""
-
-#: src/raft.c:638
-msgid "follower, term 0"
-msgstr ""
-
-#: src/raft.c:639
-msgid "members"
-msgstr ""
-
-#: src/raft.c:661
-msgid "usage: raft put KEY=VALUE"
-msgstr ""
-
-#: src/raft.c:668
-msgid "log full"
-msgstr ""
-
-#: src/raft.c:671 src/raft.c:684
-msgid "client command"
-msgstr ""
-
-#: src/raft.c:672
-msgid "replicating"
-msgstr ""
-
-#: src/raft.c:685
-msgid "not the leader: forwarded to"
-msgstr ""
-
-#: src/raft.c:688
-msgid "client command rejected"
-msgstr ""
-
-#: src/raft.c:689
-msgid "no leader known (election in progress or no majority reachable)"
-msgstr ""
-
-#: src/raft.c:699
+#: src/raft.c:193 src/raft.c:580 src/raft.c:917
 msgid "(not set)"
 msgstr ""
 
+#: src/raft.c:193
+msgid "linearizable: leadership confirmed by"
+msgstr ""
+
+#: src/raft.c:194 src/raft.c:286 src/raft.c:583
+msgid "read index"
+msgstr ""
+
+#: src/raft.c:248
+msgid "the leader did not answer"
+msgstr ""
+
+#: src/raft.c:287
+msgid "confirming leadership with a heartbeat round"
+msgstr ""
+
+#: src/raft.c:337
+msgid "committed entry"
+msgstr ""
+
+#: src/raft.c:338
+msgid "stored on a majority, applied"
+msgstr ""
+
+#: src/raft.c:340
+msgid "applied entry"
+msgstr ""
+
+#: src/raft.c:368
+msgid "steps down: a higher term exists"
+msgstr ""
+
+#: src/raft.c:443
+msgid "elected LEADER for term"
+msgstr ""
+
+#: src/raft.c:444 src/twopc.c:750 src/twopc.c:759
+msgid "votes"
+msgstr ""
+
+#: src/raft.c:465 src/raft.c:849
+msgid "election timeout"
+msgstr ""
+
+#: src/raft.c:466
+msgid "candidate for term"
+msgstr ""
+
+#: src/raft.c:466
+msgid "asking for votes"
+msgstr ""
+
+#: src/raft.c:488
+msgid "election timeout: pre-vote for term"
+msgstr ""
+
+#: src/raft.c:523
+msgid "forwarded command dropped: not the leader any more"
+msgstr ""
+
+#: src/raft.c:527
+msgid "command from"
+msgstr ""
+
+#: src/raft.c:528 src/raft.c:883
+msgid "appended at index"
+msgstr ""
+
+#: src/raft.c:572
+msgid "cannot confirm that it is still the leader"
+msgstr ""
+
+#: src/raft.c:582
+msgid "linearizable: answered by leader"
+msgstr ""
+
+#: src/raft.c:602
+msgid "would vote"
+msgstr ""
+
+#: src/raft.c:602
+msgid "no (a leader is alive or the log is behind)"
+msgstr ""
+
+#: src/raft.c:638
+msgid "vote granted"
+msgstr ""
+
+#: src/raft.c:639
+msgid "refused: stale term"
+msgstr ""
+
+#: src/raft.c:640
+msgid "refused: candidate's log is behind mine"
+msgstr ""
+
+#: src/raft.c:641
+msgid "refused: already voted in this term"
+msgstr ""
+
+#: src/raft.c:652
+msgid "vote"
+msgstr ""
+
+#: src/raft.c:679
+msgid "recognises leader"
+msgstr ""
+
 #: src/raft.c:699
-msgid "local state, applied index"
+msgid "log does not match"
 msgstr ""
 
-#: src/raft.c:700
-msgid ", may be stale: not the leader"
+#: src/raft.c:699
+msgid "retry from"
 msgstr ""
 
-#: src/raft.c:703
-msgid "usage: raft put KEY=VALUE | raft get KEY"
+#: src/raft.c:714
+msgid "discarding uncommitted entries"
 msgstr ""
 
-#: src/raft.c:726
+#: src/raft.c:715
+msgid "they conflict with the leader's log"
+msgstr ""
+
+#: src/raft.c:728
+msgid "appended"
+msgstr ""
+
+#: src/raft.c:728 src/raft.c:980
+msgid "log length"
+msgstr ""
+
+#: src/raft.c:770
+msgid "rejected (log mismatch)"
+msgstr ""
+
+#: src/raft.c:809
+msgid "the member list is missing (peers=n1,n2,...)"
+msgstr ""
+
+#: src/raft.c:823
+msgid "unknown member"
+msgstr ""
+
+#: src/raft.c:831
+msgid "this node is not in the member list"
+msgstr ""
+
+#: src/raft.c:838
+msgid "bad election range (example: election=1000-2000ms)"
+msgstr ""
+
+#: src/raft.c:848
+msgid "follower, term 0"
+msgstr ""
+
+#: src/raft.c:849
+msgid "members"
+msgstr ""
+
+#: src/raft.c:872
+msgid "usage: raft put KEY=VALUE"
+msgstr ""
+
+#: src/raft.c:879
+msgid "log full"
+msgstr ""
+
+#: src/raft.c:882 src/raft.c:895
+msgid "client command"
+msgstr ""
+
+#: src/raft.c:883
+msgid "replicating"
+msgstr ""
+
+#: src/raft.c:896
+msgid "not the leader: forwarded to"
+msgstr ""
+
+#: src/raft.c:899
+msgid "client command rejected"
+msgstr ""
+
+#: src/raft.c:900 src/raft.c:950
+msgid "no leader known (election in progress or no majority reachable)"
+msgstr ""
+
+#: src/raft.c:910
+msgid "usage: raft get KEY [stale=1]"
+msgstr ""
+
+#: src/raft.c:917
+msgid "STALE READ allowed: local state, applied index"
+msgstr ""
+
+#: src/raft.c:918
+msgid ", leadership not confirmed"
+msgstr ""
+
+#: src/raft.c:918
+msgid ", not the leader"
+msgstr ""
+
+#: src/raft.c:945
+msgid "not the leader: asking"
+msgstr ""
+
+#: src/raft.c:955
+msgid "usage: raft put KEY=VALUE | raft get KEY [stale=1]"
+msgstr ""
+
+#: src/raft.c:979
 msgid "restarted from stable storage:"
 msgstr ""
 
-#: src/raft.c:727
+#: src/raft.c:980
 msgid "follower again, commit index unknown until the leader tells"
 msgstr ""
 
-#: src/raft.c:755
+#: src/raft.c:1010
 msgid "voted for"
 msgstr ""
 
-#: src/raft.c:756
+#: src/raft.c:1011
 msgid "leader"
 msgstr ""
 
-#: src/raft.c:759
+#: src/raft.c:1014
 msgid "election timer"
 msgstr ""
 
-#: src/raft.c:789
+#: src/raft.c:1044
 msgid "(empty log)"
 msgstr ""
 
-#: src/raft.c:792
+#: src/raft.c:1047
 msgid "index:term · green = applied, blue = not committed"
 msgstr ""
 
-#: src/raft.c:881
+#: src/raft.c:1156
 msgid "Raft — consensus: one replicated log, one leader at a time"
 msgstr ""
 
-#: src/raft.c:882
+#: src/raft.c:1157
 msgid ""
-"run NODE raft peers=n1,n2,n3,... [election=1000-2000ms] [heartbeat=300ms] [prevote=1]\n"
+"run NODE raft peers=n1,n2,n3,... [election=1000-2000ms] [heartbeat=300ms] [prevote=1] [first=1]\n"
 "  Start it on every member with the same peers list (an odd number is best).\n"
+"  first=1 shortens only the very first timeout of that member, so that a lab knows who\n"
+"  is elected first; the election timeout must stay well above the heartbeat interval.\n"
 "run NODE raft put KEY=VALUE   submit a command (forwarded to the leader)\n"
-"run NODE raft get KEY         read the local copy of the state machine\n"
+"run NODE raft get KEY         linearizable read: the leader first confirms, with a\n"
+"                              heartbeat round, that a majority still follows it\n"
+"run NODE raft get KEY stale=1 read the local copy at once (may be out of date)\n"
 "  Crash and restart members with `node N down|up`, partition with `link A B down`."
 msgstr ""
 
-#: src/raft.c:887
+#: src/raft.c:1166
 msgid ""
 "Consensus lets a group of machines behave like one reliable machine: they agree on a single sequence of commands (the replicated log) and each applies it, in order, to its own copy of a state machine. As long as a majority is alive and can communicate, the service keeps working and never returns contradictory answers; when no majority is reachable it stops making progress rather than risk an inconsistency. Raft obtains this with a strong leader: one member at a time accepts commands and tells the others what to store.\n"
 "\n"
@@ -4914,7 +5020,7 @@ msgid ""
 "\n"
 "An entry is committed once the leader of the current term has stored it on a majority; committed entries are never lost and are applied in order by everybody. A subtle rule: a leader never commits entries of earlier terms by counting replicas, only indirectly by committing an entry of its own term after them (hence the no-op appended at the start of each term). Without this rule an entry present on a majority could still be overwritten.\n"
 "\n"
-"Term, vote and log are written to stable storage before answering, so a member that crashes and restarts cannot vote twice in a term or forget an entry it acknowledged; commit index and state machine are volatile and are rebuilt. A member isolated by a partition keeps timing out and inflating its term; when the partition heals it forces a needless election. The pre-vote extension avoids it: before incrementing the term a would-be candidate asks whether it could win, and members that still hear a leader say no. Real systems add log compaction (snapshots), membership changes through joint or single-server reconfiguration, and linearizable reads (read index, leases); etcd, Consul and CockroachDB are built on Raft, while Paxos and its Multi-Paxos variants solve the same problem with a less prescriptive structure."
+"Term, vote and log are written to stable storage before answering, so a member that crashes and restarts cannot vote twice in a term or forget an entry it acknowledged; commit index and state machine are volatile and are rebuilt. A member isolated by a partition keeps timing out and inflating its term; when the partition heals it forces a needless election. The pre-vote extension avoids it: before incrementing the term a would-be candidate asks whether it could win, and members that still hear a leader say no. Real systems add log compaction (snapshots), membership changes through joint or single-server reconfiguration. Reads need care too: a leader cut off from the majority does not know it has been replaced, so answering from its own state could return a value that a newer leader has already overwritten. Here a read is linearizable (ReadIndex): the leader notes its commit index, sends a heartbeat round, and answers only when a majority has acknowledged that round and the state machine has applied up to that index; followers forward reads to the leader. `stale=1` skips the check to show the anomaly. Leases trade the round for an assumption about clocks. etcd, Consul and CockroachDB are built on Raft, while Paxos and its Multi-Paxos variants solve the same problem with a less prescriptive structure."
 msgstr ""
 
 #: src/rip.c:168
@@ -5359,7 +5465,7 @@ msgstr ""
 msgid "topology changes"
 msgstr ""
 
-#: src/stp.c:744 src/twopc.c:532 src/twopc.c:534
+#: src/stp.c:744 src/twopc.c:747 src/twopc.c:749
 msgid "role"
 msgstr ""
 
@@ -5582,195 +5688,235 @@ msgid ""
 "BBR does not treat loss as the signal. From every ACK it computes a delivery-rate sample and keeps two estimates of the path: the bottleneck bandwidth (the largest rate seen in the last ten round trips) and the round-trip propagation time (the smallest RTT seen in the last ten seconds). It paces packets at gain x bandwidth and caps the data in flight at a multiple of bandwidth x RTT. STARTUP doubles the rate every round until the bandwidth stops growing, DRAIN empties the queue that this created, PROBE_BW cruises with an eight-phase gain cycle (1.25 to look for more bandwidth, 0.75 to drain what that left, then six phases at 1), and every ten seconds without a new minimum, PROBE_RTT cuts the window to four segments for 200 ms to measure the RTT again."
 msgstr ""
 
-#: src/twopc.c:93
+#: src/twopc.c:115
 msgid "log record forced to disk"
 msgstr ""
 
-#: src/twopc.c:144 src/twopc.c:167 src/twopc.c:188 src/twopc.c:231
-#: src/twopc.c:255 src/twopc.c:279 src/twopc.c:281 src/twopc.c:305
-#: src/twopc.c:309 src/twopc.c:332 src/twopc.c:339 src/twopc.c:352
-#: src/twopc.c:517
+#: src/twopc.c:217 src/twopc.c:249 src/twopc.c:270 src/twopc.c:320
+#: src/twopc.c:346 src/twopc.c:378 src/twopc.c:416 src/twopc.c:432
+#: src/twopc.c:445 src/twopc.c:447 src/twopc.c:471 src/twopc.c:475
+#: src/twopc.c:515 src/twopc.c:523 src/twopc.c:536 src/twopc.c:570
+#: src/twopc.c:732
 msgid "transaction"
 msgstr ""
 
-#: src/twopc.c:144
+#: src/twopc.c:217
 msgid "decision COMMIT"
 msgstr ""
 
-#: src/twopc.c:144
+#: src/twopc.c:217
 msgid "decision ABORT"
 msgstr ""
 
-#: src/twopc.c:158
+#: src/twopc.c:240
 msgid "a vote did not arrive in time"
 msgstr ""
 
-#: src/twopc.c:161
+#: src/twopc.c:243
 msgid "pre-commit phase over"
 msgstr ""
 
-#: src/twopc.c:168
+#: src/twopc.c:250
 msgid "decision not acknowledged by everybody: sending it again"
 msgstr ""
 
-#: src/twopc.c:182
+#: src/twopc.c:264
 msgid "transaction exists already, or too many:"
 msgstr ""
 
-#: src/twopc.c:189
+#: src/twopc.c:271
 msgid "phase 1, PREPARE sent to every participant"
 msgstr ""
 
-#: src/twopc.c:190
+#: src/twopc.c:272
 msgid "three-phase commit"
 msgstr ""
 
-#: src/twopc.c:190
+#: src/twopc.c:272
 msgid "two-phase commit"
 msgstr ""
 
-#: src/twopc.c:212
+#: src/twopc.c:294
 msgid "query about"
 msgstr ""
 
-#: src/twopc.c:214
+#: src/twopc.c:296
 msgid "unknown transaction, presumed aborted"
 msgstr ""
 
-#: src/twopc.c:232
+#: src/twopc.c:321
 msgid "all voted yes; phase 2, PRE-COMMIT sent"
 msgstr ""
 
-#: src/twopc.c:236
+#: src/twopc.c:325
 msgid "all participants voted yes"
 msgstr ""
 
-#: src/twopc.c:241
+#: src/twopc.c:330
 msgid "a participant voted no"
 msgstr ""
 
-#: src/twopc.c:248
+#: src/twopc.c:337
 msgid "pre-commit acknowledged by everybody"
 msgstr ""
 
-#: src/twopc.c:256
+#: src/twopc.c:347
 msgid "acknowledged by everybody, finished"
 msgstr ""
 
-#: src/twopc.c:279
-msgid "committed"
+#: src/twopc.c:379
+msgid "3PC recovery: asking every participant for its state before deciding"
 msgstr ""
 
-#: src/twopc.c:279
-msgid "aborted"
+#: src/twopc.c:380
+msgid "3PC termination: the coordinator is silent, I take over and ask everybody's state"
 msgstr ""
 
-#: src/twopc.c:282
-msgid "unblocked; locks were held for"
+#: src/twopc.c:405
+msgid "3PC termination: everybody reachable is pre-committed"
 msgstr ""
 
-#: src/twopc.c:293
-msgid "3PC: pre-committed and the coordinator is silent, so everybody is prepared to commit"
+#: src/twopc.c:407
+msgid "3PC termination: somebody aborted or never voted"
 msgstr ""
 
-#: src/twopc.c:299
-msgid "3PC: no PRE-COMMIT arrived, so nobody can have committed"
+#: src/twopc.c:409
+msgid "3PC termination: somebody already committed"
 msgstr ""
 
-#: src/twopc.c:306
-msgid "BLOCKED"
-msgstr ""
-
-#: src/twopc.c:307
-msgid "voted yes and heard nothing: it can neither commit nor abort on its own, and keeps its locks"
-msgstr ""
-
-#: src/twopc.c:310
-msgid "asking the coordinator for the decision"
-msgstr ""
-
-#: src/twopc.c:333
-msgid "prepared (changes and locks on disk), vote YES"
-msgstr ""
-
-#: src/twopc.c:340
-msgid "cannot do it, vote NO and abort locally"
-msgstr ""
-
-#: src/twopc.c:353
-msgid "pre-commit: now I know everybody voted yes"
-msgstr ""
-
-#: src/twopc.c:367
-msgid "decision received from the coordinator"
-msgstr ""
-
-#: src/twopc.c:406
-msgid "start with `coordinator` or `participant`"
+#: src/twopc.c:417
+msgid "3PC termination: somebody is pre-committed, so all voted yes; PRE-COMMIT to the others"
 msgstr ""
 
 #: src/twopc.c:422
+msgid "3PC termination: everybody is uncertain, so nobody can have committed"
+msgstr ""
+
+#: src/twopc.c:433
+msgid "ATOMICITY VIOLATED"
+msgstr ""
+
+#: src/twopc.c:433
+msgid "already"
+msgstr ""
+
+#: src/twopc.c:433
+msgid "now told to"
+msgstr ""
+
+#: src/twopc.c:445
+msgid "committed"
+msgstr ""
+
+#: src/twopc.c:445
+msgid "aborted"
+msgstr ""
+
+#: src/twopc.c:448
+msgid "unblocked; locks were held for"
+msgstr ""
+
+#: src/twopc.c:472
+msgid "BLOCKED"
+msgstr ""
+
+#: src/twopc.c:473
+msgid "voted yes and heard nothing: it can neither commit nor abort on its own, and keeps its locks"
+msgstr ""
+
+#: src/twopc.c:476
+msgid "asking the coordinator for the decision"
+msgstr ""
+
+#: src/twopc.c:516
+msgid "prepared (changes and locks on disk), vote YES"
+msgstr ""
+
+#: src/twopc.c:524
+msgid "cannot do it, vote NO and abort locally"
+msgstr ""
+
+#: src/twopc.c:537
+msgid "pre-commit: now I know everybody voted yes"
+msgstr ""
+
+#: src/twopc.c:553
+msgid "decision received from the coordinator"
+msgstr ""
+
+#: src/twopc.c:554
+msgid "decision received from the participant that took over"
+msgstr ""
+
+#: src/twopc.c:571
+msgid "state asked by the new coordinator, I am"
+msgstr ""
+
+#: src/twopc.c:618
+msgid "start with `coordinator` or `participant`"
+msgstr ""
+
+#: src/twopc.c:634
 msgid "unknown participant"
 msgstr ""
 
-#: src/twopc.c:428
+#: src/twopc.c:640
 msgid "the coordinator needs participants=a,b,c"
 msgstr ""
 
-#: src/twopc.c:436
+#: src/twopc.c:648
 msgid "unknown coordinator"
 msgstr ""
 
-#: src/twopc.c:447
+#: src/twopc.c:659
 msgid "from now on this participant votes"
 msgstr ""
 
-#: src/twopc.c:503
+#: src/twopc.c:716
 msgid "recovery: reading the log"
 msgstr ""
 
-#: src/twopc.c:509
+#: src/twopc.c:726
 msgid "recovery: begun but no decision in the log"
 msgstr ""
 
-#: src/twopc.c:511
-msgid "recovery: pre-commit in the log"
-msgstr ""
-
-#: src/twopc.c:518
+#: src/twopc.c:733
 msgid "in doubt after the crash, asking the coordinator"
 msgstr ""
 
-#: src/twopc.c:532 src/twopc.c:534
+#: src/twopc.c:747 src/twopc.c:749
 msgid "coordinator"
 msgstr ""
 
-#: src/twopc.c:532
+#: src/twopc.c:747
 msgid "participants"
 msgstr ""
 
-#: src/twopc.c:534
+#: src/twopc.c:749
 msgid "participant"
 msgstr ""
 
-#: src/twopc.c:551
+#: src/twopc.c:766
 msgid "write-ahead log"
 msgstr ""
 
-#: src/twopc.c:572
+#: src/twopc.c:794
 msgid "Atomic commitment: two-phase and three-phase commit"
 msgstr ""
 
-#: src/twopc.c:573
+#: src/twopc.c:795
 msgid ""
 "run NODE twopc coordinator participants=p1,p2,p3 [timeout=1s]\n"
 "run NODE twopc participant coordinator=NODE [vote=yes|no] [timeout=1s]\n"
 "run COORD twopc begin [tx=NAME] [three=1]   start a transaction (three=1: 3PC)\n"
 "run PART twopc vote=no                      change how a participant votes\n"
-"  Crash and restart nodes with `node N down` / `node N up` to see recovery."
+"  Crash and restart nodes with `node N down` / `node N up` to see recovery.\n"
+"  Counters: twopc.committed, .aborted, .decided, .blocked, .ended (coordinator: decisions\n"
+"  acknowledged by all), .took_over (3PC termination), .contradicted (a decision that\n"
+"  contradicts one already taken: atomicity broken)."
 msgstr ""
 
-#: src/twopc.c:578
+#: src/twopc.c:803
 msgid ""
 "A distributed transaction touches data on several machines and must be atomic: either every machine commits it or none does. No machine may decide alone, because another one might be unable to commit; and once a machine has promised, it cannot change its mind.\n"
 "\n"
@@ -5780,7 +5926,9 @@ msgid ""
 "\n"
 "The weakness is the window between a YES vote and the decision. A participant that has voted YES and hears nothing can neither commit (somebody may have voted NO) nor abort (the coordinator may have committed): it must wait, holding its locks, until the coordinator comes back. 2PC is a blocking protocol.\n"
 "\n"
-"Three-phase commit (3PC) inserts a PRE-COMMIT round between the votes and the commit, so that no process commits while another is still uncertain. A participant that times out before PRE-COMMIT knows nobody committed and aborts; one that times out after it knows everybody voted YES and commits. This removes blocking only if timeouts are reliable failure detectors, that is in a synchronous network without partitions; the version here also omits the termination protocol that elects a new coordinator. With real networks the general answer is consensus (Paxos, Raft): replicate the coordinator's decision so that it survives the crash of any single machine."
+"Three-phase commit (3PC) inserts a PRE-COMMIT round between the votes and the commit, so that no process commits while another is still uncertain. A participant that times out before PRE-COMMIT knows nobody committed and aborts; one that times out after it knows everybody voted YES and commits. This removes blocking only if timeouts are reliable failure detectors, that is in a synchronous network without partitions.\n"
+"\n"
+"What the participants do when the coordinator is silent is the termination protocol. One of them takes over (here: the lowest in the participant list whose timer fires first), asks all the others for their state and applies four rules: if somebody aborted, abort; if somebody committed, commit; if everybody is still uncertain, nobody can have committed, so abort; if somebody is pre-committed, everybody voted YES, so bring the others to PRE-COMMIT and commit. A coordinator that restarts runs the same inquiry instead of trusting its own log. With a partition the rules break: one side may hold a pre-committed participant and commit while the other, all uncertain, aborts; the counter twopc.contradicted records it when the two sides exchange their decisions. With real networks the general answer is consensus (Paxos, Raft): replicate the coordinator's decision so that it survives the crash of any single machine."
 msgstr ""
 
 #: src/ui.c:167
