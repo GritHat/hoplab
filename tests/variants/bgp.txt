@@ -41,3 +41,20 @@ PASS  tests/labs/bgp-lossy.nl  loss=0.3
 PASS  tests/labs/bgp-lossy.nl  keepalive=1s
 PASS  tests/labs/bgp-lossy.nl  keepalive=5s
 PASS  tests/labs/bgp-lossy.nl  loss=0.2 bw=100k
+
+# IPv6 (multiprotocol BGP): both families on one session; transport=6 runs the
+# sessions themselves over IPv6
+PASS  332-bgp-ipv6
+PASS  332-bgp-ipv6  transport=6
+PASS  332-bgp-ipv6  keepalive=1s
+PASS  332-bgp-ipv6  keepalive=10s
+PASS  332-bgp-ipv6  keepalive=10s transport=6
+PASS  332-bgp-ipv6  keepalive=30s transport=6
+
+# an IPv6-only network: sessions over IPv6, sub-prefix hijack, origin validation
+PASS  432-bgp-ipv6-hijack
+PASS  432-bgp-ipv6-hijack  rov=1
+PASS  432-bgp-ipv6-hijack  keepalive=1s
+PASS  432-bgp-ipv6-hijack  keepalive=10s
+PASS  432-bgp-ipv6-hijack  keepalive=10s rov=1
+PASS  432-bgp-ipv6-hijack  keepalive=30s
