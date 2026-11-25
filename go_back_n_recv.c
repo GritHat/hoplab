@@ -1,19 +1,19 @@
 /*
- * go_back_n_recv.c - Receiver Go-Back-N su UDP.
+ * go_back_n_recv.c - Go-Back-N receiver over UDP.
  *
- * Il receiver non ha buffer: accetta solo il pacchetto con il numero di
- * sequenza atteso (expectedseqnum, modulo 2^k) e scarta tutto il resto.
- *   - pacchetto integro con seq = expectedseqnum
- *                          -> consegna i dati all'applicazione, invia ACK seq
- *                             e passa ad attendere seq+1
- *   - pacchetto fuori ordine o duplicato
- *                          -> scartato; rinvia l'ACK dell'ultimo pacchetto
- *                             ricevuto in ordine (riscontro cumulativo)
- *   - pacchetto corrotto   -> come sopra
- * Prima di aver ricevuto qualcosa in ordine l'"ultimo riscontrato" e' il
- * numero che precede 0, cioe' 2^k-1: il sender lo riconosce come vecchio.
+ * The receiver has no buffer: it accepts only the packet with the expected
+ * sequence number (expectedseqnum, modulo 2^k) and discards everything else.
+ *   - intact packet with seq = expectedseqnum
+ *                          -> deliver the data to the application, send ACK
+ *                             seq and wait for seq+1
+ *   - packet out of order or duplicate
+ *                          -> discarded; resend the ACK of the last packet
+ *                             received in order (cumulative acknowledgement)
+ *   - corrupted packet     -> as above
+ * Before anything has been received in order the "last acknowledged" is the
+ * number that precedes 0, that is 2^k-1: the sender recognises it as old.
  *
- * Uso: ./go_back_n_recv [opzioni] [host] [porta]     (-h per l'aiuto)
+ * Usage: ./go_back_n_recv [options] [host] [port]     (-h for help)
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,6 +21,7 @@
 #include <unistd.h>
 
 #include "channel.h"
+#include "rdt_i18n.h"
 #include "rdt.h"
 #include "tui.h"
 
@@ -30,16 +31,37 @@
 
 static const rdt_protocol PROTO = {
     "go-back-N", NULL, RDT_OPT_SEQBITS,
-    "Il sender deve usare lo stesso -b; la finestra del receiver Go-Back-N è sempre 1."
+    N_("The sender must use the same -b; the Go-Back-N receiver window is always 1.")
 };
 
 enum { RULE_NONE = -1, RULE_OK, RULE_OOO, RULE_BAD };
 
 static const tui_rule RULES[] = {
-    { T_DATA "◀", "DATA n integro, n = expectedseqnum", "consegna all'app, invia ACK n, expectedseqnum + 1" },
-    { T_WARN "◀", "DATA n fuori ordine o duplicato",    "scartato (niente buffer); rinvia ACK dell'ultimo in ordine" },
-    { T_ERR "✗",  "pacchetto corrotto",                 "scartato; rinvia ACK dell'ultimo in ordine" },
+    { T_DATA "◀",
+      N_("intact DATA n, n = expectedseqnum"),
+      N_("deliver to the app, send ACK n, expectedseqnum + 1") },
+    { T_WARN "◀",
+      N_("DATA n out of order or duplicate"),
+      N_("discarded (no buffer); resend the ACK of the last in order") },
+    { T_ERR "✗",
+      N_("corrupted packet"),
+      N_("discarded; resend the ACK of the last in order") },
 };
+
+/* The rules in the user's language (translated once, on first use) */
+static const tui_rule *rules_tr(void)
+{
+    static tui_rule tr[sizeof(RULES) / sizeof(RULES[0])];
+    size_t i;
+
+    if (!tr[0].icon)
+        for (i = 0; i < sizeof(RULES) / sizeof(RULES[0]); i++) {
+            tr[i].icon = RULES[i].icon;
+            tr[i].when = _(RULES[i].when);
+            tr[i].then = _(RULES[i].then);
+        }
+    return tr;
+}
 
 typedef struct {
     rdt_options opt;
@@ -48,29 +70,29 @@ typedef struct {
     struct sockaddr_in local, peer;
     int         has_peer;
     char        local_s[64], peer_s[64];
-    int         M;                 /* numeri di sequenza 0..M-1 */
+    int         M;                 /* sequence numbers 0..M-1 */
 
-    /* stato del protocollo */
+    /* protocol state */
     int         expected;          /* expectedseqnum */
-    int         delivered;         /* pacchetti consegnati = indice assoluto di expectedseqnum */
-    int         done;              /* FIN consegnato */
-    int         last_ack;          /* -1 = nessuno */
+    int         delivered;         /* packets delivered = absolute index of expectedseqnum */
+    int         done;              /* FIN delivered */
+    int         last_ack;          /* -1 = none */
 
-    /* dati consegnati all'applicazione */
+    /* data delivered to the application */
     rdt_buffer  buf;
     int         nseg;
     tui_textbuf view;
     long long   last_deliver_t;
 
-    /* cella su cui e' arrivato l'ultimo pacchetto scartato */
+    /* cell where the last discarded packet landed */
     long        mark_idx;
     long long   mark_t;
 
-    /* statistiche */
+    /* statistics */
     unsigned    rx, rx_new, rx_ooo, rx_bad, acks, sessions;
     long long   t_first, t_done, t_last_pkt;
 
-    /* evidenziazioni grafiche */
+    /* visual highlights */
     int         rule;
     long long   rule_t, render_now;
 } receiver;
@@ -78,7 +100,7 @@ typedef struct {
 static receiver R;
 
 /* ------------------------------------------------------------------ */
-/* Protocollo                                                         */
+/* Protocol                                                           */
 /* ------------------------------------------------------------------ */
 
 static void reset_session(receiver *r)
@@ -120,16 +142,16 @@ static void send_ack(receiver *r, unsigned seq, const struct sockaddr_in *to, co
     ch_send(&r->ch, &a, to);
     r->acks++;
     r->last_ack = (int)seq;
-    tui_log(T_ACK "▶ " T_BOLD "ACK %u" T_RESET " inviato " T_DIM "· %s", seq, why);
+    tui_log(tm(_("{a}▶ {b}ACK %u{0} sent {m}· %s")), seq, why);
 }
 
-/* ACK cumulativo dell'ultimo pacchetto ricevuto in ordine */
+/* cumulative ACK of the last packet received in order */
 static void resend_last_ack(receiver *r, const struct sockaddr_in *to)
 {
     unsigned last = (unsigned)((r->expected + r->M - 1) % r->M);
 
-    send_ack(r, last, to, r->delivered ? "ultimo ricevuto in ordine"
-                                       : "nessuno ancora in ordine: il numero prima di 0");
+    send_ack(r, last, to, r->delivered ? _("last received in order")
+                                       : _("none in order yet: the number before 0"));
 }
 
 static void handle_packet(receiver *r, const ch_flight *f, long long now)
@@ -141,14 +163,14 @@ static void handle_packet(receiver *r, const ch_flight *f, long long now)
     if (!r->has_peer || !rdt_addr_equal(&f->from, &r->peer)) {
         if (r->has_peer) {
             reset_session(r);
-            tui_log_rule("nuova sessione");
+            tui_log_rule("%s", _("new session"));
         }
         r->peer = f->from;
         r->has_peer = 1;
         r->sessions++;
         r->t_first = now;
         rdt_addr_str(&r->peer, r->peer_s, sizeof(r->peer_s));
-        tui_log(T_INFO "● Primo pacchetto dal sender %s", r->peer_s);
+        tui_log(tm(_("{i}● First packet from sender %s")), r->peer_s);
     }
     r->rx++;
     r->t_last_pkt = now;
@@ -157,13 +179,12 @@ static void handle_packet(receiver *r, const ch_flight *f, long long now)
         r->rx_bad++;
         set_rule(r, RULE_BAD, now);
         tui_channel_flash(TO_RECEIVER, FLASH_ERR, "✗ checksum");
-        tui_log(T_ERR "◀ pacchetto corrotto" T_RESET ": checksum errato " T_DIM "(si legge %s %u)" T_RESET
-                " → scartato", rdt_type_name(p->type), (unsigned)p->seq);
+        tui_log(tm(_("{r}◀ corrupted packet{0}: wrong checksum {m}(it reads %s %u){0} → discarded")), rdt_type_name(p->type), (unsigned)p->seq);
         resend_last_ack(r, &f->from);
         return;
     }
     if (p->type != PKT_DATA && p->type != PKT_FIN) {
-        tui_log(T_DIM "◀ %s %u inatteso dal sender, ignorato", rdt_type_name(p->type), (unsigned)p->seq);
+        tui_log(tm(_("{m}◀ unexpected %s %u from the sender, ignored")), rdt_type_name(p->type), (unsigned)p->seq);
         return;
     }
 
@@ -176,21 +197,21 @@ static void handle_packet(receiver *r, const ch_flight *f, long long now)
         tui_channel_flash(TO_RECEIVER, FLASH_OK, flash);
         if (p->type == PKT_DATA) {
             deliver(r, p, now);
-            tui_log(T_DATA "◀ " T_RESET "%s ricevuto: " T_OK "✓ in ordine" T_RESET " → consegnato all'applicazione", d);
+            tui_log(tm(_("{d}◀ {0}%s received: {g}✓ in order{0} → delivered to the application")), d);
         } else {
             r->done = 1;
             r->t_done = now;
             r->last_deliver_t = now;
-            tui_log(T_FIN "◀ " T_RESET "%s ricevuto: " T_OK "✓ in ordine" T_RESET " → fine dei dati", d);
+            tui_log(tm(_("{f}◀ {0}%s received: {g}✓ in order{0} → end of data")), d);
         }
-        send_ack(r, seq, &f->from, "riscontra tutto fino a questo pacchetto");
+        send_ack(r, seq, &f->from, _("acknowledges everything up to this packet"));
         r->expected = (r->expected + 1) % r->M;
         r->delivered++;
         if (r->done)
-            tui_log(T_OK T_BOLD "✓ Trasferimento completato" T_RESET ": %d segmenti, %zu byte consegnati in %.1f s",
+            tui_log(tm(_("{g}{b}✓ Transfer complete{0}: %d segments, %zu bytes delivered in %.1f s")),
                     r->nseg, r->buf.len, (r->t_done - r->t_first) / 1000.0);
     } else {
-        /* distanza dall'atteso: piccola = in anticipo, grande = gia' passato */
+        /* distance from the expected one: small = early, large = already past */
         unsigned dist = (seq + (unsigned)r->M - (unsigned)r->expected) % (unsigned)r->M;
 
         r->rx_ooo++;
@@ -198,15 +219,15 @@ static void handle_packet(receiver *r, const ch_flight *f, long long now)
         r->mark_idx = dist < (unsigned)r->M / 2 ? r->delivered + (long)dist
                                                 : r->delivered - (long)(r->M - dist);
         r->mark_t = now;
-        snprintf(flash, sizeof(flash), "scarto %u", seq);
+        snprintf(flash, sizeof(flash), _("drop %u"), seq);
         tui_channel_flash(TO_RECEIVER, FLASH_WARN, flash);
-        tui_log(T_WARN "◀ " T_RESET "%s " T_WARN "fuori ordine" T_RESET " (atteso seq %d) → scartato", d, r->expected);
+        tui_log(tm(_("{y}◀ {0}%s {y}out of order{0} (expected seq %d) → discarded")), d, r->expected);
         resend_last_ack(r, &f->from);
     }
 }
 
 /* ------------------------------------------------------------------ */
-/* Interfaccia                                                        */
+/* Interface                                                          */
 /* ------------------------------------------------------------------ */
 
 static void cell_info(long idx, tui_seqcell *c, const void *ctx)
@@ -230,20 +251,20 @@ static void cell_info(long idx, tui_seqcell *c, const void *ctx)
 static void draw_window(const receiver *r, int x, int y, int w)
 {
     const tui_legend legend[] = {
-        { SC_DONE, "consegnati" }, { SC_EXPECT, "atteso (expectedseqnum)" },
-        { SC_UNUSABLE, "fuori ordine: scartati se arrivano" },
+        { SC_DONE, _("already delivered") }, { SC_EXPECT, _("expected (expectedseqnum)") },
+        { SC_UNUSABLE, _("out of order: discarded if they arrive") },
     };
     char title[160];
     tui_seqstrip st;
 
-    snprintf(title, sizeof(title), "Finestra del receiver · seq 0…%d (%d bit) · nessun buffer",
+    snprintf(title, sizeof(title), _("Receiver window · seq 0…%d (%d bits) · no buffer"),
              r->M - 1, r->opt.seq_bits);
     memset(&st, 0, sizeof(st));
     st.modulo         = r->M;
     st.count          = r->done ? r->delivered : -1;
     st.win_lo         = r->delivered;
     st.win_n          = r->done ? 0 : 1;
-    st.win_label      = "finestra 1";
+    st.win_label      = _("window 1");
     st.ptr_left       = -1;
     st.ptr_right      = r->done ? -1 : r->delivered;
     st.ptr_right_name = "expectedseqnum";
@@ -269,24 +290,23 @@ static void draw_delivery(const receiver *r, int x, int y, int w)
     int ix = x + 2, iw = w - 4, lab = 12;
     char ack[64], expect[64];
 
-    tui_box(x, y, w, 7, TS(C_BORDER, C_DEFAULT, 0), "Consegna all'applicazione");
+    tui_box(x, y, w, 7, TS(C_BORDER, C_DEFAULT, 0), _("Delivery to the application"));
 
     if (r->last_ack < 0)
-        snprintf(ack, sizeof(ack), T_DIM "nessuno");
+        snprintf(ack, sizeof(ack), "%s", tm(_("{m}none")));
     else
         snprintf(ack, sizeof(ack), T_CHIP_ACK " ACK %d ", r->last_ack);
     if (r->done)
-        snprintf(expect, sizeof(expect), T_OK "✓ FIN ricevuto");
+        snprintf(expect, sizeof(expect), "%s", tm(_("{g}✓ FIN received")));
     else
         snprintf(expect, sizeof(expect), T_CHIP_WARN " %d ", r->expected);
     tui_print(ix, y + 1, iw, TS(C_TEXT, C_DEFAULT, 0),
-              T_DIM "expectedseqnum" T_RESET " %s" T_RESET "     " T_DIM "consegnati" T_RESET " %d segment%s, %zu byte"
-              "     " T_DIM "ultimo ACK inviato" T_RESET " %s",
-              expect, r->nseg, r->nseg == 1 ? "o" : "i", r->buf.len, ack);
+              tm(_("{m}expectedseqnum{0} %s{0}     {m}delivered{0} %d %s, %zu bytes     {m}last ACK sent{0} %s")),
+              expect, r->nseg, r->nseg == 1 ? _("segment") : _("segments"), r->buf.len, ack);
 
-    tui_print(ix, y + 2, lab, TS(C_DIM, C_DEFAULT, 0), "dati");
+    tui_print(ix, y + 2, lab, TS(C_DIM, C_DEFAULT, 0), "%s", _("data"));
     if (r->view.n == 0)
-        tui_print(ix + lab, y + 2, iw - lab, TS(C_FAINT, C_DEFAULT, 0), "(ancora nulla)");
+        tui_print(ix + lab, y + 2, iw - lab, TS(C_FAINT, C_DEFAULT, 0), "%s", _("(nothing yet)"));
     else
         tui_draw_text(ix + lab, y + 2, iw - lab, 4, &r->view, r->view.n - 1, seg_style, r);
 }
@@ -296,15 +316,13 @@ static void draw_stats(const receiver *r, int x, int y, int w)
     int ix = x + 2, iw = w - 4;
     long long end = r->done ? r->t_done : r->has_peer ? rdt_now_ms() : r->t_first;
 
-    tui_box(x, y, w, 4, TS(C_BORDER, C_DEFAULT, 0), "Statistiche");
+    tui_box(x, y, w, 4, TS(C_BORDER, C_DEFAULT, 0), _("Statistics"));
     tui_print(ix, y + 1, iw, TS(C_TEXT, C_DEFAULT, 0),
-              T_DATA T_BOLD "DATA" T_RESET "  " T_DIM "ricevuti" T_RESET " %u  " T_OK "in ordine" T_RESET " %u  "
-              T_WARN "fuori ordine (scartati)" T_RESET " %u  " T_ERR "corrotti" T_RESET " %u"
-              T_DIM "  │  durata" T_RESET " %.1f s",
+              tm(_("{d}{b}DATA{0}  {m}received{0} %u  {g}in order{0} %u  {y}out of order "
+                   "(discarded){0} %u  {r}corrupted{0} %u{m}  │  duration{0} %.1f s")),
               r->rx, r->rx_new, r->rx_ooo, r->rx_bad, r->has_peer ? (end - r->t_first) / 1000.0 : 0.0);
     tui_print(ix, y + 2, iw, TS(C_TEXT, C_DEFAULT, 0),
-              T_ACK T_BOLD "ACK " T_RESET "  " T_DIM "inviati" T_RESET " %u" T_DIM "  │  " T_CHAN "canale ◀" T_RESET " "
-              T_DIM "persi" T_RESET " %u/%u  " T_DIM "corrotti" T_RESET " %u/%u",
+              tm(_("{a}{b}ACK {0}  {m}sent{0} %u{m}  │  {c}channel ◀{0} {m}lost{0} %u/%u  {m}corrupted{0} %u/%u")),
               r->acks, r->ch.n_lost, r->ch.n_sent, r->ch.n_corrupted, r->ch.n_sent);
 }
 
@@ -329,19 +347,19 @@ static void render(receiver *r, long long now)
 
     if (r->has_peer)
         snprintf(l1, sizeof(l1),
-                 T_ACK "●" T_RESET " in ascolto su " T_BOLD "%s" T_RESET "   " T_DIM "◀──" T_RESET "   sender " T_BOLD "%s",
+                 tm(_("{a}●{0} listening on {b}%s{0}   {m}◀──{0}   sender {b}%s")),
                  r->local_s, r->peer_s);
     else
         snprintf(l1, sizeof(l1),
-                 T_ACK "●" T_RESET " in ascolto su " T_BOLD "%s" T_RESET "   " T_DIM "in attesa del primo pacchetto…",
+                 tm(_("{a}●{0} listening on {b}%s{0}   {m}waiting for the first packet…")),
                  r->local_s);
-    snprintf(l2, sizeof(l2), "seq 0…%d · ritardo %.1f s · perdita ACK %.0f%% · corruzione ACK %.0f%% · seed %u",
+    snprintf(l2, sizeof(l2), _("seq 0…%d · delay %.1f s · ACK loss %.0f%% · ACK corruption %.0f%% · seed %u"),
              r->M - 1, r->opt.delay_ms / 1000.0, r->opt.loss * 100, r->opt.corrupt * 100, r->opt.seed);
     tui_draw_header(y, W, PROTOCOL, ROLE_RECEIVER, l1, l2);
     y += 4;
 
     if (show_rules) {
-        tui_draw_rules(0, y, W, "Regole del receiver Go-Back-N", RULES, 3,
+        tui_draw_rules(0, y, W, _("Go-Back-N receiver rules"), rules_tr(), 3,
                        now - r->rule_t < HIGHLIGHT_MS ? r->rule : RULE_NONE);
         y += 5;
     }
@@ -353,9 +371,9 @@ static void render(receiver *r, long long now)
     }
 
     if (r->done)
-        snprintf(note, sizeof(note), T_OK "✓ fine");
+        snprintf(note, sizeof(note), "%s", tm(_("{g}✓ done")));
     else
-        snprintf(note, sizeof(note), "atteso " T_ACK T_BOLD "%d", r->expected);
+        snprintf(note, sizeof(note), tm(_("expecting {a}{b}%d")), r->expected);
     tui_draw_channel(0, y, W, &r->ch, ROLE_RECEIVER, now, note);
     y += 7;
 
@@ -363,10 +381,10 @@ static void render(receiver *r, long long now)
         draw_stats(r, 0, y, W);
         y += 4;
     }
-    tui_draw_log(0, y, W, H - 1 - y, "Registro eventi");
+    tui_draw_log(0, y, W, H - 1 - y, _("Event log"));
 
-    snprintf(foot, sizeof(foot), T_KEY " q " T_RESET " esci     go-back-N · receiver · pid %d%s",
-             (int)getpid(), r->done ? T_OK "     ✓ completato · resta in ascolto" : "");
+    snprintf(foot, sizeof(foot), tm(_("{K} q {0} quit     go-back-N · receiver · pid %d%s")),
+             (int)getpid(), r->done ? tm(_("{g}     ✓ complete · still listening")) : "");
     tui_draw_footer(H - 1, W, foot);
     tui_frame_end();
 }
@@ -379,21 +397,29 @@ int main(int argc, char **argv)
     int quit = 0;
     long long linger;
 
-    rdt_parse_options(argc, argv, ROLE_RECEIVER, &PROTO, &r->opt);
+    rdt_protocol proto = PROTO;
+
+    /* the catalog must be loaded before the default text and the help are translated */
+    nl_i18n_init(NULL);
+    if (proto.message)
+        proto.message = _(proto.message);
+    if (proto.note)
+        proto.note = _(proto.note);
+    rdt_parse_options(argc, argv, ROLE_RECEIVER, &proto, &r->opt);
     rdt_srand(r->opt.seed);
     r->sock = rdt_open_receiver(&r->opt, &r->local, r->local_s, sizeof(r->local_s));
     r->M = 1 << r->opt.seq_bits;
     ch_init(&r->ch, r->sock, TO_SENDER, r->opt.loss, r->opt.corrupt, r->opt.delay_ms);
     reset_session(r);
 
-    /* senza schermo (output rediretto) si termina un po' dopo il FIN, oppure
-     * dopo un silenzio piu' lungo se il FIN non arriva */
+    /* without a screen (redirected output) exit a little after the FIN, or
+     * after a longer silence if the FIN never arrives */
     linger = 6LL * r->opt.delay_ms > 4000 ? 6LL * r->opt.delay_ms : 4000;
 
     tui_init();
     r->rule = RULE_NONE;
     r->rule_t = r->last_deliver_t = r->mark_t = -MARK_MS * 10LL;
-    tui_log(T_INFO "● Receiver in ascolto" T_RESET " su %s · seq 0…%d · atteso seq 0", r->local_s, r->M - 1);
+    tui_log(tm(_("{i}● Receiver listening{0} on %s · seq 0…%d · expecting seq 0")), r->local_s, r->M - 1);
 
     while (!quit && !tui_should_quit()) {
         long long now = rdt_now_ms();
@@ -421,11 +447,11 @@ int main(int argc, char **argv)
     tui_shutdown();
 
     if (r->done) {
-        printf("Go-back-N: ricevuti %d segmenti (%zu byte) da %s:\n", r->nseg, r->buf.len, r->peer_s);
+        printf(_("Go-back-N: received %d segments (%zu bytes) from %s:\n"), r->nseg, r->buf.len, r->peer_s);
         fwrite(r->buf.data, 1, r->buf.len, stdout);
         printf("\n");
     } else {
-        printf("Go-back-N: interrotto dopo %d segmenti (%zu byte) consegnati\n", r->nseg, r->buf.len);
+        printf(_("Go-back-N: interrupted after %d segments (%zu bytes) delivered\n"), r->nseg, r->buf.len);
     }
 
     close(r->sock);

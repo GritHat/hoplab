@@ -1,7 +1,8 @@
 /*
- * rdt.c - Pacchetti, checksum, opzioni, dati, socket e utilita' comuni.
+ * rdt.c - Packets, checksum, options, data, sockets and common utilities.
  */
 #include "rdt.h"
+#include "i18n.h"
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -16,7 +17,7 @@
 #include <unistd.h>
 
 /* ------------------------------------------------------------------ */
-/* Pacchetti                                                          */
+/* Packets                                                            */
 /* ------------------------------------------------------------------ */
 
 uint16_t rdt_checksum(const uint8_t *buf, size_t len)
@@ -46,7 +47,7 @@ size_t rdt_encode(const rdt_packet *p, uint8_t *buf)
     buf[5]  = (uint8_t)(p->seq >> 16);
     buf[6]  = (uint8_t)(p->seq >> 8);
     buf[7]  = (uint8_t)p->seq;
-    buf[8]  = 0;                      /* checksum calcolato con il campo a zero */
+    buf[8]  = 0;                      /* checksum computed with the field at zero */
     buf[9]  = 0;
     buf[10] = 0;
     buf[11] = 0;
@@ -78,13 +79,13 @@ int rdt_decode(const uint8_t *buf, size_t len, rdt_packet *p)
         avail = RDT_MAX_PAYLOAD;
     memcpy(p->data, buf + RDT_HEADER_SIZE, avail);
 
-    /* Sommando anche il checksum memorizzato si deve ottenere 0xFFFF,
-     * cioe' rdt_checksum() sull'intero datagramma deve valere 0. */
+    /* Adding the stored checksum too must give 0xFFFF, that is
+     * rdt_checksum() over the whole datagram must be 0. */
     ok = rdt_checksum(buf, len) == 0 &&
          p->len == len - RDT_HEADER_SIZE &&
          (p->type == PKT_DATA || p->type == PKT_ACK || p->type == PKT_FIN);
 
-    /* un campo lunghezza corrotto non deve far leggere oltre i dati presenti */
+    /* a corrupted length field must not make us read past the data we have */
     if (p->len > avail)
         p->len = (uint16_t)avail;
     return ok;
@@ -101,7 +102,7 @@ const char *rdt_type_name(int type)
 }
 
 /* ------------------------------------------------------------------ */
-/* Opzioni                                                            */
+/* Options                                                            */
 /* ------------------------------------------------------------------ */
 
 static void usage(const char *prog, rdt_role role, const rdt_protocol *proto)
@@ -109,49 +110,51 @@ static void usage(const char *prog, rdt_role role, const rdt_protocol *proto)
     int s = role == ROLE_SENDER;
     unsigned x = proto->opts;
 
-    printf("Uso: %s [opzioni] [host] [porta]\n\n", prog);
-    printf("%s %s su UDP con canale inaffidabile simulato.\n\n",
+    printf(_("Usage: %s [options] [host] [port]\n\n"), prog);
+    printf(_("%s %s over UDP with a simulated unreliable channel.\n\n"),
            s ? "Sender" : "Receiver", proto->name);
     if (s) {
-        printf("  -a, --host HOST      receiver da contattare            (default %s)\n", RDT_DEFAULT_HOST);
-        printf("  -p, --port PORTA     porta UDP del receiver            (default %d)\n", RDT_DEFAULT_PORT);
+        printf(_("  -a, --host HOST      receiver to contact               (default %s)\n"), RDT_DEFAULT_HOST);
+        printf(_("  -p, --port PORT      UDP port of the receiver          (default %d)\n"), RDT_DEFAULT_PORT);
     } else {
-        printf("  -a, --host HOST      indirizzo su cui ascoltare        (default %s,\n", RDT_DEFAULT_HOST);
-        printf("                       0.0.0.0 = tutte le interfacce)\n");
-        printf("  -p, --port PORTA     porta UDP di ascolto              (default %d)\n", RDT_DEFAULT_PORT);
+        printf(_("  -a, --host HOST      address to listen on              (default %s,\n"), RDT_DEFAULT_HOST);
+        printf("%s", _("                       0.0.0.0 = every interface)\n"));
+        printf(_("  -p, --port PORT      UDP port to listen on             (default %d)\n"), RDT_DEFAULT_PORT);
     }
-    printf("  -l, --loss P         perdita %-26s(default %.0f%%)\n",
-           s ? "dei DATA inviati" : "degli ACK inviati", RDT_DEFAULT_LOSS * 100);
-    printf("  -c, --corrupt P      corruzione %-23s(default %.0f%%)\n",
-           s ? "dei DATA" : "degli ACK", RDT_DEFAULT_CORRUPT * 100);
-    printf("                       P è una probabilità: 0.2 oppure 20%%\n");
-    printf("  -d, --delay MS       ritardo di propagazione simulato  (default %d ms)\n", RDT_DEFAULT_DELAY_MS);
+    printf(s ? _("  -l, --loss P         loss of the DATA sent             (default %.0f%%)\n")
+             : _("  -l, --loss P         loss of the ACKs sent             (default %.0f%%)\n"),
+           RDT_DEFAULT_LOSS * 100);
+    printf(s ? _("  -c, --corrupt P      corruption of the DATA            (default %.0f%%)\n")
+             : _("  -c, --corrupt P      corruption of the ACKs            (default %.0f%%)\n"),
+           RDT_DEFAULT_CORRUPT * 100);
+    printf("%s", _("                       P is a probability: 0.2 or 20%\n"));
+    printf(_("  -d, --delay MS       simulated propagation delay       (default %d ms)\n"), RDT_DEFAULT_DELAY_MS);
     if (s)
-        printf("  -t, --timeout MS     timeout di ritrasmissione         (default 2.5*ritardo + 500)\n");
+        printf("%s", _("  -t, --timeout MS     retransmission timeout            (default 2.5*delay + 500)\n"));
     if (x & RDT_OPT_WINDOW)
-        printf("  -w, --window N       dimensione della finestra         (default %d, max %d)\n",
+        printf(_("  -w, --window N       window size                       (default %d, max %d)\n"),
                RDT_DEFAULT_WINDOW, RDT_MAX_WINDOW);
     if (x & RDT_OPT_SEQBITS)
-        printf("  -b, --bits K         bit del numero di sequenza        (default %d: numeri 0…%d)\n",
+        printf(_("  -b, --bits K         bits of the sequence number       (default %d: numbers 0…%d)\n"),
                RDT_DEFAULT_SEQBITS, (1 << RDT_DEFAULT_SEQBITS) - 1);
     if (x & RDT_OPT_INTERVAL)
-        printf("  -i, --interval MS    intervallo fra due invii          (default ritardo/4)\n");
+        printf("%s", _("  -i, --interval MS    interval between transmissions    (default delay/4)\n"));
     if (s) {
-        printf("  -m, --message TESTO  testo da trasmettere\n");
-        printf("  -f, --file FILE      trasmette il contenuto di un file\n");
-        printf("  -s, --size N         byte di payload per pacchetto     (default %d)\n", RDT_DEFAULT_CHUNK);
+        printf("%s", _("  -m, --message TEXT   text to transmit\n"));
+        printf("%s", _("  -f, --file FILE      transmits the content of a file\n"));
+        printf(_("  -s, --size N         payload bytes per packet          (default %d)\n"), RDT_DEFAULT_CHUNK);
     }
-    printf("  -S, --seed N         seme casuale, per ripetere lo stesso scenario\n");
-    printf("  -h, --help           mostra questo aiuto\n\n");
+    printf("%s", _("  -S, --seed N         random seed, to repeat the same scenario\n"));
+    printf("%s", _("  -h, --help           show this help\n\n"));
     if (proto->note)
-        printf("%s\n\n", proto->note);
-    printf("Esempi:\n");
+        printf("%s\n\n", _(proto->note));
+    printf("%s", _("Examples:\n"));
     printf("  %s\n", prog);
     printf("  %s 192.168.1.20 9000\n", prog);
     if (s && (x & RDT_OPT_WINDOW))
-        printf("  %s -w 6 -b 4 -l 0.3 -m \"ciao mondo\"\n", prog);
+        printf("  %s -w 6 -b 4 -l 0.3 -m \"%s\"\n", prog, _("hello world"));
     else if (s)
-        printf("  %s -l 0.3 -c 0 -d 600 -m \"ciao mondo\"\n", prog);
+        printf("  %s -l 0.3 -c 0 -d 600 -m \"%s\"\n", prog, _("hello world"));
     else
         printf("  %s -a 0.0.0.0 -l 25%% -c 0\n", prog);
 }
@@ -162,13 +165,13 @@ static double parse_prob(const char *s, const char *name)
     double v = strtod(s, &end);
 
     if (end == s) {
-        fprintf(stderr, "Valore non valido per %s: %s\n", name, s);
+        fprintf(stderr, _("Invalid value for %s: %s\n"), name, s);
         exit(EXIT_FAILURE);
     }
     if (*end == '%' || v > 1.0)
         v /= 100.0;
     if (v < 0.0 || v > 1.0) {
-        fprintf(stderr, "%s deve essere compreso tra 0 e 1 (oppure 0%% e 100%%)\n", name);
+        fprintf(stderr, _("%s must be between 0 and 1 (or 0%% and 100%%)\n"), name);
         exit(EXIT_FAILURE);
     }
     return v;
@@ -180,7 +183,7 @@ static int parse_int(const char *s, const char *name, int min, int max)
     long v = strtol(s, &end, 10);
 
     if (end == s || *end != '\0' || v < min || v > max) {
-        fprintf(stderr, "Valore non valido per %s: %s (ammesso %d..%d)\n", name, s, min, max);
+        fprintf(stderr, _("Invalid value for %s: %s (allowed %d..%d)\n"), name, s, min, max);
         exit(EXIT_FAILURE);
     }
     return (int)v;
@@ -206,9 +209,10 @@ void rdt_parse_options(int argc, char **argv, rdt_role role,
         { "help",     no_argument,       NULL, 'h' },
         { NULL, 0, NULL, 0 }
     };
-    char optstring[64] = ":a:p:l:c:d:S:h";   /* ':' iniziale: errori gestiti qui */
+    char optstring[64] = ":a:p:l:c:d:S:h";   /* leading ':': errors handled here */
     int interval_set = 0, c, li = 0;
 
+    nl_i18n_init(NULL);                      /* every demo program starts here */
     if (role == ROLE_SENDER)
         strcat(optstring, "t:m:f:s:");
     if (proto->opts & RDT_OPT_WINDOW)
@@ -227,27 +231,27 @@ void rdt_parse_options(int argc, char **argv, rdt_role role,
     o->chunk    = RDT_DEFAULT_CHUNK;
     o->window   = RDT_DEFAULT_WINDOW;
     o->seq_bits = RDT_DEFAULT_SEQBITS;
-    o->message  = proto->message ? proto->message : "";
+    o->message  = proto->message ? _(proto->message) : "";
     o->seed     = (unsigned)time(NULL) ^ ((unsigned)getpid() << 16);
 
     opterr = 0;
     while ((c = getopt_long(argc, argv, optstring, longopts, &li)) != -1) {
         if (c == '?') {
             if (optopt)
-                fprintf(stderr, "Opzione sconosciuta: -%c\n\n", optopt);
+                fprintf(stderr, _("Unknown option: -%c\n\n"), optopt);
             else
-                fprintf(stderr, "Opzione sconosciuta: %s\n\n", argv[optind - 1]);
+                fprintf(stderr, _("Unknown option: %s\n\n"), argv[optind - 1]);
             usage(argv[0], role, proto);
             exit(EXIT_FAILURE);
         }
         if (c == ':') {
-            fprintf(stderr, "L'opzione %s richiede un argomento\n\n", argv[optind - 1]);
+            fprintf(stderr, _("Option %s requires an argument\n\n"), argv[optind - 1]);
             usage(argv[0], role, proto);
             exit(EXIT_FAILURE);
         }
-        /* opzione lunga esistente ma non prevista per questo programma */
+        /* a long option that exists but is not meant for this program */
         if (!strchr(optstring + 1, c)) {
-            fprintf(stderr, "L'opzione --%s non è prevista per il %s %s\n\n", longopts[li].name,
+            fprintf(stderr, _("Option --%s does not apply to the %s %s\n\n"), longopts[li].name,
                     role == ROLE_SENDER ? "sender" : "receiver", proto->name);
             usage(argv[0], role, proto);
             exit(EXIT_FAILURE);
@@ -271,22 +275,22 @@ void rdt_parse_options(int argc, char **argv, rdt_role role,
         }
     }
 
-    /* Argomenti posizionali: [host] [porta] */
+    /* Positional arguments: [host] [port] */
     if (optind < argc)
         o->host = argv[optind++];
     if (optind < argc)
-        o->port = parse_int(argv[optind++], "porta", 1, 65535);
+        o->port = parse_int(argv[optind++], _("port"), 1, 65535);
     if (optind < argc) {
-        fprintf(stderr, "Argomento inatteso: %s\n\n", argv[optind]);
+        fprintf(stderr, _("Unexpected argument: %s\n\n"), argv[optind]);
         usage(argv[0], role, proto);
         exit(EXIT_FAILURE);
     }
 
-    /* Con piu' pacchetti in finestra che numeri di sequenza due pacchetti
-     * in volo avrebbero lo stesso numero: non ha senso nemmeno come esperimento. */
+    /* With more packets in the window than sequence numbers, two packets in
+     * flight would carry the same number: pointless even as an experiment. */
     if ((proto->opts & RDT_OPT_WINDOW) && (proto->opts & RDT_OPT_SEQBITS) &&
         o->window > 1 << o->seq_bits) {
-        fprintf(stderr, "La finestra (%d) supera i numeri di sequenza disponibili: con -b %d sono %d\n",
+        fprintf(stderr, _("The window (%d) exceeds the available sequence numbers: with -b %d there are %d\n"),
                 o->window, o->seq_bits, 1 << o->seq_bits);
         exit(EXIT_FAILURE);
     }
@@ -298,7 +302,7 @@ void rdt_parse_options(int argc, char **argv, rdt_role role,
 }
 
 /* ------------------------------------------------------------------ */
-/* Dati dell'applicazione                                             */
+/* Application data                                                   */
 /* ------------------------------------------------------------------ */
 
 static void *xrealloc(void *p, size_t n)
@@ -306,7 +310,7 @@ static void *xrealloc(void *p, size_t n)
     void *q = realloc(p, n ? n : 1);
 
     if (!q) {
-        fprintf(stderr, "memoria esaurita\n");
+        fprintf(stderr, "%s", _("out of memory\n"));
         exit(EXIT_FAILURE);
     }
     return q;
@@ -322,7 +326,7 @@ void rdt_load_data(const rdt_options *o, rdt_data *d)
         FILE *f = fopen(o->file, "rb");
         size_t r;
         if (!f) {
-            fprintf(stderr, "Impossibile aprire %s: %s\n", o->file, strerror(errno));
+            fprintf(stderr, _("Cannot open %s: %s\n"), o->file, strerror(errno));
             exit(EXIT_FAILURE);
         }
         do {
@@ -340,11 +344,11 @@ void rdt_load_data(const rdt_options *o, rdt_data *d)
         memcpy(d->text, o->message, d->len);
     }
     if (d->len == 0) {
-        fprintf(stderr, "Nessun dato da inviare\n");
+        fprintf(stderr, "%s", _("No data to send\n"));
         exit(EXIT_FAILURE);
     }
 
-    /* Segmenti di al massimo o->chunk byte, senza spezzare i caratteri UTF-8 */
+    /* Segments of at most o->chunk bytes, without breaking UTF-8 characters */
     d->off     = xrealloc(NULL, (d->len + 1) * sizeof(*d->off));
     d->seg_len = xrealloc(NULL, (d->len + 1) * sizeof(*d->seg_len));
     while (off < d->len) {
@@ -353,7 +357,7 @@ void rdt_load_data(const rdt_options *o, rdt_data *d)
             len = (size_t)o->chunk;
         while (len > 0 && off + len < d->len && (d->text[off + len] & 0xC0) == 0x80)
             len--;
-        if (len == 0) {                /* carattere piu' lungo di un segmento */
+        if (len == 0) {                /* a character longer than a segment */
             len = 1;
             while (off + len < d->len && (d->text[off + len] & 0xC0) == 0x80)
                 len++;
@@ -406,7 +410,7 @@ int rdt_buffer_append(rdt_buffer *b, const void *data, size_t n)
 }
 
 /* ------------------------------------------------------------------ */
-/* Rete                                                               */
+/* Network                                                            */
 /* ------------------------------------------------------------------ */
 
 int rdt_resolve(const char *host, int port, struct sockaddr_in *out)
@@ -442,7 +446,7 @@ int rdt_udp_socket(const struct sockaddr_in *bind_addr)
         errno = e;
         return -1;
     }
-    /* Non bloccante: il ciclo principale usa poll() per gestire anche timer e animazioni */
+    /* Non-blocking: the main loop uses poll() to handle timers and animations too */
     flags = fcntl(fd, F_GETFL, 0);
     fcntl(fd, F_SETFL, flags | O_NONBLOCK);
     return fd;
@@ -469,7 +473,7 @@ int rdt_open_sender(const rdt_options *o, struct sockaddr_in *dst,
     int fd;
 
     if (rdt_resolve(o->host, o->port, dst) < 0) {
-        fprintf(stderr, "Indirizzo non valido o non risolvibile: %s\n", o->host);
+        fprintf(stderr, _("Invalid or unresolvable address: %s\n"), o->host);
         exit(EXIT_FAILURE);
     }
     memset(&any, 0, sizeof(any));
@@ -491,15 +495,15 @@ int rdt_open_receiver(const rdt_options *o, struct sockaddr_in *local,
     int fd;
 
     if (rdt_resolve(o->host, o->port, local) < 0) {
-        fprintf(stderr, "Indirizzo non valido o non risolvibile: %s\n", o->host);
+        fprintf(stderr, _("Invalid or unresolvable address: %s\n"), o->host);
         exit(EXIT_FAILURE);
     }
     fd = rdt_udp_socket(local);
     if (fd < 0) {
-        fprintf(stderr, "Impossibile usare %s:%d: %s\n", o->host, o->port, strerror(errno));
+        fprintf(stderr, _("Cannot use %s:%d: %s\n"), o->host, o->port, strerror(errno));
         if (errno == EADDRINUSE)
-            fprintf(stderr, "La porta è già occupata: c'è già un receiver in esecuzione? "
-                            "Prova con un'altra porta (-p).\n");
+            fprintf(stderr, "%s", _("The port is already in use: is a receiver already running? "
+                                    "Try another port (-p).\n"));
         exit(EXIT_FAILURE);
     }
     rdt_addr_str(local, local_s, size);
@@ -507,7 +511,7 @@ int rdt_open_receiver(const rdt_options *o, struct sockaddr_in *local,
 }
 
 /* ------------------------------------------------------------------ */
-/* Tempo e numeri casuali                                             */
+/* Time and random numbers                                            */
 /* ------------------------------------------------------------------ */
 
 long long rdt_now_ms(void)
@@ -518,7 +522,7 @@ long long rdt_now_ms(void)
     return (long long)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 }
 
-/* xorshift64*: piccolo, veloce e con il seme sotto controllo (scenari ripetibili) */
+/* xorshift64*: small, fast and with the seed under control (repeatable scenarios) */
 static uint64_t rng_state = 0x9E3779B97F4A7C15ULL;
 
 void rdt_srand(unsigned seed)

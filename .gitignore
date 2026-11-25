@@ -1,4 +1,4 @@
-# programmi compilati (make)
+# built programs (make)
 stop_and_wait_send
 stop_and_wait_recv
 go_back_n_send

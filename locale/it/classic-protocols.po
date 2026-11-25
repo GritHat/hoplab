@@ -1,0 +1,654 @@
+# files: stop_and_wait_send stop_and_wait_recv go_back_n_send go_back_n_recv selective_repeat_send selective_repeat_recv rdt_i18n
+# Italian translation of the classic reliable-transfer programs
+# (stop-and-wait, Go-Back-N, Selective Repeat senders and receivers).
+# {x} are colour codes: keep them around the same words.
+msgid ""
+msgstr ""
+"Project-Id-Version: netlab classic demos\n"
+"PO-Revision-Date: 2026-11-25 00:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: Italian\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Stop-and-wait: interrupted after %d/%d segments confirmed\n"
+msgstr "Stop-and-wait: interrotto dopo %d/%d segmenti confermati\n"
+
+msgid "Stop-and-wait: %d segments (%zu bytes) delivered in %.1f s · %u transmissions, %u retransmissions, %u timeouts\n"
+msgstr "Stop-and-wait: %d segmenti (%zu byte) consegnati in %.1f s · %u trasmissioni, %u ritrasmissioni, %u timeout\n"
+
+msgid "{i}● Sender ready{0}: %zu bytes in %d segments of at most %d bytes, to %s"
+msgstr "{i}● Sender pronto{0}: %zu byte in %d segmenti da al più %d byte, verso %s"
+
+msgid "{g}     ✓ transfer complete, press q to quit"
+msgstr "{g}     ✓ trasferimento completato, premi q per uscire"
+
+msgid "{K} q {0} quit     stop-and-wait · sender · pid %d%s"
+msgstr "{K} q {0} esci     stop-and-wait · sender · pid %d%s"
+
+msgid "Event log"
+msgstr "Registro eventi"
+
+msgid "{g}✓ done"
+msgstr "{g}✓ fine"
+
+msgid "{y}  timeout ≤ RTT: premature timeouts!"
+msgstr "{y}  timeout ≤ RTT: timeout prematuri!"
+
+msgid "timeout %.1f s · delay %.1f s · loss %.0f%% · corruption %.0f%% · %d×%d B · seed %u%s"
+msgstr "timeout %.1f s · ritardo %.1f s · perdita %.0f%% · corruzione %.0f%% · %d×%d B · seed %u%s"
+
+msgid "{a}{b}ACK {0}  {g}✓{0} %u  {y}other bit{0} %u  {r}corrupted{0} %u  {m}out of time{0} %u{m}  │  duration{0} %.1f s  {m}useful{0} %.0f%%"
+msgstr "{a}{b}ACK {0}  {g}✓{0} %u  {y}bit diverso{0} %u  {r}corrotti{0} %u  {m}fuori tempo{0} %u{m}  │  durata{0} %.1f s  {m}utili{0} %.0f%%"
+
+msgid "{d}{b}DATA{0}  {m}sent{0} %u  {m}retransmitted{0} %u  {t}timeouts{0} %u{m}  │  {c}channel ▶{0} {m}lost{0} %u/%u  {m}corrupted{0} %u/%u"
+msgstr "{d}{b}DATA{0}  {m}trasmessi{0} %u  {m}ritrasmessi{0} %u  {t}timeout{0} %u{m}  │  {c}canale ▶{0} {m}persi{0} %u/%u  {m}corrotti{0} %u/%u"
+
+msgid "Statistics"
+msgstr "Statistiche"
+
+msgid "data"
+msgstr "dati"
+
+msgid "confirmed"
+msgstr "confermati"
+
+msgid "■ stopped"
+msgstr "■ fermo"
+
+msgid "{m}current bit{0}  %s{0}     {m}segment{0} %s     {m}attempt{0} %s"
+msgstr "{m}bit corrente{0}  %s{0}     {m}segmento{0} %s     {m}tentativo{0} %s"
+
+msgid "Transfer"
+msgstr "Trasferimento"
+
+msgid "↻ waiting for ACK: timeout · ACK with the other bit · corrupted ACK  ⇒  retransmission"
+msgstr "↻ in attesa di ACK: timeout · ACK con bit diverso · ACK corrotto  ⇒  ritrasmissione"
+
+msgid "waiting for data from the application"
+msgstr "in attesa di dati dall'applicazione"
+
+msgid "waiting for {a}{b}ACK %d{0}"
+msgstr "in attesa di {a}{b}ACK %d{0}"
+
+msgid "✓ transfer complete"
+msgstr "✓ trasferimento completato"
+
+msgid "WAIT ACK 1"
+msgstr "ATTESA ACK 1"
+
+msgid "WAIT DATA 1"
+msgstr "ATTESA DATI 1"
+
+msgid "WAIT ACK 0"
+msgstr "ATTESA ACK 0"
+
+msgid "WAIT DATA 0"
+msgstr "ATTESA DATI 0"
+
+msgid "send DATA 1"
+msgstr "invio DATA 1"
+
+msgid "send DATA 0"
+msgstr "invio DATA 0"
+
+msgid "Sender state machine (rdt 3.0)"
+msgstr "Macchina a stati del sender (rdt 3.0)"
+
+msgid "{a}◀ ACK %u{0} received: {y}different bit (expected %d){0} → it acknowledges the previous transfer, retransmitting"
+msgstr "{a}◀ ACK %u{0} ricevuto: {y}bit diverso (atteso %d){0} → riscontra il trasferimento precedente, ritrasmetto"
+
+msgid "{g}{b}✓ Transfer complete{0}: %d segments, %zu bytes in %.1f s {m}· %u transmissions, %u retransmissions"
+msgstr "{g}{b}✓ Trasferimento completato{0}: %d segmenti, %zu byte in %.1f s {m}· %u trasmissioni, %u ritrasmissioni"
+
+msgid "segment"
+msgstr "segmento"
+
+msgid "{a}◀ ACK %d{0} received: {g}✓ same bit{0} → timer stopped, %s confirmed {m}(RTT %.1f s)"
+msgstr "{a}◀ ACK %d{0} ricevuto: {g}✓ stesso bit{0} → timer fermato, %s confermato {m}(RTT %.1f s)"
+
+msgid "{r}◀ corrupted ACK{0}: wrong checksum, no way to know what it acknowledges → retransmitting"
+msgstr "{r}◀ ACK corrotto{0}: checksum errato, non si sa cosa riscontri → ritrasmetto"
+
+msgid "ignored"
+msgstr "ignorato"
+
+msgid "packet"
+msgstr "pacchetto"
+
+msgid "{m}◀ %s %u out of time: no packet is waiting for an acknowledgement, ignored"
+msgstr "{m}◀ %s %u fuori tempo: nessun pacchetto in attesa di riscontro, ignorato"
+
+msgid "{m}◀ packet from %s ignored: it is not the receiver"
+msgstr "{m}◀ pacchetto da %s ignorato: non è il receiver"
+
+msgid "{t}◷ TIMEOUT{0}: no ACK %d within %.1f s {m}(packet or acknowledgement lost){0} → retransmitting"
+msgstr "{t}◷ TIMEOUT{0}: nessun ACK %d entro %.1f s {m}(pacchetto o riscontro perso){0} → ritrasmetto"
+
+msgid "closing · FIN · bit %d"
+msgstr "chiusura · FIN · bit %d"
+
+msgid "segment %d/%d · bit %d"
+msgstr "segmento %d/%d · bit %d"
+
+msgid "{y}↻ {0}%s retransmitted {m}· attempt %d · timer restarted"
+msgstr "{y}↻ {0}%s ritrasmesso {m}· tentativo %d · timer riavviato"
+
+msgid "{d}▶ {0}%s sent {m}· timer started (%.1f s)"
+msgstr "{d}▶ {0}%s inviato {m}· timer avviato (%.1f s)"
+
+msgid "Stop-and-wait: a single alternating bit is enough to make a channel that loses and corrupts packets reliable."
+msgstr "Stop-and-wait: un solo bit alternato basta a rendere affidabile un canale che perde e corrompe i pacchetti."
+
+msgid "Stop-and-wait: interrupted after %d segments (%zu bytes) delivered\n"
+msgstr "Stop-and-wait: interrotto dopo %d segmenti (%zu byte) consegnati\n"
+
+msgid "Stop-and-wait: received %d segments (%zu bytes) from %s:\n"
+msgstr "Stop-and-wait: ricevuti %d segmenti (%zu byte) da %s:\n"
+
+msgid "{i}● Receiver listening{0} on %s · expecting bit 0"
+msgstr "{i}● Receiver in ascolto{0} su %s · atteso bit 0"
+
+msgid "{g}     ✓ complete · listening for duplicate FINs"
+msgstr "{g}     ✓ completato · in ascolto per FIN duplicati"
+
+msgid "{K} q {0} quit     stop-and-wait · receiver · pid %d%s"
+msgstr "{K} q {0} esci     stop-and-wait · receiver · pid %d%s"
+
+msgid "expecting {a}{b}%d"
+msgstr "atteso {a}{b}%d"
+
+msgid "delay %.1f s · ACK loss %.0f%% · ACK corruption %.0f%% · seed %u"
+msgstr "ritardo %.1f s · perdita ACK %.0f%% · corruzione ACK %.0f%% · seed %u"
+
+msgid "{a}●{0} listening on {b}%s{0}   {m}waiting for the first packet…"
+msgstr "{a}●{0} in ascolto su {b}%s{0}   {m}in attesa del primo pacchetto…"
+
+msgid "{a}●{0} listening on {b}%s{0}   {m}◀──{0}   sender {b}%s"
+msgstr "{a}●{0} in ascolto su {b}%s{0}   {m}◀──{0}   sender {b}%s"
+
+msgid "{a}{b}ACK {0}  {m}sent{0} %u{m}  │  {c}channel ◀{0} {m}lost{0} %u/%u  {m}corrupted{0} %u/%u"
+msgstr "{a}{b}ACK {0}  {m}inviati{0} %u{m}  │  {c}canale ◀{0} {m}persi{0} %u/%u  {m}corrotti{0} %u/%u"
+
+msgid "{d}{b}DATA{0}  {m}received{0} %u  {g}new{0} %u  {y}duplicates{0} %u  {r}corrupted{0} %u{m}  │  duration{0} %.1f s"
+msgstr "{d}{b}DATA{0}  {m}ricevuti{0} %u  {g}nuovi{0} %u  {y}duplicati{0} %u  {r}corrotti{0} %u{m}  │  durata{0} %.1f s"
+
+msgid "(nothing yet)"
+msgstr "(ancora nulla)"
+
+msgid "{m}expected bit{0}    %s{0}     {m}delivered{0} %d %s, %zu bytes     {m}last ACK sent{0} %s"
+msgstr "{m}bit atteso{0}    %s{0}     {m}consegnati{0} %d %s, %zu byte     {m}ultimo ACK inviato{0} %s"
+
+msgid "{m}none"
+msgstr "{m}nessuno"
+
+msgid "Delivery to the application"
+msgstr "Consegna all'applicazione"
+
+msgid "↻ corrupted or duplicate packet  ⇒  resend the last ACK (the bit of the other state)"
+msgstr "↻ pacchetto corrotto o duplicato  ⇒  rinvia l'ultimo ACK (il bit dell'altro stato)"
+
+msgid "expecting bit {a}{b}%d"
+msgstr "atteso bit {a}{b}%d"
+
+msgid "✓ FIN received"
+msgstr "✓ FIN ricevuto"
+
+msgid " DATA 1 ok · deliver · ACK 1 "
+msgstr " DATA 1 ok · consegna · ACK 1 "
+
+msgid " DATA 0 ok · deliver · ACK 0 "
+msgstr " DATA 0 ok · consegna · ACK 0 "
+
+msgid "Receiver state machine (rdt 3.0)"
+msgstr "Macchina a stati del receiver (rdt 3.0)"
+
+msgid "acknowledgement retransmitted"
+msgstr "ritrasmissione del riscontro"
+
+msgid "{y}◀ {0}%s {y}duplicate{0} (expected bit %d): already delivered, my ACK did not arrive intact → not delivered again"
+msgstr "{y}◀ {0}%s {y}duplicato{0} (atteso bit %d): già consegnato, il mio ACK non è arrivato integro → non lo riconsegno"
+
+msgid "{g}{b}✓ Transfer complete{0}: %d segments, %zu bytes delivered in %.1f s"
+msgstr "{g}{b}✓ Trasferimento completato{0}: %d segmenti, %zu byte consegnati in %.1f s"
+
+msgid "same bit as the packet received"
+msgstr "stesso bit del pacchetto ricevuto"
+
+msgid "{f}◀ {0}%s received: {g}✓ expected bit{0} → end of data"
+msgstr "{f}◀ {0}%s ricevuto: {g}✓ bit atteso{0} → fine dei dati"
+
+msgid "{d}◀ {0}%s received: {g}✓ expected bit{0} → delivered to the application"
+msgstr "{d}◀ {0}%s ricevuto: {g}✓ bit atteso{0} → consegnato all'applicazione"
+
+msgid "{m}◀ unexpected %s %u from the sender, ignored"
+msgstr "{m}◀ %s %u inatteso dal sender, ignorato"
+
+msgid "bit of the last correct packet: the sender will retransmit"
+msgstr "bit dell'ultimo pacchetto corretto: il sender ritrasmetterà"
+
+msgid "{r}◀ corrupted packet{0}: wrong checksum {m}(it reads %s %u){0} → discarded"
+msgstr "{r}◀ pacchetto corrotto{0}: checksum errato {m}(si legge %s %u){0} → scartato"
+
+msgid "{i}● First packet from sender %s"
+msgstr "{i}● Primo pacchetto dal sender %s"
+
+msgid "new session"
+msgstr "nuova sessione"
+
+msgid "{a}▶ {b}ACK %u{0} sent {m}· %s"
+msgstr "{a}▶ {b}ACK %u{0} inviato {m}· %s"
+
+msgid "Go-back-N: interrupted after %d/%d segments confirmed\n"
+msgstr "Go-back-N: interrotto dopo %d/%d segmenti confermati\n"
+
+msgid "Go-back-N: %d segments (%zu bytes) delivered in %.1f s · %u transmissions, %u retransmissions, %u timeouts\n"
+msgstr "Go-back-N: %d segmenti (%zu byte) consegnati in %.1f s · %u trasmissioni, %u ritrasmissioni, %u timeout\n"
+
+msgid "{y}N = %d with %d sequence numbers: if every ACK of a window is lost, the one for the packet before base looks new (N ≤ 2^k − 1 is required)"
+msgstr "{y}N = %d con %d numeri di sequenza: se si perdono tutti gli ACK di una finestra, quello del pacchetto prima di base sembra nuovo (serve N ≤ 2^k − 1)"
+
+msgid "{i}● Sender ready{0}: %zu bytes in %d segments + FIN, window N = %d, seq 0…%d, to %s"
+msgstr "{i}● Sender pronto{0}: %zu byte in %d segmenti + FIN, finestra N = %d, seq 0…%d, verso %s"
+
+msgid "out of memory\n"
+msgstr "memoria esaurita\n"
+
+msgid "{K} q {0} quit     go-back-N · sender · pid %d%s"
+msgstr "{K} q {0} esci     go-back-N · sender · pid %d%s"
+
+msgid "Go-Back-N sender rules"
+msgstr "Regole del sender Go-Back-N"
+
+msgid "timeout %.1f s · delay %.1f s · loss %.0f%% · corruption %.0f%% · %d×%d B · seed %u"
+msgstr "timeout %.1f s · ritardo %.1f s · perdita %.0f%% · corruzione %.0f%% · %d×%d B · seed %u"
+
+msgid "{y}   N > 2^k−1: an old ACK may look new!{0}"
+msgstr "{y}   N > 2^k−1: un ACK vecchio può sembrare nuovo!{0}"
+
+msgid "{a}{b}ACK {0}  {g}new{0} %u  {y}duplicates{0} %u  {r}corrupted{0} %u  {m}out of time{0} %u{m}  │  duration{0} %.1f s  {m}useful{0} %.0f%%"
+msgstr "{a}{b}ACK {0}  {g}nuovi{0} %u  {y}duplicati{0} %u  {r}corrotti{0} %u  {m}fuori tempo{0} %u{m}  │  durata{0} %.1f s  {m}utili{0} %.0f%%"
+
+msgid "window N = %d"
+msgstr "finestra N = %d"
+
+msgid "Sender window · N = %d · seq 0…%d (%d bits) · one transmission every %.2f s"
+msgstr "Finestra del sender · N = %d · seq 0…%d (%d bit) · un invio ogni %.2f s"
+
+msgid "not usable"
+msgstr "non utilizzabili"
+
+msgid "usable"
+msgstr "utilizzabili"
+
+msgid "to retransmit"
+msgstr "da ritrasmettere"
+
+msgid "in flight"
+msgstr "in volo"
+
+msgid "acknowledged"
+msgstr "riscontrati"
+
+msgid "{a}◀ ACK %u{0} {y}duplicate{0}: it only acknowledges packets already confirmed {m}(base = seq %d){0} → ignored"
+msgstr "{a}◀ ACK %u{0} {y}duplicato{0}: riscontra solo pacchetti già confermati {m}(base = seq %d){0} → ignorato"
+
+msgid "nothing in flight, timer stopped"
+msgstr "niente in volo, timer fermato"
+
+msgid "timer restarted"
+msgstr "timer riavviato"
+
+msgid "FIN confirmed"
+msgstr "FIN confermato"
+
+msgid "{a}◀ ACK %u{0} received: {g}✓ cumulative, acknowledges seq %d…%u{0} (%d packets) → base = seq %d {m}· %s"
+msgstr "{a}◀ ACK %u{0} ricevuto: {g}✓ cumulativo, riscontra seq %d…%u{0} (%d pacchetti) → base = seq %d {m}· %s"
+
+msgid "{a}◀ ACK %u{0} received: {g}✓ acknowledges seq %u{0} → base = seq %d {m}· %s"
+msgstr "{a}◀ ACK %u{0} ricevuto: {g}✓ riscontra seq %u{0} → base = seq %d {m}· %s"
+
+msgid "{r}◀ corrupted ACK{0}: wrong checksum → ignored {m}(if needed, the timeout will retransmit)"
+msgstr "{r}◀ ACK corrotto{0}: checksum errato → ignorato {m}(se serve, ritrasmetterà il timeout)"
+
+msgid "{m}◀ %s %u out of time: transfer already finished, ignored"
+msgstr "{m}◀ %s %u fuori tempo: trasferimento già concluso, ignorato"
+
+msgid "go-back · retransmitting %d %s, seq %d…%d"
+msgstr "go-back · ritrasmissione di %d %s, seq %d…%d"
+
+msgid "{t}◷ TIMEOUT{0}: no acknowledgement for {b}seq %d{0} within %.1f s → restarting the timer and going back"
+msgstr "{t}◷ TIMEOUT{0}: nessun riscontro per {b}seq %d{0} entro %.1f s → riavvio il timer e torno indietro"
+
+msgid "{y}↻ {0}%s retransmitted {m}· attempt %d"
+msgstr "{y}↻ {0}%s ritrasmesso {m}· tentativo %d"
+
+msgid " · timer started"
+msgstr " · timer avviato"
+
+msgid "{d}▶ {0}%s sent {m}· in flight %d/%d%s"
+msgstr "{d}▶ {0}%s inviato {m}· in volo %d/%d%s"
+
+msgid "ignored: if needed, the timeout takes care of it"
+msgstr "ignorato: se serve, ci pensa il timeout"
+
+msgid "corrupted or duplicate ACK"
+msgstr "ACK corrotto o duplicato"
+
+msgid "restart the timer and retransmit everything from base on"
+msgstr "riavvia il timer e ritrasmette tutto da base in poi"
+
+msgid "timeout (a single timer, on base)"
+msgstr "timeout (un solo timer, su base)"
+
+msgid "base = n+1; restart the timer, stop it if nothing is in flight"
+msgstr "base = n+1; riavvia il timer, fermo se nulla in volo"
+
+msgid "intact ACK n (cumulative)"
+msgstr "ACK n integro (cumulativo)"
+
+msgid "send DATA nextseqnum; the first in flight starts the timer"
+msgstr "invia DATA nextseqnum; il primo in volo avvia il timer"
+
+msgid "data from the app, nextseqnum < base+N"
+msgstr "dati dall'app, nextseqnum < base+N"
+
+msgid "The receiver must use the same -b."
+msgstr "Il receiver deve usare lo stesso -b."
+
+msgid "Go-back-N: with N packets in flight the channel is never idle; a single timer and, when it expires, everything from base onwards is retransmitted."
+msgstr "Go-back-N: con N pacchetti in volo il canale non resta mai vuoto; un solo timer e, se scade, si ritrasmette tutto a partire da base."
+
+msgid "Go-back-N: interrupted after %d segments (%zu bytes) delivered\n"
+msgstr "Go-back-N: interrotto dopo %d segmenti (%zu byte) consegnati\n"
+
+msgid "Go-back-N: received %d segments (%zu bytes) from %s:\n"
+msgstr "Go-back-N: ricevuti %d segmenti (%zu byte) da %s:\n"
+
+msgid "{i}● Receiver listening{0} on %s · seq 0…%d · expecting seq 0"
+msgstr "{i}● Receiver in ascolto{0} su %s · seq 0…%d · atteso seq 0"
+
+msgid "{g}     ✓ complete · still listening"
+msgstr "{g}     ✓ completato · resta in ascolto"
+
+msgid "{K} q {0} quit     go-back-N · receiver · pid %d%s"
+msgstr "{K} q {0} esci     go-back-N · receiver · pid %d%s"
+
+msgid "Go-Back-N receiver rules"
+msgstr "Regole del receiver Go-Back-N"
+
+msgid "seq 0…%d · delay %.1f s · ACK loss %.0f%% · ACK corruption %.0f%% · seed %u"
+msgstr "seq 0…%d · ritardo %.1f s · perdita ACK %.0f%% · corruzione ACK %.0f%% · seed %u"
+
+msgid "{d}{b}DATA{0}  {m}received{0} %u  {g}in order{0} %u  {y}out of order (discarded){0} %u  {r}corrupted{0} %u{m}  │  duration{0} %.1f s"
+msgstr "{d}{b}DATA{0}  {m}ricevuti{0} %u  {g}in ordine{0} %u  {y}fuori ordine (scartati){0} %u  {r}corrotti{0} %u{m}  │  durata{0} %.1f s"
+
+msgid "{m}expectedseqnum{0} %s{0}     {m}delivered{0} %d %s, %zu bytes     {m}last ACK sent{0} %s"
+msgstr "{m}expectedseqnum{0} %s{0}     {m}consegnati{0} %d %s, %zu byte     {m}ultimo ACK inviato{0} %s"
+
+msgid "{g}✓ FIN received"
+msgstr "{g}✓ FIN ricevuto"
+
+msgid "window 1"
+msgstr "finestra 1"
+
+msgid "Receiver window · seq 0…%d (%d bits) · no buffer"
+msgstr "Finestra del receiver · seq 0…%d (%d bit) · nessun buffer"
+
+msgid "out of order: discarded if they arrive"
+msgstr "fuori ordine: scartati se arrivano"
+
+msgid "expected (expectedseqnum)"
+msgstr "atteso (expectedseqnum)"
+
+msgid "already delivered"
+msgstr "consegnati"
+
+msgid "{y}◀ {0}%s {y}out of order{0} (expected seq %d) → discarded"
+msgstr "{y}◀ {0}%s {y}fuori ordine{0} (atteso seq %d) → scartato"
+
+msgid "drop %u"
+msgstr "scarto %u"
+
+msgid "acknowledges everything up to this packet"
+msgstr "riscontra tutto fino a questo pacchetto"
+
+msgid "{f}◀ {0}%s received: {g}✓ in order{0} → end of data"
+msgstr "{f}◀ {0}%s ricevuto: {g}✓ in ordine{0} → fine dei dati"
+
+msgid "{d}◀ {0}%s received: {g}✓ in order{0} → delivered to the application"
+msgstr "{d}◀ {0}%s ricevuto: {g}✓ in ordine{0} → consegnato all'applicazione"
+
+msgid "none in order yet: the number before 0"
+msgstr "nessuno ancora in ordine: il numero prima di 0"
+
+msgid "last received in order"
+msgstr "ultimo ricevuto in ordine"
+
+msgid "discarded; resend the ACK of the last in order"
+msgstr "scartato; rinvia ACK dell'ultimo in ordine"
+
+msgid "corrupted packet"
+msgstr "pacchetto corrotto"
+
+msgid "discarded (no buffer); resend the ACK of the last in order"
+msgstr "scartato (niente buffer); rinvia ACK dell'ultimo in ordine"
+
+msgid "DATA n out of order or duplicate"
+msgstr "DATA n fuori ordine o duplicato"
+
+msgid "deliver to the app, send ACK n, expectedseqnum + 1"
+msgstr "consegna all'app, invia ACK n, expectedseqnum + 1"
+
+msgid "intact DATA n, n = expectedseqnum"
+msgstr "DATA n integro, n = expectedseqnum"
+
+msgid "The sender must use the same -b; the Go-Back-N receiver window is always 1."
+msgstr "Il sender deve usare lo stesso -b; la finestra del receiver Go-Back-N è sempre 1."
+
+msgid "Selective repeat: interrupted after %d/%d segments confirmed\n"
+msgstr "Selective repeat: interrotto dopo %d/%d segmenti confermati\n"
+
+msgid "Selective repeat: %d segments (%zu bytes) delivered in %.1f s · %u transmissions, %u retransmissions, %u timeouts\n"
+msgstr "Selective repeat: %d segmenti (%zu byte) consegnati in %.1f s · %u trasmissioni, %u ritrasmissioni, %u timeout\n"
+
+msgid "{y}N = %d with %d sequence numbers: the sender and receiver windows can overlap and a retransmitted packet look new (N ≤ 2^(k−1) is required)"
+msgstr "{y}N = %d con %d numeri di sequenza: le finestre di sender e receiver possono sovrapporsi e un pacchetto ritrasmesso sembrare nuovo (serve N ≤ 2^(k−1))"
+
+msgid "{K} q {0} quit     selective repeat · sender · pid %d%s"
+msgstr "{K} q {0} esci     selective repeat · sender · pid %d%s"
+
+msgid "Selective Repeat sender rules"
+msgstr "Regole del sender Selective Repeat"
+
+msgid "{y}   N > 2^(k−1): the receiver may take old packets for new ones!{0}"
+msgstr "{y}   N > 2^(k−1): il receiver può scambiare vecchi per nuovi!{0}"
+
+msgid "{a}{b}ACK {0}  {g}new{0} %u  {y}duplicates{0} %u  {y}out of window{0} %u  {r}corrupted{0} %u{m}  │  duration{0} %.1f s  {m}useful{0} %.0f%%"
+msgstr "{a}{b}ACK {0}  {g}nuovi{0} %u  {y}duplicati{0} %u  {y}fuori finestra{0} %u  {r}corrotti{0} %u{m}  │  durata{0} %.1f s  {m}utili{0} %.0f%%"
+
+msgid "{d}%d in flight{0}{m} · {0}{g}%d ACKs out of order{0}{m} · {0}{y}%d to retransmit{0}   %s"
+msgstr "{d}%d in volo{0}{m} · {0}{g}%d ACK fuori ordine{0}{m} · {0}{y}%d da ritrasmettere{0}   %s"
+
+msgid "{m}no timer running"
+msgstr "{m}nessun timer attivo"
+
+msgid "{m}next timeout{0} {d}seq %d{0} in %.1f s"
+msgstr "{m}prossimo timeout{0} {d}seq %d{0} tra %.1f s"
+
+msgid "in flight + timer"
+msgstr "in volo + timer"
+
+msgid "ACK out of order"
+msgstr "ACK fuori ordine"
+
+msgid "{a}◀ ACK %u{0} received: {g}✓ acknowledged out of order{0}, timer stopped {m}· send_base stays seq %d, waiting for its ACK"
+msgstr "{a}◀ ACK %u{0} ricevuto: {g}✓ riscontrato fuori ordine{0}, timer fermato {m}· send_base resta seq %d, in attesa del suo ACK"
+
+msgid " (the following ones were already acknowledged)"
+msgstr " (i successivi erano già riscontrati)"
+
+msgid "{a}◀ ACK %u{0} received: {g}✓ timer stopped{0} → the window slides by %d, send_base = seq %d{m}%s"
+msgstr "{a}◀ ACK %u{0} ricevuto: {g}✓ timer fermato{0} → la finestra scorre di %d, send_base = seq %d{m}%s"
+
+msgid "{a}◀ ACK %u{0} received: {g}✓ timer stopped{0} → FIN confirmed"
+msgstr "{a}◀ ACK %u{0} ricevuto: {g}✓ timer fermato{0} → FIN confermato"
+
+msgid "{a}◀ ACK %u{0} {y}duplicate{0}: seq %u already acknowledged → ignored"
+msgstr "{a}◀ ACK %u{0} {y}duplicato{0}: seq %u già riscontrato → ignorato"
+
+msgid "{a}◀ ACK %u{0} {y}out of window{0}: it acknowledges a packet that already left the window {m}(send_base = seq %d){0} → ignored"
+msgstr "{a}◀ ACK %u{0} {y}fuori finestra{0}: riscontra un pacchetto già uscito dalla finestra {m}(send_base = seq %d){0} → ignorato"
+
+msgid "old ACK %u"
+msgstr "ACK %u vecchio"
+
+msgid "{r}◀ corrupted ACK{0}: wrong checksum → ignored {m}(the packet's timer will do the rest)"
+msgstr "{r}◀ ACK corrotto{0}: checksum errato → ignorato {m}(il timer del pacchetto farà il resto)"
+
+msgid "{t}◷ TIMEOUT{0} of {b}seq %d{0}: no ACK within %.1f s → retransmitting only this packet"
+msgstr "{t}◷ TIMEOUT{0} di {b}seq %d{0}: nessun ACK entro %.1f s → ritrasmetto solo questo pacchetto"
+
+msgid "{y}↻ {0}%s retransmitted {m}· attempt %d · its timer restarted"
+msgstr "{y}↻ {0}%s ritrasmesso {m}· tentativo %d · suo timer riavviato"
+
+msgid "{d}▶ {0}%s sent {m}· its timer started · window %d/%d"
+msgstr "{d}▶ {0}%s inviato {m}· suo timer avviato · finestra %d/%d"
+
+msgid "corrupted, duplicate or out-of-window ACK"
+msgstr "ACK corrotto, duplicato o fuori finestra"
+
+msgid "retransmit only n and restart its timer"
+msgstr "ritrasmette solo n e ne riavvia il timer"
+
+msgid "timeout of packet n"
+msgstr "timeout del pacchetto n"
+
+msgid "stop the timer of n; if n = send_base, slide"
+msgstr "ferma il timer di n; se n = send_base, scorre"
+
+msgid "ACK n inside the window"
+msgstr "ACK n nella finestra"
+
+msgid "send DATA nextseqnum and start its timer"
+msgstr "invia DATA nextseqnum e avvia il suo timer"
+
+msgid "data from the app, nextseqnum < send_base+N"
+msgstr "dati dall'app, nextseqnum < send_base+N"
+
+msgid "The receiver must use the same -w and -b."
+msgstr "Il receiver deve usare gli stessi -w e -b."
+
+msgid "Selective repeat: every packet has its own timer, the receiver keeps the out-of-order ones aside and only what was lost is retransmitted."
+msgstr "Selective repeat: ogni pacchetto ha il suo timer, il receiver tiene da parte quelli fuori ordine e si ritrasmette solo ciò che è andato perso."
+
+msgid "Selective repeat: interrupted after %d segments (%zu bytes) delivered\n"
+msgstr "Selective repeat: interrotto dopo %d segmenti (%zu byte) consegnati\n"
+
+msgid "Selective repeat: received %d segments (%zu bytes) from %s:\n"
+msgstr "Selective repeat: ricevuti %d segmenti (%zu byte) da %s:\n"
+
+msgid "{y}N = %d with %d sequence numbers: a retransmitted packet can fall in the new window and be delivered twice (N ≤ 2^(k−1) is required)"
+msgstr "{y}N = %d con %d numeri di sequenza: un pacchetto ritrasmesso può cadere nella finestra nuova ed essere consegnato due volte (serve N ≤ 2^(k−1))"
+
+msgid "{i}● Receiver listening{0} on %s · window N = %d · seq 0…%d"
+msgstr "{i}● Receiver in ascolto{0} su %s · finestra N = %d · seq 0…%d"
+
+msgid "{K} q {0} quit     selective repeat · receiver · pid %d%s"
+msgstr "{K} q {0} esci     selective repeat · receiver · pid %d%s"
+
+msgid "Selective Repeat receiver rules"
+msgstr "Regole del receiver Selective Repeat"
+
+msgid "{y}   N > 2^(k−1): old and new packets get mixed up!"
+msgstr "{y}   N > 2^(k−1): vecchi e nuovi si confondono!"
+
+msgid "{a}●{0} listening on {b}%s{0}   {m}◀──{0}   sender {b}%s{0}%s"
+msgstr "{a}●{0} in ascolto su {b}%s{0}   {m}◀──{0}   sender {b}%s{0}%s"
+
+msgid "{a}{b}ACK {0}  {m}sent{0} %u{m}  │  {c}channel ◀{0} {m}lost{0} %u/%u  {m}corrupted{0} %u/%u{m}  │  duration{0} %.1f s"
+msgstr "{a}{b}ACK {0}  {m}inviati{0} %u{m}  │  {c}canale ◀{0} {m}persi{0} %u/%u  {m}corrotti{0} %u/%u{m}  │  durata{0} %.1f s"
+
+msgid "{d}{b}DATA{0}  {m}received{0} %u  {g}in order{0} %u  {i}buffered{0} %u  {y}duplicates{0} %u  {y}already delivered{0} %u  {r}corrupted{0} %u  {m}ignored{0} %u"
+msgstr "{d}{b}DATA{0}  {m}ricevuti{0} %u  {g}in ordine{0} %u  {i}nel buffer{0} %u  {y}duplicati{0} %u  {y}già consegnati{0} %u  {r}corrotti{0} %u  {m}ignorati{0} %u"
+
+msgid "{m}rcv_base{0} %s{0}    {m}delivered{0} %d %s, %zu bytes    {m}in the buffer{0} %d    {m}last ACK{0} %s"
+msgstr "{m}rcv_base{0} %s{0}    {m}consegnati{0} %d %s, %zu byte    {m}nel buffer{0} %d    {m}ultimo ACK{0} %s"
+
+msgid "resend ACK"
+msgstr "rinvio ACK"
+
+msgid "Receiver window · N = %d · seq 0…%d (%d bits) · buffer %d/%d"
+msgstr "Finestra del receiver · N = %d · seq 0…%d (%d bit) · buffer %d/%d"
+
+msgid "acceptable"
+msgstr "accettabili"
+
+msgid "expected"
+msgstr "atteso"
+
+msgid "in the buffer (acknowledged)"
+msgstr "nel buffer (riscontrati)"
+
+msgid "{m}◀ %s outside both windows (rcv_base = seq %d) → ignored"
+msgstr "{m}◀ %s fuori da entrambe le finestre (rcv_base = seq %d) → ignorato"
+
+msgid "repeated for a packet already delivered"
+msgstr "ripetuto per un pacchetto già consegnato"
+
+msgid "{y}◀ {0}%s {y}already delivered{0}: the sender did not get the ACK → resending it, without delivering again"
+msgstr "{y}◀ {0}%s {y}già consegnato{0}: il sender non ha avuto l'ACK → lo rinvio, senza riconsegnare"
+
+msgid "seen %u"
+msgstr "già %u"
+
+msgid "acknowledgement of this packet"
+msgstr "riscontro di questo pacchetto"
+
+msgid "{d}◀ {0}%s received {i}out of order{0} → buffered {m}(seq %d, rcv_base, is missing)"
+msgstr "{d}◀ {0}%s ricevuto {i}fuori ordine{0} → nel buffer {m}(manca seq %d, rcv_base)"
+
+msgid "{d}◀ {0}%s received: {g}✓ it is rcv_base{0} → delivered %d packets (seq %d…%d, %d from the buffer), rcv_base = seq %d"
+msgstr "{d}◀ {0}%s ricevuto: {g}✓ è rcv_base{0} → consegnati %d pacchetti (seq %d…%d, %d dal buffer), rcv_base = seq %d"
+
+msgid "delivered to the app"
+msgstr "consegnato"
+
+msgid "end of data"
+msgstr "fine dei dati"
+
+msgid "{d}◀ {0}%s received: {g}✓ it is rcv_base{0} → %s, rcv_base = seq %d"
+msgstr "{d}◀ {0}%s ricevuto: {g}✓ è rcv_base{0} → %s, rcv_base = seq %d"
+
+msgid "repeated, the previous one did not arrive"
+msgstr "ripetuto, il precedente non è arrivato"
+
+msgid "{y}◀ {0}%s {y}duplicate{0}: it is already in the buffer → ACK only"
+msgstr "{y}◀ {0}%s {y}duplicato{0}: è già nel buffer → solo ACK"
+
+msgid "{r}◀ corrupted packet{0}: wrong checksum {m}(it reads %s %u){0} → discarded, no ACK {m}(the sender will retransmit on timeout)"
+msgstr "{r}◀ pacchetto corrotto{0}: checksum errato {m}(si legge %s %u){0} → scartato, nessun ACK {m}(il sender ritrasmetterà al timeout)"
+
+msgid "ignored, no ACK: the sender will retransmit on timeout"
+msgstr "ignorato, nessun ACK: il sender ritrasmetterà al timeout"
+
+msgid "corrupted or outside both"
+msgstr "corrotto o fuori da entrambe"
+
+msgid "already delivered: resend ACK n (the previous one was lost)"
+msgstr "già consegnato: rinvia ACK n (il precedente si è perso)"
+
+msgid "ACK n, buffer it; if n = rcv_base deliver and slide"
+msgstr "ACK n, nel buffer; se n = rcv_base consegna e scorre"
+
+msgid "The sender must use the same -w and -b."
+msgstr "Il sender deve usare gli stessi -w e -b."
+
+msgid "segments"
+msgstr "segmenti"
+
+msgid "packets"
+msgstr "pacchetti"
+

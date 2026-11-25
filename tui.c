@@ -1,17 +1,18 @@
 /*
- * tui.c - Grafica da terminale: buffer di celle, testo colorato, pannelli,
- *         registro eventi e widget del canale.
+ * tui.c - Terminal graphics: cell buffer, coloured text, panels, event log
+ *         and the channel widgets.
  *
- * Due varianti, scelte con variabili d'ambiente:
- *   RDT_PANE=left|right  il programma disegna solo in una meta' del terminale,
- *                        che condivide con l'altro programma (modalita' "split"
- *                        di demo.sh, senza tmux): left = sinistra, right =
- *                        destra; se la finestra e' stretta e alta, sopra e sotto
- *   RDT_BASIC=1|0        16 colori e soli caratteri della code page 437, per
- *                        la console testuale di Linux (attiva da sola con
- *                        TERM=linux; 0 la disattiva)
+ * Two variants, chosen with environment variables:
+ *   RDT_PANE=left|right  the program draws in one half of the terminal only,
+ *                        which it shares with the other program ("split" mode
+ *                        of demo.sh, without tmux): left and right halves; if
+ *                        the window is narrow and tall, top and bottom
+ *   RDT_BASIC=1|0        16 colours and only code page 437 characters, for
+ *                        the Linux text console (on by itself with
+ *                        TERM=linux; 0 turns it off)
  */
 #include "tui.h"
+#include "i18n.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -26,7 +27,7 @@
 #include <unistd.h>
 
 typedef struct {
-    char   ch[5];                   /* un carattere UTF-8 */
+    char   ch[5];                   /* one UTF-8 character */
     tstyle st;
 } tcell;
 
@@ -34,12 +35,12 @@ enum { MODE_OFF, MODE_SCREEN, MODE_TEXT };
 enum { PANE_NONE, PANE_LEFT, PANE_RIGHT };
 
 static int    g_mode = MODE_OFF;
-static int    g_w, g_h;             /* area di disegno */
-static int    g_bw, g_bh;           /* buffer: l'area piu' l'eventuale riga/colonna di separazione */
-static int    g_x0, g_y0;           /* punto dello schermo da cui parte il buffer */
+static int    g_w, g_h;             /* drawing area */
+static int    g_bw, g_bh;           /* buffer: the area plus the separator row/column, if any */
+static int    g_x0, g_y0;           /* screen position where the buffer starts */
 static int    g_pane = PANE_NONE;
-static int    g_basic;              /* console di Linux: 16 colori, code page 437 */
-static tcell *g_cur, *g_prev;       /* fotogramma in costruzione / gia' a schermo */
+static int    g_basic;              /* Linux console: 16 colours, code page 437 */
+static tcell *g_cur, *g_prev;       /* frame being built / already on screen */
 static int    g_full_redraw;
 static int    g_title_set;
 static long long g_t0;
@@ -50,7 +51,7 @@ static int            g_term_saved;
 static volatile sig_atomic_t g_winch, g_quit;
 
 /* ------------------------------------------------------------------ */
-/* Output bufferizzato: un fotogramma = una sola write()              */
+/* Buffered output: one frame = a single write()                      */
 /* ------------------------------------------------------------------ */
 
 static char  *g_out;
@@ -78,9 +79,9 @@ static void out_str(const char *s)
     out_add(s, strlen(s));
 }
 
-/* Una write() su un terminale non si mescola con quelle di altri processi,
- * purche' un segnale non la spezzi: in modalita' split l'altro programma
- * scrive sullo stesso terminale, quindi i segnali restano bloccati. */
+/* A write() to a terminal does not mix with those of other processes,
+ * provided no signal breaks it: in split mode the other program writes to
+ * the same terminal, so signals stay blocked. */
 static void out_flush(void)
 {
     sigset_t block, old;
@@ -106,7 +107,7 @@ static void out_flush(void)
 }
 
 /* ------------------------------------------------------------------ */
-/* Ciclo di vita                                                      */
+/* Life cycle                                                         */
 /* ------------------------------------------------------------------ */
 
 static void on_winch(int sig) { (void)sig; g_winch = 1; }
@@ -124,10 +125,10 @@ static void resize(void)
     if (w > 1000) w = 1000;
     if (h > 500)  h = 500;
 
-    /* meta' schermo: affiancati se c'e' spazio in larghezza, altrimenti uno
-     * sopra l'altro. Una colonna (o riga) vuota separa le due aree: la
-     * disegna il primo programma, cosi' dopo un ridimensionamento non resta
-     * nulla di vecchio. Entrambi decidono dalle stesse dimensioni. */
+    /* half screen: side by side if there is room in width, otherwise one
+     * above the other. An empty column (or row) separates the two areas: the
+     * first program draws it, so nothing old is left after a resize. Both
+     * decide from the same dimensions. */
     g_x0 = g_y0 = 0;
     g_bw = w;
     g_bh = h;
@@ -162,7 +163,7 @@ static void resize(void)
     g_prev = calloc((size_t)g_bw * (size_t)g_bh + 1, sizeof(tcell));
     if (!g_cur || !g_prev) {
         tui_shutdown();
-        fprintf(stderr, "memoria esaurita\n");
+        fprintf(stderr, "%s", _("out of memory\n"));
         exit(EXIT_FAILURE);
     }
     g_w = w;
@@ -183,7 +184,7 @@ int tui_init(void)
     else
         g_basic = term && strncmp(term, "linux", 5) == 0;
 
-    /* niente SA_RESTART: poll() si interrompe subito e il ciclo reagisce */
+    /* no SA_RESTART: poll() is interrupted at once and the loop reacts */
     memset(&sa, 0, sizeof(sa));
     sigemptyset(&sa.sa_mask);
     sa.sa_handler = on_quit;
@@ -202,9 +203,9 @@ int tui_init(void)
     g_mode = MODE_SCREEN;
     atexit(tui_shutdown);
 
-    /* a meta' schermo terminale e tastiera sono di chi ha diviso lo schermo */
+    /* in half-screen mode terminal and keyboard belong to whoever split the screen */
     if (g_pane == PANE_NONE) {
-        /* tastiera senza eco e senza attendere Invio */
+        /* keyboard without echo and without waiting for Enter */
         if (isatty(STDIN_FILENO) && tcgetattr(STDIN_FILENO, &g_term_orig) == 0) {
             struct termios t = g_term_orig;
             t.c_lflag &= ~(tcflag_t)(ICANON | ECHO);
@@ -213,7 +214,7 @@ int tui_init(void)
             tcsetattr(STDIN_FILENO, TCSANOW, &t);
             g_term_saved = 1;
         }
-        /* schermo alternativo, cursore nascosto, niente a-capo automatico */
+        /* alternate screen, hidden cursor, no automatic line wrap */
         out_str("\033[?1049h\033[?25l\033[?7l\033[2J");
         out_flush();
     }
@@ -224,8 +225,8 @@ int tui_init(void)
 void tui_shutdown(void)
 {
     if (g_mode == MODE_SCREEN && g_pane != PANE_NONE) {
-        /* il riepilogo finale non deve finire sopra l'altra meta' dello
-         * schermo: va nel file indicato da demo.sh (RDT_PANE_LOG) */
+        /* the final summary must not land on the other half of the screen:
+         * it goes to the file named by demo.sh (RDT_PANE_LOG) */
         const char *log = getenv("RDT_PANE_LOG");
         int fd;
 
@@ -240,7 +241,7 @@ void tui_shutdown(void)
     } else if (g_mode == MODE_SCREEN) {
         out_str("\033[0m\033[?7h\033[?25h\033[?1049l");
         if (g_basic)
-            out_str("\033[2J\033[H");     /* la console di Linux non ha lo schermo alternativo */
+            out_str("\033[2J\033[H");     /* the Linux console has no alternate screen */
         out_flush();
         if (g_term_saved)
             tcsetattr(STDIN_FILENO, TCSANOW, &g_term_orig);
@@ -287,7 +288,7 @@ void tui_wait(int fd, int ms)
 }
 
 /* ------------------------------------------------------------------ */
-/* Celle e fotogrammi                                                 */
+/* Cells and frames                                                   */
 /* ------------------------------------------------------------------ */
 
 static int style_eq(tstyle a, tstyle b)
@@ -295,7 +296,7 @@ static int style_eq(tstyle a, tstyle b)
     return a.fg == b.fg && a.bg == b.bg && a.attr == b.attr;
 }
 
-/* Lunghezza in byte del carattere UTF-8 che inizia in s */
+/* Length in bytes of the UTF-8 character that starts at s */
 static int cp_len(const char *s)
 {
     unsigned char c = (unsigned char)*s;
@@ -329,7 +330,7 @@ int tui_frame_begin(void)
     if (g_winch) {
         g_winch = 0;
         resize();
-        /* a meta' schermo non si cancella tutto: si ridisegna la propria area */
+        /* in half-screen mode not everything is cleared: only our own area is redrawn */
         if (g_pane == PANE_NONE)
             out_str("\033[0m\033[2J");
     }
@@ -341,10 +342,10 @@ int tui_frame_begin(void)
     return 1;
 }
 
-/* ---- console di Linux ---- */
+/* ---- Linux console ---- */
 
-/* Caratteri sostituiti con altri presenti nei font della console (code
- * page 437); gli altri, come le lettere accentate, restano come sono. */
+/* Characters replaced with others found in the console fonts (code page
+ * 437); the rest, such as accented letters, stay as they are. */
 static const char *const BASIC_GLYPHS[][2] = {
     { "╭", "┌" }, { "╮", "┐" }, { "╰", "└" }, { "╯", "┘" },
     { "┃", "║" }, { "━", "═" }, { "┗", "╚" }, { "┛", "╝" }, { "┄", "·" },
@@ -367,9 +368,9 @@ static const char *basic_glyph(const char *ch)
     return ch;
 }
 
-/* Colore della tavolozza a 256 -> uno dei 16 della console (i fondi solo 0..7).
- * I colori dell'interfaccia hanno una corrispondenza scelta a mano, perche'
- * restino distinguibili; gli altri vanno al piu' vicino. */
+/* Colour of the 256 palette -> one of the 16 of the console (backgrounds only
+ * 0..7). The interface colours have a hand-picked mapping, so that they stay
+ * distinguishable; the others go to the nearest one. */
 static int color16(int c, int bg)
 {
     static const short FG[][2] = {
@@ -417,7 +418,7 @@ static void emit_style_basic(tstyle s, char *b, size_t size, int n)
     int fg = s.fg >= 0 ? color16(s.fg, 0) : -1;
     int bg = s.bg >= 0 ? color16(s.bg, 1) : -1;
 
-    /* testo poco leggibile sul suo fondo: nero sui fondi chiari, bianco sugli scuri */
+    /* text hard to read on its background: black on light ones, white on dark ones */
     if (bg >= 0 && fg >= 0) {
         int light = bg == 2 || bg == 3 || bg == 6 || bg == 7;
         if (fg == bg || (bg == 7 && fg == 15))
@@ -470,7 +471,7 @@ void tui_frame_end(void)
             if (!g_full_redraw && style_eq(c->st, p->st) && strcmp(c->ch, p->ch) == 0)
                 continue;
             if (!any) {
-                out_str("\033[?2026h");          /* aggiornamento sincronizzato */
+                out_str("\033[?2026h");          /* synchronized update */
                 any = 1;
             }
             if (y != cy || x != cx) {
@@ -495,7 +496,7 @@ void tui_frame_end(void)
 }
 
 /* ------------------------------------------------------------------ */
-/* Testo con markup                                                   */
+/* Text with markup                                                   */
 /* ------------------------------------------------------------------ */
 
 static tstyle markup_style(char code, tstyle cur, tstyle base)
@@ -543,7 +544,7 @@ int tui_text_width(const char *s)
     return w;
 }
 
-/* Disegna testo con markup su una riga; se supera maxw lo tronca con "…" */
+/* Draws text with markup on one line; if it exceeds maxw it is cut with "…" */
 static int draw_markup(int x, int y, int maxw, tstyle base, const char *s)
 {
     int total = tui_text_width(s);
@@ -573,7 +574,7 @@ static int draw_markup(int x, int y, int maxw, tstyle base, const char *s)
     return col;
 }
 
-/* Larghezza della parola che inizia in s (fino al prossimo spazio) */
+/* Width of the word that starts at s (up to the next space) */
 static int word_width(const char *s)
 {
     int w = 0;
@@ -591,8 +592,8 @@ static int word_width(const char *s)
     return w;
 }
 
-/* Testo con markup che va a capo sulle parole; ritorna le righe usate */
-static int draw_wrapped(int x, int y, int w, tstyle base, const char *s, int draw)
+/* Text with markup that wraps on words; returns the rows used */
+static int draw_wrapped(int x, int y, int w, tstyle base, const char *s, int draw, int maxh)
 {
     tstyle cur = base;
     int line = 0, col = 0;
@@ -606,6 +607,12 @@ static int draw_wrapped(int x, int y, int w, tstyle base, const char *s, int dra
                 break;
             cur = markup_style(s[1], cur, base);
             s += 2;
+            continue;
+        }
+        if (*s == '\n') {
+            line++;
+            col = 0;
+            s++;
             continue;
         }
         if (*s == ' ' && col > 0) {
@@ -626,12 +633,17 @@ static int draw_wrapped(int x, int y, int w, tstyle base, const char *s, int dra
             }
         }
         n = cp_len(s);
-        if (draw)
+        if (draw && line < maxh)
             set_cell(x + col, y + line, s, n, cur);
         s += n;
         col++;
     }
     return line + 1;
+}
+
+int tui_print_wrapped(int x, int y, int w, int maxh, tstyle base, const char *text)
+{
+    return draw_wrapped(x, y, w, base, text, maxh > 0, maxh > 0 ? maxh : 0);
 }
 
 void tui_put(int x, int y, tstyle st, const char *s)
@@ -670,7 +682,7 @@ int tui_print_center(int x, int y, int w, tstyle base, const char *fmt, ...)
 }
 
 /* ------------------------------------------------------------------ */
-/* Primitive grafiche                                                 */
+/* Drawing primitives                                                 */
 /* ------------------------------------------------------------------ */
 
 void tui_fill(int x, int y, int w, int h, tstyle st)
@@ -733,7 +745,7 @@ void tui_bar(int x, int y, int w, double frac, short color)
         else if (i == full && part > 0)
             set_cell(x + i, y, eighths[part], 3, TS(color, C_PANEL, 0));
         else if (g_basic)
-            set_cell(x + i, y, "░", 3, TS(C_FAINT, C_PANEL, 0));   /* il fondo grigio non c'e' */
+            set_cell(x + i, y, "░", 3, TS(C_FAINT, C_PANEL, 0));   /* there is no grey background */
         else
             set_cell(x + i, y, " ", 1, TS(C_DEFAULT, C_PANEL, 0));
     }
@@ -754,17 +766,17 @@ void tui_pill(int x, int y, int w, const char *text, int active, short active_bg
 
 void tui_too_small(int minw, int minh)
 {
-    tui_print_center(0, g_h / 2 - 1, g_w, TS(C_WARN, C_DEFAULT, TA_BOLD), "Finestra troppo piccola");
+    tui_print_center(0, g_h / 2 - 1, g_w, TS(C_WARN, C_DEFAULT, TA_BOLD), "%s", _("Window too small"));
     tui_print_center(0, g_h / 2 + 1, g_w, TS(C_DIM, C_DEFAULT, 0),
-                     "servono almeno %dx%d caratteri (ora %dx%d)", minw, minh, g_w, g_h);
+                     _("at least %dx%d characters are needed (now %dx%d)"), minw, minh, g_w, g_h);
     if (g_pane != PANE_NONE)
         tui_print_center(0, g_h / 2 + 2, g_w, TS(C_DIM, C_DEFAULT, 0),
-                         "ingrandisci la finestra: in tutto %d colonne (o %d righe)",
+                         _("enlarge the window: %d columns in all (or %d rows)"),
                          2 * minw + 1, 2 * minh + 1);
 }
 
 /* ------------------------------------------------------------------ */
-/* Registro eventi                                                    */
+/* Event log                                                          */
 /* ------------------------------------------------------------------ */
 
 #define LOG_MAX 300
@@ -772,7 +784,7 @@ void tui_too_small(int minw, int minh)
 
 typedef struct {
     long long t;
-    int       rule;                 /* 1 = riga separatrice */
+    int       rule;                 /* 1 = separator line */
     char      text[LOG_LEN];
 } log_entry;
 
@@ -847,7 +859,7 @@ void tui_draw_log(int x, int y, int w, int h, const char *title)
     if (iw <= tw + 4)
         return;
 
-    /* dal piu' recente (in basso) verso l'alto */
+    /* from the newest (at the bottom) upwards */
     for (k = 0; k < g_log_count && row >= top; k++) {
         const log_entry *e = &g_log[(g_log_next - 1 - k + LOG_MAX) % LOG_MAX];
         tstyle base = TS(C_TEXT, C_DEFAULT, 0);
@@ -860,22 +872,22 @@ void tui_draw_log(int x, int y, int w, int h, const char *title)
             row--;
             continue;
         }
-        lines = draw_wrapped(ix + tw, 0, iw - tw, base, e->text, 0);
+        lines = draw_wrapped(ix + tw, 0, iw - tw, base, e->text, 0, 0);
         start = row - lines + 1;
         if (start < top)
             break;
         fmt_time(e->t, t, sizeof(t));
         tui_put(ix, start, TS(C_FAINT, C_DEFAULT, 0), t);
-        draw_wrapped(ix + tw, start, iw - tw, base, e->text, 1);
+        draw_wrapped(ix + tw, start, iw - tw, base, e->text, 1, 1 << 20);
         row = start - 1;
     }
 }
 
 /* ------------------------------------------------------------------ */
-/* Widget RDT                                                         */
+/* RDT widgets                                                        */
 /* ------------------------------------------------------------------ */
 
-/* Caratteri non ASCII ammessi: solo alfabeti a una colonna (accenti ecc.) */
+/* Non-ASCII characters allowed: one-column alphabets only (accents etc.) */
 static int narrow_cp(unsigned cp)
 {
     return (cp >= 0xA0 && cp <= 0x24F && cp != 0xAD) ||
@@ -926,7 +938,7 @@ int tui_payload(const uint8_t *d, size_t len, char *out, size_t outsz, int maxco
                 rep = "·";
             }
         } else {
-            rep = "·";                  /* byte di controllo o UTF-8 non valido */
+            rep = "·";                  /* control byte or invalid UTF-8 */
         }
         if (rep) {
             n = strlen(rep);
@@ -940,7 +952,7 @@ int tui_payload(const uint8_t *d, size_t len, char *out, size_t outsz, int maxco
         i += adv;
         cols++;
     }
-    if (i < len && cols > 0) {          /* troncato: l'ultimo carattere diventa "…" */
+    if (i < len && cols > 0) {          /* truncated: the last character becomes "…" */
         o = last;
         memcpy(out + o, "…", 3);
         o += 3;
@@ -974,14 +986,16 @@ const char *tui_pkt_name(const rdt_packet *p, char *buf, size_t n)
 
 void tui_log_fate(const ch_flight *f)
 {
-    char d[256];
+    char d[256], bit[96];
 
     tui_pkt_name(&f->pkt, d, sizeof(d));
-    if (f->fate == FATE_LOST)
-        tui_log(T_CHAN "✗ canale" T_RESET ": %s perso lungo il percorso", d);
-    else if (f->fate == FATE_CORRUPT)
-        tui_log(T_CHAN "↯ canale" T_RESET ": %s corrotto " T_DIM "(invertito il bit %d di %d)",
-                d, f->flipped_bit, (RDT_HEADER_SIZE + f->pkt.len) * 8);
+    if (f->fate == FATE_LOST) {
+        tui_log(T_CHAN "✗ %s" T_RESET ": %s %s", _("channel"), d, _("lost along the way"));
+    } else if (f->fate == FATE_CORRUPT) {
+        snprintf(bit, sizeof(bit), _("(bit %d of %d flipped)"), f->flipped_bit,
+                 (RDT_HEADER_SIZE + f->pkt.len) * 8);
+        tui_log(T_CHAN "↯ %s" T_RESET ": %s %s " T_DIM "%s", _("channel"), d, _("corrupted"), bit);
+    }
 }
 
 void tui_text_append(tui_textbuf *t, const uint8_t *data, size_t len, int seg)
@@ -1022,8 +1036,8 @@ static int is_space(const tui_glyph *g)
     return g->ch[0] == ' ' && g->ch[1] == '\0';
 }
 
-/* Dispone i caratteri da start in poi andando a capo sulle parole.
- * Ritorna 1 se il carattere focus rientra nelle h righe. */
+/* Lays out the characters from start onwards wrapping on words.
+ * Returns 1 if the focus character falls within the h rows. */
 static int text_layout(int x, int y, int w, int h, const tui_textbuf *t, int start, int focus,
                        tui_seg_style style, const void *ctx, int draw)
 {
@@ -1035,7 +1049,7 @@ static int text_layout(int x, int y, int w, int h, const tui_textbuf *t, int sta
         if (is_space(g) && i > start) {
             int j, ww = 0;
             if (col == 0)
-                continue;                   /* niente spazi a inizio riga */
+                continue;                   /* no spaces at the start of a line */
             for (j = i + 1; j < t->n && !is_space(&t->g[j]); j++)
                 ww++;
             if (col + 1 + ww > w && ww <= w) {
@@ -1076,8 +1090,8 @@ void tui_draw_text(int x, int y, int w, int h, const tui_textbuf *t, int focus,
         if (start < 0)
             start = 0;
     }
-    /* andando a capo sulle parole ci stanno meno caratteri: si scorre finche'
-     * il carattere da tenere in vista non entra nel riquadro */
+    /* wrapping on words fits fewer characters: scroll until the character
+     * to keep in view enters the box */
     while (start < focus && !text_layout(x, y, w, h, t, start, focus, style, ctx, 0))
         start += step;
     if (start > focus)
@@ -1093,7 +1107,7 @@ void tui_draw_header(int y, int w, const char *protocol, rdt_role role,
     const char *name = sender ? "SENDER" : "RECEIVER";
     int cw = (int)strlen(name) + 4;
 
-    /* titolo della finestra: a meta' schermo lo sceglie demo.sh, la console non ce l'ha */
+    /* window title: in half-screen mode demo.sh chooses it, the console has none */
     if (!g_title_set && g_pane == PANE_NONE && !g_basic) {
         char t[128];
         snprintf(t, sizeof(t), "\033]0;RDT %s - %s\007", protocol, name);
@@ -1113,7 +1127,7 @@ void tui_draw_footer(int y, int w, const char *markup)
     tui_print(1, y, w - 2, TS(C_DIM, C_PANEL, 0), "%s", markup);
 }
 
-/* ---- canale ---- */
+/* ---- channel ---- */
 
 typedef struct {
     char      text[48];
@@ -1144,7 +1158,7 @@ static void host_box(int x, int y, int w, const char *name, int self, short acc,
                      self ? TS(acc, C_DEFAULT, TA_BOLD) : TS(C_DIM, C_DEFAULT, TA_BOLD), "%s", name);
     tui_print_center(x + 1, y + 2, w - 2,
                      self ? TS(C_TEXT, C_DEFAULT, 0) : TS(C_FAINT, C_DEFAULT, 0),
-                     "%s", self ? "◉ questo" : "remoto");
+                     "%s%s", self ? "◉ " : "", self ? _("this one") : _("remote"));
     if (self && note)
         tui_print_center(x + 1, y + 3, w - 2, TS(C_DIM, C_DEFAULT, 0), "%s", note);
 }
@@ -1172,8 +1186,8 @@ static void chip_label(const rdt_packet *p, int maxpay, int damaged, char *buf, 
     }
 }
 
-/* Formati dell'etichetta di un pacchetto in volo, dal piu' ricco al piu' corto:
- * con piu' pacchetti nella stessa corsia si usa il primo che non si sovrappone. */
+/* Label formats of a packet in flight, from the richest to the shortest: with
+ * several packets in the same lane the first one that does not overlap is used. */
 enum { LBL_FULL, LBL_SHORT, LBL_TINY };
 
 static int flight_lost(const ch_flight *f)
@@ -1191,7 +1205,7 @@ static void flight_label(const ch_flight *f, int variant, int maxpay, long long 
     if (flight_lost(f)) {
         *st = now - f->fate_time < 700 ? TS(231, C_ERR_BG, TA_BOLD) : TS(C_ERR, C_DEFAULT, TA_BOLD);
         if (variant == LBL_FULL)
-            snprintf(buf, n, " ✗ %s %u perso ", rdt_type_name(p->type), seq);
+            snprintf(buf, n, " ✗ %s %u %s ", rdt_type_name(p->type), seq, _("lost"));
         else if (variant == LBL_SHORT)
             snprintf(buf, n, " ✗ %s %u ", rdt_type_name(p->type), seq);
         else
@@ -1207,7 +1221,7 @@ static void flight_label(const ch_flight *f, int variant, int maxpay, long long 
         snprintf(buf, n, damaged ? "↯%u " : " %u ", seq);
 }
 
-/* Colonna di partenza dell'etichetta lungo la corsia */
+/* Starting column of the label along the lane */
 static int flight_pos(const ch_flight *f, int cw, int lx0, int lx1, int L, long long now)
 {
     double p = flight_lost(f) ? f->fate_pos : ch_progress(f, now);
@@ -1217,7 +1231,7 @@ static int flight_pos(const ch_flight *f, int cw, int lx0, int lx1, int L, long 
                                  : lx1 - cw + 1 - (int)(p * span + 0.5);
 }
 
-/* Primo formato con cui i pacchetti in movimento sulla corsia non si toccano */
+/* First format with which the packets moving on the lane do not touch */
 static int lane_variant(const ch_flight *const *order, int n, ch_dir lane, int maxpay,
                         int lx0, int lx1, int L, long long now)
 {
@@ -1238,7 +1252,7 @@ static int lane_variant(const ch_flight *const *order, int n, ch_dir lane, int m
                 cw = L;
             pos[m] = flight_pos(order[i], cw, lx0, lx1, L, now);
             wid[m] = cw;
-            /* inserimento ordinato per colonna */
+            /* insertion sorted by column */
             for (j = m; j > 0 && pos[j - 1] > pos[j]; j--) {
                 int tp = pos[j], tw = wid[j];
                 pos[j] = pos[j - 1]; wid[j] = wid[j - 1];
@@ -1247,7 +1261,7 @@ static int lane_variant(const ch_flight *const *order, int n, ch_dir lane, int m
             m++;
         }
         for (i = 0; i + 1 < m && ok; i++)
-            if (pos[i] + wid[i] + 1 > pos[i + 1])     /* almeno una colonna libera fra due */
+            if (pos[i] + wid[i] + 1 > pos[i + 1])     /* at least one free column between two */
                 ok = 0;
         if (ok)
             return v;
@@ -1268,9 +1282,9 @@ void tui_draw_channel(int x, int y, int w, const channel *ch, rdt_role self,
 {
     const ch_flight *order[CH_MAX_FLIGHTS];
     int ix = x + 1, iw = w - 2;
-    int hb = iw >= 72 ? 12 : 10;                 /* larghezza dei box degli host */
+    int hb = iw >= 72 ? 12 : 10;                 /* width of the host boxes */
     int lbx = ix + 1, rbx = ix + iw - 1 - hb;
-    int lx0 = lbx + hb, lx1 = rbx - 1;           /* colonne della corsia */
+    int lx0 = lbx + hb, lx1 = rbx - 1;           /* columns of the lane */
     int L = lx1 - lx0 + 1;
     int r_top = y + 1, r_data = y + 2, r_mid = y + 3, r_ack = y + 4, r_bot = y + 5;
     int is_s = self == ROLE_SENDER;
@@ -1278,13 +1292,13 @@ void tui_draw_channel(int x, int y, int w, const channel *ch, rdt_role self,
     int variant[2];
     int i, n = 0, lane;
 
-    tui_box(x, y, w, 7, TS(C_BORDER, C_DEFAULT, 0), "Canale UDP inaffidabile (simulato)");
+    tui_box(x, y, w, 7, TS(C_BORDER, C_DEFAULT, 0), _("Unreliable UDP channel (simulated)"));
     host_box(lbx, r_top, hb, "SENDER", is_s, C_DATA, self_note);
     host_box(rbx, r_top, hb, "RECEIVER", !is_s, C_ACK, self_note);
     if (L < 12)
         return;
 
-    /* corsie e frecce */
+    /* lanes and arrows */
     tui_hline(lx0, r_data, L, TS(C_FAINT, C_DEFAULT, 0), "┄");
     tui_hline(lx0, r_ack, L, TS(C_FAINT, C_DEFAULT, 0), "┄");
     tui_put(lx1, r_data, TS(C_DATA, C_DEFAULT, 0), "▶");
@@ -1294,11 +1308,11 @@ void tui_draw_channel(int x, int y, int w, const channel *ch, rdt_role self,
     tui_put(rbx, r_data, host_border(!is_s, C_ACK), "┤");
     tui_put(rbx, r_ack, host_border(!is_s, C_ACK), "┤");
 
-    tui_print_center(lx0, r_top, L, TS(C_FAINT, C_DEFAULT, 0), "dati  " T_DATA "DATA ──▶");
-    tui_print_center(lx0, r_bot, L, TS(C_FAINT, C_DEFAULT, 0), T_ACK "◀── ACK" T_RESET "  riscontri");
-    tui_print_center(lx0, r_mid, L, TS(C_FAINT, C_DEFAULT, 0), "UDP · ritardo %.1f s", ch->delay_ms / 1000.0);
+    tui_print_center(lx0, r_top, L, TS(C_FAINT, C_DEFAULT, 0), "%s  " T_DATA "DATA ──▶", _("data"));
+    tui_print_center(lx0, r_bot, L, TS(C_FAINT, C_DEFAULT, 0), T_ACK "◀── ACK" T_RESET "  %s", _("acknowledgements"));
+    tui_print_center(lx0, r_mid, L, TS(C_FAINT, C_DEFAULT, 0), "UDP · %s %.1f s", _("delay"), ch->delay_ms / 1000.0);
 
-    /* pacchetti in volo, dal piu' vecchio al piu' recente */
+    /* packets in flight, from the oldest to the newest */
     for (i = 0; i < CH_MAX_FLIGHTS; i++)
         if (ch->fl[i].active)
             order[n++] = &ch->fl[i];
@@ -1306,8 +1320,8 @@ void tui_draw_channel(int x, int y, int w, const channel *ch, rdt_role self,
     variant[TO_RECEIVER] = lane_variant(order, n, TO_RECEIVER, maxpay, lx0, lx1, L, now);
     variant[TO_SENDER]   = lane_variant(order, n, TO_SENDER, maxpay, lx0, lx1, L, now);
 
-    /* etichette e posizioni; i segni delle perdite restano fermi dove il
-     * pacchetto si e' perso e spariscono mentre un altro ci passa sopra */
+    /* labels and positions; the loss marks stay where the packet was lost
+     * and disappear while another one passes over them */
     {
         static char label[CH_MAX_FLIGHTS][160];
         tstyle st[CH_MAX_FLIGHTS];
@@ -1336,7 +1350,7 @@ void tui_draw_channel(int x, int y, int w, const channel *ch, rdt_role self,
                 tui_print(pos[i], order[i]->dir == TO_RECEIVER ? r_data : r_ack, cw[i], st[i], "%s", label[i]);
     }
 
-    /* esito degli arrivi all'estremita' della corsia */
+    /* outcome of the arrivals at the end of the lane */
     for (lane = 0; lane < 2; lane++) {
         const flash_t *fl = &g_flash[lane];
         int row = lane == 0 ? r_data : r_ack;
@@ -1355,7 +1369,7 @@ void tui_draw_channel(int x, int y, int w, const channel *ch, rdt_role self,
     }
 }
 
-/* ---- regole del protocollo ---- */
+/* ---- protocol rules ---- */
 
 void tui_draw_rules(int x, int y, int w, const char *title, const tui_rule *rules, int n, int active)
 {
@@ -1385,10 +1399,10 @@ void tui_draw_rules(int x, int y, int w, const char *title, const tui_rule *rule
     }
 }
 
-/* ---- striscia dei numeri di sequenza ---- */
+/* ---- sequence number strip ---- */
 
-/* Puntatore sopra una cella: "nome ▼" a sinistra della freccia o "▼ nome" a
- * destra; se non c'e' spazio dalla parte preferita si usa l'altra. */
+/* Pointer above a cell: "name ▼" to the left of the arrow or "▼ name" to the
+ * right; if there is no room on the preferred side the other one is used. */
 static void seq_pointer(int col, int row, int lo, int hi, const char *name, int left, tstyle st)
 {
     int tw = tui_text_width(name) + 2;
@@ -1403,8 +1417,8 @@ static void seq_pointer(int col, int row, int lo, int hi, const char *name, int 
         tui_print(col, row, tw, st, "▼ %s", name);
 }
 
-/* Parentesi sotto le celle [lo, lo+n): lati verticali sulla riga delle celle
- * e di cio' che sta sotto, base con l'etichetta. */
+/* Bracket below the cells [lo, lo+n): vertical sides on the row of the cells
+ * and of what lies below, base with the label. */
 static void seq_bracket(int cx0, int pitch, int cw, long first, long lo, int n, int ytop,
                         int xmax, int heavy, tstyle st, const char *label)
 {
@@ -1461,7 +1475,7 @@ void tui_draw_seqstrip(int x, int y, int w, const char *title, const tui_seqstri
     if (ncells < 1)
         return;
 
-    /* un po' di storia a sinistra della finestra, il resto a destra */
+    /* a bit of history to the left of the window, the rest to the right */
     margin = (ncells - s->win_n) / 3;
     if (s->shadow_n > 0 && margin < s->shadow_n)
         margin = s->shadow_n;
@@ -1483,7 +1497,7 @@ void tui_draw_seqstrip(int x, int y, int w, const char *title, const tui_seqstri
     if (s->count < 0 || last < s->count)
         tui_put(cx0 + (int)(last - first) * pitch, y + 2, dim, "…");
 
-    /* celle */
+    /* cells */
     for (k = 0; first + k < last; k++) {
         long idx = first + k;
         int cx = cx0 + k * pitch;
@@ -1503,12 +1517,12 @@ void tui_draw_seqstrip(int x, int y, int w, const char *title, const tui_seqstri
         }
     }
 
-    /* parentesi: prima quella tenue, poi la finestra che ne copre il bordo comune */
+    /* brackets: the faint one first, then the window that covers their shared edge */
     seq_bracket(cx0, pitch, cw, first, s->shadow_lo, s->shadow_n, y + 2, xmax, 0,
                 TS(C_DIM, C_DEFAULT, 0), s->shadow_label);
     seq_bracket(cx0, pitch, cw, first, s->win_lo, s->win_n, y + 2, xmax, 1, acc, s->win_label);
 
-    /* puntatori */
+    /* pointers */
     if (s->ptr_left >= first && s->ptr_left <= last)
         seq_pointer(cx0 + (int)(s->ptr_left - first) * pitch + cw / 2, y + 1, ix, xmax,
                     s->ptr_left_name, 1, acc);
@@ -1516,7 +1530,7 @@ void tui_draw_seqstrip(int x, int y, int w, const char *title, const tui_seqstri
         seq_pointer(cx0 + (int)(s->ptr_right - first) * pitch + cw / 2, y + 1, ix, xmax,
                     s->ptr_right_name, 0, acc);
 
-    /* legenda: quelle che non ci stanno si perdono dalla fine */
+    /* legend: the entries that do not fit are dropped from the end */
     {
         int lx = ix;
         for (k = 0; k < s->nlegend; k++) {

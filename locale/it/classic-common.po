@@ -1,0 +1,176 @@
+# files: rdt tui channel
+# Italian translation of the classic reliable-transfer demos: common code
+# (rdt.c, tui.c). The msgstr are the original Italian wording.
+msgid ""
+msgstr ""
+"Project-Id-Version: netlab\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"PO-Revision-Date: 2026-11-25 00:00+0000\n"
+"Last-Translator: netlab\n"
+"Language-Team: Italian\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Usage: %s [options] [host] [port]\n\n"
+msgstr "Uso: %s [opzioni] [host] [porta]\n\n"
+
+msgid "%s %s over UDP with a simulated unreliable channel.\n\n"
+msgstr "%s %s su UDP con canale inaffidabile simulato.\n\n"
+
+msgid "  -a, --host HOST      receiver to contact               (default %s)\n"
+msgstr "  -a, --host HOST      receiver da contattare            (default %s)\n"
+
+msgid "  -p, --port PORT      UDP port of the receiver          (default %d)\n"
+msgstr "  -p, --port PORTA     porta UDP del receiver            (default %d)\n"
+
+msgid "  -a, --host HOST      address to listen on              (default %s,\n"
+msgstr "  -a, --host HOST      indirizzo su cui ascoltare        (default %s,\n"
+
+msgid "                       0.0.0.0 = every interface)\n"
+msgstr "                       0.0.0.0 = tutte le interfacce)\n"
+
+msgid "  -p, --port PORT      UDP port to listen on             (default %d)\n"
+msgstr "  -p, --port PORTA     porta UDP di ascolto              (default %d)\n"
+
+msgid "  -l, --loss P         loss of the DATA sent             (default %.0f%%)\n"
+msgstr "  -l, --loss P         perdita dei DATA inviati          (default %.0f%%)\n"
+
+msgid "  -l, --loss P         loss of the ACKs sent             (default %.0f%%)\n"
+msgstr "  -l, --loss P         perdita degli ACK inviati         (default %.0f%%)\n"
+
+msgid "  -c, --corrupt P      corruption of the DATA            (default %.0f%%)\n"
+msgstr "  -c, --corrupt P      corruzione dei DATA               (default %.0f%%)\n"
+
+msgid "  -c, --corrupt P      corruption of the ACKs            (default %.0f%%)\n"
+msgstr "  -c, --corrupt P      corruzione degli ACK              (default %.0f%%)\n"
+
+msgid "                       P is a probability: 0.2 or 20%\n"
+msgstr "                       P è una probabilità: 0.2 oppure 20%\n"
+
+msgid "  -d, --delay MS       simulated propagation delay       (default %d ms)\n"
+msgstr "  -d, --delay MS       ritardo di propagazione simulato  (default %d ms)\n"
+
+msgid "  -t, --timeout MS     retransmission timeout            (default 2.5*delay + 500)\n"
+msgstr "  -t, --timeout MS     timeout di ritrasmissione         (default 2.5*ritardo + 500)\n"
+
+msgid "  -w, --window N       window size                       (default %d, max %d)\n"
+msgstr "  -w, --window N       dimensione della finestra         (default %d, max %d)\n"
+
+msgid "  -b, --bits K         bits of the sequence number       (default %d: numbers 0…%d)\n"
+msgstr "  -b, --bits K         bit del numero di sequenza        (default %d: numeri 0…%d)\n"
+
+msgid "  -i, --interval MS    interval between transmissions    (default delay/4)\n"
+msgstr "  -i, --interval MS    intervallo fra due invii          (default ritardo/4)\n"
+
+msgid "  -m, --message TEXT   text to transmit\n"
+msgstr "  -m, --message TESTO  testo da trasmettere\n"
+
+msgid "  -f, --file FILE      transmits the content of a file\n"
+msgstr "  -f, --file FILE      trasmette il contenuto di un file\n"
+
+msgid "  -s, --size N         payload bytes per packet          (default %d)\n"
+msgstr "  -s, --size N         byte di payload per pacchetto     (default %d)\n"
+
+msgid "  -S, --seed N         random seed, to repeat the same scenario\n"
+msgstr "  -S, --seed N         seme casuale, per ripetere lo stesso scenario\n"
+
+msgid "  -h, --help           show this help\n\n"
+msgstr "  -h, --help           mostra questo aiuto\n\n"
+
+msgid "Examples:\n"
+msgstr "Esempi:\n"
+
+msgid "hello world"
+msgstr "ciao mondo"
+
+msgid "Invalid value for %s: %s\n"
+msgstr "Valore non valido per %s: %s\n"
+
+msgid "%s must be between 0 and 1 (or 0%% and 100%%)\n"
+msgstr "%s deve essere compreso tra 0 e 1 (oppure 0%% e 100%%)\n"
+
+msgid "Invalid value for %s: %s (allowed %d..%d)\n"
+msgstr "Valore non valido per %s: %s (ammesso %d..%d)\n"
+
+msgid "Unknown option: -%c\n\n"
+msgstr "Opzione sconosciuta: -%c\n\n"
+
+msgid "Unknown option: %s\n\n"
+msgstr "Opzione sconosciuta: %s\n\n"
+
+msgid "Option %s requires an argument\n\n"
+msgstr "L'opzione %s richiede un argomento\n\n"
+
+msgid "Option --%s does not apply to the %s %s\n\n"
+msgstr "L'opzione --%s non è prevista per il %s %s\n\n"
+
+msgid "port"
+msgstr "porta"
+
+msgid "Unexpected argument: %s\n\n"
+msgstr "Argomento inatteso: %s\n\n"
+
+msgid "The window (%d) exceeds the available sequence numbers: with -b %d there are %d\n"
+msgstr "La finestra (%d) supera i numeri di sequenza disponibili: con -b %d sono %d\n"
+
+msgid "out of memory\n"
+msgstr "memoria esaurita\n"
+
+msgid "Cannot open %s: %s\n"
+msgstr "Impossibile aprire %s: %s\n"
+
+msgid "No data to send\n"
+msgstr "Nessun dato da inviare\n"
+
+msgid "Invalid or unresolvable address: %s\n"
+msgstr "Indirizzo non valido o non risolvibile: %s\n"
+
+msgid "Cannot use %s:%d: %s\n"
+msgstr "Impossibile usare %s:%d: %s\n"
+
+msgid "The port is already in use: is a receiver already running? Try another port (-p).\n"
+msgstr "La porta è già occupata: c'è già un receiver in esecuzione? Prova con un'altra porta (-p).\n"
+
+msgid "Window too small"
+msgstr "Finestra troppo piccola"
+
+msgid "at least %dx%d characters are needed (now %dx%d)"
+msgstr "servono almeno %dx%d caratteri (ora %dx%d)"
+
+msgid "enlarge the window: %d columns in all (or %d rows)"
+msgstr "ingrandisci la finestra: in tutto %d colonne (o %d righe)"
+
+msgid "channel"
+msgstr "canale"
+
+msgid "lost along the way"
+msgstr "perso lungo il percorso"
+
+msgid "corrupted"
+msgstr "corrotto"
+
+msgid "(bit %d of %d flipped)"
+msgstr "(invertito il bit %d di %d)"
+
+msgid "this one"
+msgstr "questo"
+
+msgid "remote"
+msgstr "remoto"
+
+msgid "lost"
+msgstr "perso"
+
+msgid "Unreliable UDP channel (simulated)"
+msgstr "Canale UDP inaffidabile (simulato)"
+
+msgid "data"
+msgstr "dati"
+
+msgid "acknowledgements"
+msgstr "riscontri"
+
+msgid "delay"
+msgstr "ritardo"
+

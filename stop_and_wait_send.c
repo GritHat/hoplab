@@ -1,19 +1,19 @@
 /*
- * stop_and_wait_send.c - Sender Stop-and-Wait (protocollo a bit alternato,
- *                        rdt 3.0) su UDP.
+ * stop_and_wait_send.c - Stop-and-Wait sender (alternating-bit protocol,
+ *                        rdt 3.0) over UDP.
  *
- * Il sender invia un segmento alla volta, marcato con un solo bit di
- * sequenza (0/1), e non passa al successivo finche' non riceve un ACK con
- * lo stesso bit:
- *   - ACK con lo stesso bit   -> segmento confermato, il bit si inverte
- *   - ACK con il bit diverso  -> e' il riscontro del trasferimento precedente,
- *                                quindi il segmento corrente non e' arrivato
- *                                integro: si ritrasmette
- *   - ACK corrotto            -> non si sa cosa riscontri: si ritrasmette
- *   - nessun ACK entro il timeout (dati o ACK persi): si ritrasmette
- * Alla fine un FIN, numerato e riscontrato come i dati, chiude il trasferimento.
+ * The sender transmits one segment at a time, marked with a single sequence
+ * bit (0/1), and does not move on to the next one until it receives an ACK
+ * carrying the same bit:
+ *   - ACK with the same bit   -> segment confirmed, the bit flips
+ *   - ACK with the other bit  -> it acknowledges the previous transfer, so
+ *                                the current segment did not arrive intact:
+ *                                retransmit
+ *   - corrupted ACK           -> no way to know what it acknowledges: retransmit
+ *   - no ACK within the timeout (data or ACK lost): retransmit
+ * At the end a FIN, numbered and acknowledged like the data, closes the transfer.
  *
- * Uso: ./stop_and_wait_send [opzioni] [host] [porta]     (-h per l'aiuto)
+ * Usage: ./stop_and_wait_send [options] [host] [port]     (-h for help)
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,6 +21,7 @@
 #include <unistd.h>
 
 #include "channel.h"
+#include "rdt_i18n.h"
 #include "rdt.h"
 #include "tui.h"
 
@@ -29,14 +30,14 @@
 
 static const rdt_protocol PROTO = {
     "stop-and-wait",
-    "Stop-and-wait: un solo bit alternato basta a rendere affidabile "
-    "un canale che perde e corrompe i pacchetti.",
+    N_("Stop-and-wait: a single alternating bit is enough to make a channel that loses and corrupts "
+       "packets reliable."),
     0, NULL
 };
 
 typedef enum { ST_WAIT_CALL, ST_WAIT_ACK, ST_DONE } sw_state;
 
-/* Transizioni della macchina a stati (per evidenziare l'ultima percorsa) */
+/* State machine transitions (to highlight the last one taken) */
 enum { EDGE_NONE = -1, EDGE_SEND0, EDGE_ACK0, EDGE_SEND1, EDGE_ACK1 };
 
 typedef struct {
@@ -46,25 +47,25 @@ typedef struct {
     struct sockaddr_in dst;
     char        local_s[64], remote_s[64];
 
-    /* dati dell'applicazione divisi in segmenti; il FIN e' il segmento nseg */
+    /* application data split into segments; the FIN is segment nseg */
     rdt_data    data;
     tui_textbuf view;
 
-    /* stato del protocollo */
+    /* protocol state */
     sw_state    state;
-    int         bit;               /* bit di sequenza del segmento corrente */
-    int         seg;               /* indice del segmento corrente */
-    rdt_packet  cur;               /* copia del pacchetto per le ritrasmissioni */
-    int         attempts;          /* trasmissioni del segmento corrente */
+    int         bit;               /* sequence bit of the current segment */
+    int         seg;               /* index of the current segment */
+    rdt_packet  cur;               /* copy of the packet, for retransmissions */
+    int         attempts;          /* transmissions of the current segment */
     int         timer_on;
     long long   timer_start, timer_deadline;
-    long long   next_send;         /* quando l'applicazione passa il prossimo segmento */
+    long long   next_send;         /* when the application hands over the next segment */
     long long   t_begin, t_end;
 
-    /* statistiche */
+    /* statistics */
     unsigned    tx, retx, timeouts, ack_ok, ack_dup, ack_bad, ack_late;
 
-    /* evidenziazioni grafiche */
+    /* visual highlights */
     int         edge;
     long long   edge_t, loop_t, render_now;
 } sender;
@@ -72,7 +73,7 @@ typedef struct {
 static sender S;
 
 /* ------------------------------------------------------------------ */
-/* Protocollo                                                         */
+/* Protocol                                                           */
 /* ------------------------------------------------------------------ */
 
 static void set_edge(sender *s, int edge, long long now)
@@ -81,7 +82,7 @@ static void set_edge(sender *s, int edge, long long now)
     s->edge_t = now;
 }
 
-/* udt_send + avvio del timer */
+/* udt_send + start the timer */
 static void transmit(sender *s, long long now)
 {
     char d[256];
@@ -98,20 +99,20 @@ static void transmit(sender *s, long long now)
 
     tui_pkt_name(&s->cur, d, sizeof(d));
     if (!retx)
-        tui_log(T_DATA "▶ " T_RESET "%s inviato " T_DIM "· timer avviato (%.1f s)",
+        tui_log(tm(_("{d}▶ {0}%s sent {m}· timer started (%.1f s)")),
                 d, s->opt.timeout_ms / 1000.0);
     else
-        tui_log(T_WARN "↻ " T_RESET "%s ritrasmesso " T_DIM "· tentativo %d · timer riavviato",
+        tui_log(tm(_("{y}↻ {0}%s retransmitted {m}· attempt %d · timer restarted")),
                 d, s->attempts);
 }
 
-/* rdt_send(): l'applicazione consegna il prossimo segmento */
+/* rdt_send(): the application hands over the next segment */
 static void start_segment(sender *s, long long now)
 {
     if (s->seg < s->data.nseg)
-        tui_log_rule("segmento %d/%d · bit %d", s->seg + 1, s->data.nseg, s->bit);
+        tui_log_rule(_("segment %d/%d · bit %d"), s->seg + 1, s->data.nseg, s->bit);
     else
-        tui_log_rule("chiusura · FIN · bit %d", s->bit);
+        tui_log_rule(_("closing · FIN · bit %d"), s->bit);
     rdt_make_packet(&s->data, s->seg, (uint32_t)s->bit, &s->cur);
     s->attempts = 0;
     s->state = ST_WAIT_ACK;
@@ -122,8 +123,8 @@ static void start_segment(sender *s, long long now)
 static void on_timeout(sender *s, long long now)
 {
     s->timeouts++;
-    tui_log(T_TIME "◷ TIMEOUT" T_RESET ": nessun ACK %d entro %.1f s " T_DIM "(pacchetto o riscontro perso)"
-            T_RESET " → ritrasmetto", s->bit, s->opt.timeout_ms / 1000.0);
+    tui_log(tm(_("{t}◷ TIMEOUT{0}: no ACK %d within %.1f s {m}(packet or acknowledgement lost){0} → "
+                 "retransmitting")), s->bit, s->opt.timeout_ms / 1000.0);
     s->loop_t = now;
     transmit(s, now);
 }
@@ -136,21 +137,21 @@ static void handle_ack(sender *s, const ch_flight *f, long long now)
     if (!rdt_addr_equal(&f->from, &s->dst)) {
         char from[64];
         rdt_addr_str(&f->from, from, sizeof(from));
-        tui_log(T_DIM "◀ pacchetto da %s ignorato: non è il receiver", from);
+        tui_log(tm(_("{m}◀ packet from %s ignored: it is not the receiver")), from);
         return;
     }
 
     if (s->state != ST_WAIT_ACK) {
         s->ack_late++;
-        tui_log(T_DIM "◀ %s %u fuori tempo: nessun pacchetto in attesa di riscontro, ignorato",
-                f->valid ? rdt_type_name(a->type) : "pacchetto", (unsigned)a->seq);
-        tui_channel_flash(TO_SENDER, FLASH_WARN, "ignorato");
+        tui_log(tm(_("{m}◀ %s %u out of time: no packet is waiting for an acknowledgement, ignored")),
+                f->valid ? rdt_type_name(a->type) : _("packet"), (unsigned)a->seq);
+        tui_channel_flash(TO_SENDER, FLASH_WARN, _("ignored"));
         return;
     }
 
     if (!f->valid || a->type != PKT_ACK) {
         s->ack_bad++;
-        tui_log(T_ERR "◀ ACK corrotto" T_RESET ": checksum errato, non si sa cosa riscontri → ritrasmetto");
+        tui_log("%s", tm(_("{r}◀ corrupted ACK{0}: wrong checksum, no way to know what it acknowledges → retransmitting")));
         tui_channel_flash(TO_SENDER, FLASH_ERR, "✗ checksum");
         s->loop_t = now;
         transmit(s, now);
@@ -164,17 +165,16 @@ static void handle_ack(sender *s, const ch_flight *f, long long now)
         s->timer_on = 0;
         snprintf(flash, sizeof(flash), "✓ ACK %d", s->bit);
         tui_channel_flash(TO_SENDER, FLASH_OK, flash);
-        tui_log(T_ACK "◀ ACK %d" T_RESET " ricevuto: " T_OK "✓ stesso bit" T_RESET
-                " → timer fermato, %s confermato " T_DIM "(RTT %.1f s)",
-                s->bit, s->cur.type == PKT_FIN ? "FIN" : "segmento", rtt);
+        tui_log(tm(_("{a}◀ ACK %d{0} received: {g}✓ same bit{0} → timer stopped, %s confirmed {m}(RTT %.1f s)")),
+                s->bit, s->cur.type == PKT_FIN ? "FIN" : _("segment"), rtt);
         set_edge(s, s->bit == 0 ? EDGE_ACK0 : EDGE_ACK1, now);
         s->seg++;
         s->bit ^= 1;
         if (s->seg > s->data.nseg) {
             s->state = ST_DONE;
             s->t_end = now;
-            tui_log(T_OK T_BOLD "✓ Trasferimento completato" T_RESET ": %d segmenti, %zu byte in %.1f s "
-                    T_DIM "· %u trasmissioni, %u ritrasmissioni",
+            tui_log(tm(_("{g}{b}✓ Transfer complete{0}: %d segments, %zu bytes in %.1f s {m}· %u "
+                         "transmissions, %u retransmissions")),
                     s->data.nseg, s->data.len, (s->t_end - s->t_begin) / 1000.0, s->tx, s->retx);
         } else {
             s->state = ST_WAIT_CALL;
@@ -184,8 +184,8 @@ static void handle_ack(sender *s, const ch_flight *f, long long now)
         s->ack_dup++;
         snprintf(flash, sizeof(flash), "ACK %u ≠ %d", (unsigned)a->seq, s->bit);
         tui_channel_flash(TO_SENDER, FLASH_WARN, flash);
-        tui_log(T_ACK "◀ ACK %u" T_RESET " ricevuto: " T_WARN "bit diverso (atteso %d)" T_RESET
-                " → riscontra il trasferimento precedente, ritrasmetto",
+        tui_log(tm(_("{a}◀ ACK %u{0} received: {y}different bit (expected %d){0} → it acknowledges "
+                     "the previous transfer, retransmitting")),
                 (unsigned)a->seq, s->bit);
         s->loop_t = now;
         transmit(s, now);
@@ -193,7 +193,7 @@ static void handle_ack(sender *s, const ch_flight *f, long long now)
 }
 
 /* ------------------------------------------------------------------ */
-/* Interfaccia                                                        */
+/* Interface                                                          */
 /* ------------------------------------------------------------------ */
 
 static tstyle edge_style(const sender *s, int edge, long long now)
@@ -219,11 +219,11 @@ static void edge_v(int x, int y0, int y1, int dir, tstyle st)
 }
 
 /*
- *    ▐ ATTESA DATI 0 ▌──── invio DATA 0 ────▶▐ ATTESA ACK 0 ▌ ↻
+ *    ▐  WAIT DATA 0  ▌──── send DATA 0 ────▶▐  WAIT ACK 0  ▌ ↻
  *            ▲                                      │
  *      ACK 1 │                                      │ ACK 0
  *            │                                      ▼
- *  ↻ ▐ ATTESA ACK 1 ▌◀──── invio DATA 1 ────▐ ATTESA DATI 1 ▌
+ *  ↻ ▐  WAIT ACK 1  ▌◀──── send DATA 1 ────▐  WAIT DATA 1  ▌
  */
 static void draw_fsm(const sender *s, int x, int y, int w, long long now)
 {
@@ -246,33 +246,33 @@ static void draw_fsm(const sender *s, int x, int y, int w, long long now)
     else if (s->state == ST_WAIT_ACK)
         active = s->bit == 0 ? 1 : 3;
 
-    tui_box(x, y, w, 8, TS(C_BORDER, C_DEFAULT, 0), "Macchina a stati del sender (rdt 3.0)");
+    tui_box(x, y, w, 8, TS(C_BORDER, C_DEFAULT, 0), _("Sender state machine (rdt 3.0)"));
 
-    edge_h(lx + P, rx - 1, r0, +1, "invio DATA 0", edge_style(s, EDGE_SEND0, now));
+    edge_h(lx + P, rx - 1, r0, +1, _("send DATA 0"), edge_style(s, EDGE_SEND0, now));
     edge_v(cr, r0 + 1, r4 - 1, +1, edge_style(s, EDGE_ACK0, now));
     tui_print(cr + 2, r0 + 2, P, edge_style(s, EDGE_ACK0, now), "ACK 0 ✓");
-    edge_h(lx + P, rx - 1, r4, -1, "invio DATA 1", edge_style(s, EDGE_SEND1, now));
+    edge_h(lx + P, rx - 1, r4, -1, _("send DATA 1"), edge_style(s, EDGE_SEND1, now));
     edge_v(cl, r0 + 1, r4 - 1, -1, edge_style(s, EDGE_ACK1, now));
     tui_print(cl - 9, r0 + 2, 8, edge_style(s, EDGE_ACK1, now), "ACK 1 ✓");
 
-    tui_pill(lx, r0, P, "ATTESA DATI 0", active == 0, C_DATA);
-    tui_pill(rx, r0, P, "ATTESA ACK 0", active == 1, C_WARN);
-    tui_pill(rx, r4, P, "ATTESA DATI 1", active == 2, C_DATA);
-    tui_pill(lx, r4, P, "ATTESA ACK 1", active == 3, C_WARN);
+    tui_pill(lx, r0, P, _("WAIT DATA 0"), active == 0, C_DATA);
+    tui_pill(rx, r0, P, _("WAIT ACK 0"), active == 1, C_WARN);
+    tui_pill(rx, r4, P, _("WAIT DATA 1"), active == 2, C_DATA);
+    tui_pill(lx, r4, P, _("WAIT ACK 1"), active == 3, C_WARN);
     tui_put(rx + P + 1, r0, looping && active == 1 ? loop_on : loop_off, "↻");
     tui_put(lx - 2, r4, looping && active == 3 ? loop_on : loop_off, "↻");
 
     if (s->state == ST_DONE)
-        tui_print_center(cl + 2, r0 + 2, cr - cl - 3, TS(C_OK, C_DEFAULT, TA_BOLD), "✓ trasferimento completato");
+        tui_print_center(cl + 2, r0 + 2, cr - cl - 3, TS(C_OK, C_DEFAULT, TA_BOLD), "%s", _("✓ transfer complete"));
     else if (s->state == ST_WAIT_ACK)
         tui_print_center(cl + 2, r0 + 2, cr - cl - 3, TS(C_TEXT, C_DEFAULT, 0),
-                         "in attesa di " T_ACK T_BOLD "ACK %d" T_RESET, s->bit);
+                         tm(_("waiting for {a}{b}ACK %d{0}")), s->bit);
     else
         tui_print_center(cl + 2, r0 + 2, cr - cl - 3, TS(C_DIM, C_DEFAULT, 0),
-                         "in attesa di dati dall'applicazione");
+                         "%s", _("waiting for data from the application"));
 
     tui_print(ix, y + 6, iw, TS(C_DIM, C_DEFAULT, 0),
-              "↻ in attesa di ACK: timeout · ACK con bit diverso · ACK corrotto  ⇒  ritrasmissione");
+              "%s", _("↻ waiting for ACK: timeout · ACK with the other bit · corrupted ACK  ⇒  retransmission"));
 }
 
 static tstyle seg_style(int seg, const void *ctx)
@@ -293,9 +293,9 @@ static void draw_transfer(const sender *s, int x, int y, int w, long long now)
     tstyle dim = TS(C_DIM, C_DEFAULT, 0), txt = TS(C_TEXT, C_DEFAULT, 0);
     char segno[32], attempt[16];
 
-    tui_box(x, y, w, 7, TS(C_BORDER, C_DEFAULT, 0), "Trasferimento");
+    tui_box(x, y, w, 7, TS(C_BORDER, C_DEFAULT, 0), _("Transfer"));
 
-    /* bit corrente, segmento, tentativi */
+    /* current bit, segment, attempts */
     if (s->state == ST_DONE)
         snprintf(segno, sizeof(segno), "—");
     else if (s->seg < s->data.nseg)
@@ -307,14 +307,13 @@ static void draw_transfer(const sender *s, int x, int y, int w, long long now)
     else
         snprintf(attempt, sizeof(attempt), "—");
     tui_print(ix, y + 1, iw, txt,
-              T_DIM "bit corrente" T_RESET "  %s" T_RESET "     " T_DIM "segmento" T_RESET " %s     "
-              T_DIM "tentativo" T_RESET " %s",
+              tm(_("{m}current bit{0}  %s{0}     {m}segment{0} %s     {m}attempt{0} %s")),
               s->state == ST_DONE ? T_CHIP_OFF " 0 " T_RESET " " T_CHIP_OFF " 1 "
               : s->bit == 0       ? T_CHIP_DATA " 0 " T_RESET " " T_CHIP_OFF " 1 "
                                   : T_CHIP_OFF " 0 " T_RESET " " T_CHIP_DATA " 1 ",
               segno, attempt);
 
-    /* timer di ritrasmissione */
+    /* retransmission timer */
     bw = iw - lab - 16;
     tui_print(ix, y + 2, lab, dim, "timer");
     if (s->timer_on && s->state == ST_WAIT_ACK) {
@@ -325,16 +324,16 @@ static void draw_transfer(const sender *s, int x, int y, int w, long long now)
         tui_print(ix + lab + bw + 2, y + 2, 14, TS(col, C_DEFAULT, TA_BOLD), "%.1f / %.1f s", el > tot ? tot : el, tot);
     } else {
         tui_bar(ix + lab, y + 2, bw, 0.0, C_OK);
-        tui_print(ix + lab + bw + 2, y + 2, 14, dim, "■ fermo");
+        tui_print(ix + lab + bw + 2, y + 2, 14, dim, "%s", _("■ stopped"));
     }
 
-    /* segmenti confermati */
-    tui_print(ix, y + 3, lab, dim, "confermati");
+    /* confirmed segments */
+    tui_print(ix, y + 3, lab, dim, "%s", _("confirmed"));
     tui_bar(ix + lab, y + 3, bw, s->data.nseg ? (double)done_segs / s->data.nseg : 0.0, C_ACK);
     tui_print(ix + lab + bw + 2, y + 3, 14, txt, "%d/%d", done_segs, s->data.nseg);
 
-    /* testo: confermato (verde), in volo (blu), da inviare (grigio) */
-    tui_print(ix, y + 4, lab, dim, "dati");
+    /* text: confirmed (green), in flight (blue), still to send (grey) */
+    tui_print(ix, y + 4, lab, dim, "%s", _("data"));
     for (i = 0; i < s->view.n; i++)
         if (s->view.g[i].seg == s->seg) {
             focus = i;
@@ -351,16 +350,14 @@ static void draw_stats(const sender *s, int x, int y, int w)
     long long end = s->state == ST_DONE ? s->t_end : rdt_now_ms();
     int confirmed = s->seg;
 
-    tui_box(x, y, w, 4, TS(C_BORDER, C_DEFAULT, 0), "Statistiche");
+    tui_box(x, y, w, 4, TS(C_BORDER, C_DEFAULT, 0), _("Statistics"));
     tui_print(ix, y + 1, iw, TS(C_TEXT, C_DEFAULT, 0),
-              T_DATA T_BOLD "DATA" T_RESET "  " T_DIM "trasmessi" T_RESET " %u  " T_DIM "ritrasmessi" T_RESET " %u  "
-              T_TIME "timeout" T_RESET " %u" T_DIM "  │  " T_CHAN "canale ▶" T_RESET " " T_DIM "persi" T_RESET " %u/%u  "
-              T_DIM "corrotti" T_RESET " %u/%u",
+              tm(_("{d}{b}DATA{0}  {m}sent{0} %u  {m}retransmitted{0} %u  {t}timeouts{0} %u{m}  │  "
+                   "{c}channel ▶{0} {m}lost{0} %u/%u  {m}corrupted{0} %u/%u")),
               s->tx, s->retx, s->timeouts, s->ch.n_lost, s->ch.n_sent, s->ch.n_corrupted, s->ch.n_sent);
     tui_print(ix, y + 2, iw, TS(C_TEXT, C_DEFAULT, 0),
-              T_ACK T_BOLD "ACK " T_RESET "  " T_OK "✓" T_RESET " %u  " T_WARN "bit diverso" T_RESET " %u  "
-              T_ERR "corrotti" T_RESET " %u  " T_DIM "fuori tempo" T_RESET " %u" T_DIM "  │  durata" T_RESET " %.1f s  "
-              T_DIM "utili" T_RESET " %.0f%%",
+              tm(_("{a}{b}ACK {0}  {g}✓{0} %u  {y}other bit{0} %u  {r}corrupted{0} %u  {m}out of "
+                   "time{0} %u{m}  │  duration{0} %.1f s  {m}useful{0} %.0f%%")),
               s->ack_ok, s->ack_dup, s->ack_bad, s->ack_late,
               (end - s->t_begin) / 1000.0, s->tx ? 100.0 * confirmed / s->tx : 0.0);
 }
@@ -386,10 +383,10 @@ static void render(sender *s, long long now)
              T_DATA "●" T_RESET " sender " T_BOLD "%s" T_RESET "   " T_DIM "──▶" T_RESET "   receiver " T_BOLD "%s",
              s->local_s, s->remote_s);
     snprintf(l2, sizeof(l2),
-             "timeout %.1f s · ritardo %.1f s · perdita %.0f%% · corruzione %.0f%% · %d×%d B · seed %u%s",
+             _("timeout %.1f s · delay %.1f s · loss %.0f%% · corruption %.0f%% · %d×%d B · seed %u%s"),
              s->opt.timeout_ms / 1000.0, s->opt.delay_ms / 1000.0, s->opt.loss * 100, s->opt.corrupt * 100,
              s->data.nseg, s->opt.chunk, s->opt.seed,
-             s->opt.timeout_ms <= 2 * s->opt.delay_ms ? T_WARN "  timeout ≤ RTT: timeout prematuri!" : "");
+             s->opt.timeout_ms <= 2 * s->opt.delay_ms ? tm(_("{y}  timeout ≤ RTT: premature timeouts!")) : "");
     tui_draw_header(y, W, PROTOCOL, ROLE_SENDER, l1, l2);
     y += 4;
 
@@ -401,7 +398,7 @@ static void render(sender *s, long long now)
     y += 7;
 
     if (s->state == ST_DONE)
-        snprintf(note, sizeof(note), T_OK "✓ fine");
+        snprintf(note, sizeof(note), "%s", tm(_("{g}✓ done")));
     else
         snprintf(note, sizeof(note), "bit " T_DATA T_BOLD "%d", s->bit);
     tui_draw_channel(0, y, W, &s->ch, ROLE_SENDER, now, note);
@@ -411,10 +408,10 @@ static void render(sender *s, long long now)
         draw_stats(s, 0, y, W);
         y += 4;
     }
-    tui_draw_log(0, y, W, H - 1 - y, "Registro eventi");
+    tui_draw_log(0, y, W, H - 1 - y, _("Event log"));
 
-    snprintf(foot, sizeof(foot), T_KEY " q " T_RESET " esci     stop-and-wait · sender · pid %d%s",
-             (int)getpid(), s->state == ST_DONE ? T_OK "     ✓ trasferimento completato, premi q per uscire" : "");
+    snprintf(foot, sizeof(foot), tm(_("{K} q {0} quit     stop-and-wait · sender · pid %d%s")),
+             (int)getpid(), s->state == ST_DONE ? tm(_("{g}     ✓ transfer complete, press q to quit")) : "");
     tui_draw_footer(H - 1, W, foot);
     tui_frame_end();
 }
@@ -426,7 +423,15 @@ int main(int argc, char **argv)
     sender *s = &S;
     int quit = 0, i;
 
-    rdt_parse_options(argc, argv, ROLE_SENDER, &PROTO, &s->opt);
+    rdt_protocol proto = PROTO;
+
+    /* the catalog must be loaded before the default text and the help are translated */
+    nl_i18n_init(NULL);
+    if (proto.message)
+        proto.message = _(proto.message);
+    if (proto.note)
+        proto.note = _(proto.note);
+    rdt_parse_options(argc, argv, ROLE_SENDER, &proto, &s->opt);
     rdt_srand(s->opt.seed);
     s->sock = rdt_open_sender(&s->opt, &s->dst, s->local_s, s->remote_s, sizeof(s->local_s));
 
@@ -442,7 +447,7 @@ int main(int argc, char **argv)
     s->t_begin   = rdt_now_ms();
     s->next_send = s->t_begin + 800;
     s->loop_t    = s->edge_t = -HIGHLIGHT_MS;
-    tui_log(T_INFO "● Sender pronto" T_RESET ": %zu byte in %d segmenti da al più %d byte, verso %s",
+    tui_log(tm(_("{i}● Sender ready{0}: %zu bytes in %d segments of at most %d bytes, to %s")),
             s->data.len, s->data.nseg, s->opt.chunk, s->remote_s);
 
     while (!quit && !tui_should_quit()) {
@@ -474,11 +479,11 @@ int main(int argc, char **argv)
     tui_shutdown();
 
     if (s->state == ST_DONE)
-        printf("Stop-and-wait: %d segmenti (%zu byte) consegnati in %.1f s · %u trasmissioni, "
-               "%u ritrasmissioni, %u timeout\n", s->data.nseg, s->data.len,
+        printf(_("Stop-and-wait: %d segments (%zu bytes) delivered in %.1f s · %u transmissions, %u "
+                 "retransmissions, %u timeouts\n"), s->data.nseg, s->data.len,
                (s->t_end - s->t_begin) / 1000.0, s->tx, s->retx, s->timeouts);
     else
-        printf("Stop-and-wait: interrotto dopo %d/%d segmenti confermati\n",
+        printf(_("Stop-and-wait: interrupted after %d/%d segments confirmed\n"),
                s->seg < s->data.nseg ? s->seg : s->data.nseg, s->data.nseg);
 
     close(s->sock);

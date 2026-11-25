@@ -1,5 +1,5 @@
 /*
- * channel.c - Canale inaffidabile simulato (perdita, corruzione, ritardo).
+ * channel.c - Simulated unreliable channel (loss, corruption, delay).
  */
 #include "channel.h"
 
@@ -17,8 +17,8 @@ void ch_init(channel *ch, int sock, ch_dir out_dir, double loss, double corrupt,
     ch->delay_ms = delay_ms;
 }
 
-/* Trova un posto libero; se non c'e' sacrifica l'animazione in uscita piu'
- * vecchia (mai un pacchetto in arrivo, che deve ancora essere consegnato). */
+/* Finds a free slot; if there is none it sacrifices the oldest outgoing
+ * animation (never an incoming packet, which still has to be delivered). */
 static ch_flight *alloc_flight(channel *ch)
 {
     ch_flight *oldest = NULL;
@@ -47,7 +47,7 @@ ch_fate ch_send(channel *ch, const rdt_packet *p, const struct sockaddr_in *to)
         fate = FATE_LOST;
         ch->n_lost++;
     } else if (rdt_rand01() < ch->corrupt) {
-        /* inverte un bit a caso fra intestazione e payload */
+        /* flips a random bit of header or payload */
         fate = FATE_CORRUPT;
         ch->n_corrupted++;
         bit = (int)rdt_rand((unsigned)(n * 8));
@@ -91,7 +91,7 @@ int ch_poll_socket(channel *ch)
         if (n < 0) {
             if (errno == EINTR)
                 continue;
-            break;                      /* EAGAIN: nient'altro da leggere */
+            break;                      /* EAGAIN: nothing else to read */
         }
         now = rdt_now_ms();
         ch->n_recv++;
@@ -99,7 +99,7 @@ int ch_poll_socket(channel *ch)
 
         f = alloc_flight(ch);
         if (!f)
-            continue;                   /* nessun posto: equivale a una perdita */
+            continue;                   /* no slot: the same as a loss */
         memset(f, 0, sizeof(*f));
         f->active   = 1;
         f->outbound = 0;
@@ -156,7 +156,7 @@ void ch_gc(channel *ch, long long now)
             continue;
         if (f->fate == FATE_LOST) {
             if (f->fate_reported && now - f->fate_time > 1500)
-                f->active = 0;          /* la croce resta visibile per un po' */
+                f->active = 0;          /* the cross stays visible for a while */
         } else if (now >= f->t_end) {
             f->active = 0;
         }

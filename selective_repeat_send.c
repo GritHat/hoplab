@@ -1,24 +1,24 @@
 /*
- * selective_repeat_send.c - Sender Selective Repeat su UDP.
+ * selective_repeat_send.c - Selective Repeat sender over UDP.
  *
- * Come in Go-Back-N il sender puo' avere fino a N pacchetti in volo (la
- * finestra [send_base, send_base+N-1], numeri di sequenza modulo 2^k), ma
- * ogni pacchetto ha il SUO timer e il receiver riscontra i pacchetti uno per
- * uno, anche fuori ordine:
- *   - dati dall'applicazione e nextseqnum < send_base+N
- *                          -> invia il pacchetto nextseqnum e ne avvia il timer
- *   - ACK n nella finestra -> segna n come riscontrato e ne ferma il timer; se
- *                             n = send_base la finestra scorre fino al primo
- *                             pacchetto non ancora riscontrato
- *   - timeout del pacchetto n
- *                          -> ritrasmette SOLO n e ne riavvia il timer
- *   - ACK corrotto, duplicato o fuori finestra -> ignorato
- * Alla fine un FIN, numerato come i dati, chiude il trasferimento.
+ * As in Go-Back-N the sender may have up to N packets in flight (the window
+ * [send_base, send_base+N-1], sequence numbers modulo 2^k), but every packet
+ * has ITS OWN timer and the receiver acknowledges packets one by one, even
+ * out of order:
+ *   - data from the application and nextseqnum < send_base+N
+ *                          -> send packet nextseqnum and start its timer
+ *   - ACK n in the window  -> mark n as acknowledged and stop its timer; if
+ *                             n = send_base the window slides up to the first
+ *                             packet not yet acknowledged
+ *   - timeout of packet n
+ *                          -> retransmit ONLY n and restart its timer
+ *   - corrupted, duplicate or out-of-window ACK -> ignored
+ * At the end a FIN, numbered like the data, closes the transfer.
  *
- * Perche' il receiver non scambi un pacchetto ritrasmesso per uno nuovo serve
- * N <= 2^(k-1): con una finestra piu' grande l'intestazione lo segnala.
+ * For the receiver not to take a retransmitted packet for a new one,
+ * N <= 2^(k-1) is required: with a larger window the header says so.
  *
- * Uso: ./selective_repeat_send [opzioni] [host] [porta]     (-h per l'aiuto)
+ * Usage: ./selective_repeat_send [options] [host] [port]     (-h for help)
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,6 +26,7 @@
 #include <unistd.h>
 
 #include "channel.h"
+#include "rdt_i18n.h"
 #include "rdt.h"
 #include "tui.h"
 
@@ -34,20 +35,43 @@
 
 static const rdt_protocol PROTO = {
     "selective repeat",
-    "Selective repeat: ogni pacchetto ha il suo timer, il receiver tiene da parte "
-    "quelli fuori ordine e si ritrasmette solo ciò che è andato perso.",
+    N_("Selective repeat: every packet has its own timer, the receiver keeps the out-of-order ones "
+       "aside and only what was lost is retransmitted."),
     RDT_OPT_WINDOW | RDT_OPT_SEQBITS | RDT_OPT_INTERVAL,
-    "Il receiver deve usare gli stessi -w e -b."
+    N_("The receiver must use the same -w and -b.")
 };
 
 enum { RULE_NONE = -1, RULE_SEND, RULE_ACK, RULE_TIMEOUT, RULE_IGNORE };
 
 static const tui_rule RULES[] = {
-    { T_DATA "▶", "dati dall'app, nextseqnum < send_base+N", "invia DATA nextseqnum e avvia il suo timer" },
-    { T_ACK "◀",  "ACK n nella finestra",                    "ferma il timer di n; se n = send_base, scorre" },
-    { T_TIME "◷", "timeout del pacchetto n",                 "ritrasmette solo n e ne riavvia il timer" },
-    { T_ERR "✗",  "ACK corrotto, duplicato o fuori finestra", "ignorato" },
+    { T_DATA "▶",
+      N_("data from the app, nextseqnum < send_base+N"),
+      N_("send DATA nextseqnum and start its timer") },
+    { T_ACK "◀",
+      N_("ACK n inside the window"),
+      N_("stop the timer of n; if n = send_base, slide") },
+    { T_TIME "◷",
+      N_("timeout of packet n"),
+      N_("retransmit only n and restart its timer") },
+    { T_ERR "✗",
+      N_("corrupted, duplicate or out-of-window ACK"),
+      N_("ignored") },
 };
+
+/* The rules in the user's language (translated once, on first use) */
+static const tui_rule *rules_tr(void)
+{
+    static tui_rule tr[sizeof(RULES) / sizeof(RULES[0])];
+    size_t i;
+
+    if (!tr[0].icon)
+        for (i = 0; i < sizeof(RULES) / sizeof(RULES[0]); i++) {
+            tr[i].icon = RULES[i].icon;
+            tr[i].when = _(RULES[i].when);
+            tr[i].then = _(RULES[i].then);
+        }
+    return tr;
+}
 
 typedef struct {
     rdt_options opt;
@@ -56,27 +80,27 @@ typedef struct {
     struct sockaddr_in dst;
     char        local_s[64], remote_s[64];
 
-    rdt_data    data;              /* segmenti 0..nseg-1; il FIN e' il pacchetto nseg */
+    rdt_data    data;              /* segments 0..nseg-1; the FIN is packet nseg */
     tui_textbuf view;
-    int         total;             /* pacchetti da consegnare, FIN compreso */
-    int         M, N;              /* numeri di sequenza 0..M-1, finestra N */
+    int         total;             /* packets to deliver, FIN included */
+    int         M, N;              /* sequence numbers 0..M-1, window N */
 
-    /* stato del protocollo: indici assoluti dei pacchetti, seq = indice mod M */
-    int         base;              /* send_base: il piu' vecchio non riscontrato */
-    int         nextseq;           /* il prossimo mai inviato */
-    long long   next_tx_time;      /* prossimo invio non prima di (ms) */
-    unsigned char *acked;          /* per pacchetto: riscontrato */
-    unsigned char *timer_on;       /* per pacchetto: timer attivo */
-    unsigned char *pending;        /* per pacchetto: timer scaduto, da ritrasmettere */
+    /* protocol state: absolute packet indexes, seq = index mod M */
+    int         base;              /* send_base: the oldest unacknowledged */
+    int         nextseq;           /* the next never sent */
+    long long   next_tx_time;      /* next transmission not before (ms) */
+    unsigned char *acked;          /* per packet: acknowledged */
+    unsigned char *timer_on;       /* per packet: timer running */
+    unsigned char *pending;        /* per packet: timer expired, to retransmit */
     long long  *timer_start;
     int        *tx_count;
     int         done;
     long long   t_begin, t_end;
 
-    /* statistiche */
+    /* statistics */
     unsigned    tx, retx, timeouts, ack_new, ack_dup, ack_out, ack_bad, ack_late;
 
-    /* evidenziazioni grafiche */
+    /* visual highlights */
     int         rule;
     long long   rule_t, render_now;
 } sender;
@@ -84,7 +108,7 @@ typedef struct {
 static sender S;
 
 /* ------------------------------------------------------------------ */
-/* Protocollo                                                         */
+/* Protocol                                                           */
 /* ------------------------------------------------------------------ */
 
 static int seq_of(const sender *s, int idx)
@@ -98,7 +122,7 @@ static void set_rule(sender *s, int rule, long long now)
     s->rule_t = now;
 }
 
-/* udt_send del pacchetto idx e avvio del suo timer */
+/* udt_send of packet idx and start of its timer */
 static void transmit(sender *s, int idx, long long now)
 {
     rdt_packet p;
@@ -116,16 +140,16 @@ static void transmit(sender *s, int idx, long long now)
     if (idx == s->nextseq) {
         s->nextseq++;
         set_rule(s, RULE_SEND, now);
-        tui_log(T_DATA "▶ " T_RESET "%s inviato " T_DIM "· suo timer avviato · finestra %d/%d",
+        tui_log(tm(_("{d}▶ {0}%s sent {m}· its timer started · window %d/%d")),
                 d, s->nextseq - s->base, s->N);
     } else {
         s->retx++;
-        tui_log(T_WARN "↻ " T_RESET "%s ritrasmesso " T_DIM "· tentativo %d · suo timer riavviato",
+        tui_log(tm(_("{y}↻ {0}%s retransmitted {m}· attempt %d · its timer restarted")),
                 d, s->tx_count[idx]);
     }
 }
 
-/* Scadenza dei timer: il pacchetto va in coda per la ritrasmissione */
+/* Timer expiry: the packet is queued for retransmission */
 static void check_timers(sender *s, long long now)
 {
     int i;
@@ -136,12 +160,11 @@ static void check_timers(sender *s, long long now)
             s->pending[i]  = 1;
             s->timeouts++;
             set_rule(s, RULE_TIMEOUT, now);
-            tui_log(T_TIME "◷ TIMEOUT" T_RESET " di " T_BOLD "seq %d" T_RESET ": nessun ACK entro %.1f s "
-                    "→ ritrasmetto solo questo pacchetto", seq_of(s, i), s->opt.timeout_ms / 1000.0);
+            tui_log(tm(_("{t}◷ TIMEOUT{0} of {b}seq %d{0}: no ACK within %.1f s → retransmitting only this packet")), seq_of(s, i), s->opt.timeout_ms / 1000.0);
         }
 }
 
-/* Invia al massimo un pacchetto ogni interval_ms: prima le ritrasmissioni */
+/* Send at most one packet every interval_ms: retransmissions first */
 static void pump(sender *s, long long now)
 {
     while (!s->done && now >= s->next_tx_time) {
@@ -169,21 +192,20 @@ static void handle_ack(sender *s, const ch_flight *f, long long now)
     if (!rdt_addr_equal(&f->from, &s->dst)) {
         char from[64];
         rdt_addr_str(&f->from, from, sizeof(from));
-        tui_log(T_DIM "◀ pacchetto da %s ignorato: non è il receiver", from);
+        tui_log(tm(_("{m}◀ packet from %s ignored: it is not the receiver")), from);
         return;
     }
     if (s->done) {
         s->ack_late++;
-        tui_log(T_DIM "◀ %s %u fuori tempo: trasferimento già concluso, ignorato",
-                f->valid ? rdt_type_name(a->type) : "pacchetto", (unsigned)a->seq);
-        tui_channel_flash(TO_SENDER, FLASH_WARN, "ignorato");
+        tui_log(tm(_("{m}◀ %s %u out of time: transfer already finished, ignored")),
+                f->valid ? rdt_type_name(a->type) : _("packet"), (unsigned)a->seq);
+        tui_channel_flash(TO_SENDER, FLASH_WARN, _("ignored"));
         return;
     }
     if (!f->valid || a->type != PKT_ACK) {
         s->ack_bad++;
         set_rule(s, RULE_IGNORE, now);
-        tui_log(T_ERR "◀ ACK corrotto" T_RESET ": checksum errato → ignorato "
-                T_DIM "(il timer del pacchetto farà il resto)");
+        tui_log("%s", tm(_("{r}◀ corrupted ACK{0}: wrong checksum → ignored {m}(the packet's timer will do the rest)")));
         tui_channel_flash(TO_SENDER, FLASH_ERR, "✗ checksum");
         return;
     }
@@ -194,10 +216,10 @@ static void handle_ack(sender *s, const ch_flight *f, long long now)
     if (d >= s->nextseq - s->base) {
         s->ack_out++;
         set_rule(s, RULE_IGNORE, now);
-        snprintf(flash, sizeof(flash), "ACK %u vecchio", seq);
+        snprintf(flash, sizeof(flash), _("old ACK %u"), seq);
         tui_channel_flash(TO_SENDER, FLASH_WARN, flash);
-        tui_log(T_ACK "◀ ACK %u" T_RESET " " T_WARN "fuori finestra" T_RESET ": riscontra un pacchetto già "
-                "uscito dalla finestra " T_DIM "(send_base = seq %d)" T_RESET " → ignorato", seq, seq_of(s, s->base));
+        tui_log(tm(_("{a}◀ ACK %u{0} {y}out of window{0}: it acknowledges a packet that already left "
+                     "the window {m}(send_base = seq %d){0} → ignored")), seq, seq_of(s, s->base));
         return;
     }
 
@@ -209,7 +231,7 @@ static void handle_ack(sender *s, const ch_flight *f, long long now)
             set_rule(s, RULE_IGNORE, now);
             snprintf(flash, sizeof(flash), "dup ACK %u", seq);
             tui_channel_flash(TO_SENDER, FLASH_WARN, flash);
-            tui_log(T_ACK "◀ ACK %u" T_RESET " " T_WARN "duplicato" T_RESET ": seq %u già riscontrato → ignorato", seq, seq);
+            tui_log(tm(_("{a}◀ ACK %u{0} {y}duplicate{0}: seq %u already acknowledged → ignored")), seq, seq);
             return;
         }
         s->acked[i]    = 1;
@@ -229,26 +251,26 @@ static void handle_ack(sender *s, const ch_flight *f, long long now)
                 s->t_end = now;
             }
             if (s->done)
-                tui_log(T_ACK "◀ ACK %u" T_RESET " ricevuto: " T_OK "✓ timer fermato" T_RESET " → FIN confermato", seq);
+                tui_log(tm(_("{a}◀ ACK %u{0} received: {g}✓ timer stopped{0} → FIN confirmed")), seq);
             else
-                tui_log(T_ACK "◀ ACK %u" T_RESET " ricevuto: " T_OK "✓ timer fermato" T_RESET
-                        " → la finestra scorre di %d, send_base = seq %d" T_DIM "%s",
+                tui_log(tm(_("{a}◀ ACK %u{0} received: {g}✓ timer stopped{0} → the window slides by "
+                             "%d, send_base = seq %d{m}%s")),
                         seq, s->base - old, seq_of(s, s->base),
-                        s->base - old > 1 ? " (i successivi erano già riscontrati)" : "");
+                        s->base - old > 1 ? _(" (the following ones were already acknowledged)") : "");
         } else {
-            tui_log(T_ACK "◀ ACK %u" T_RESET " ricevuto: " T_OK "✓ riscontrato fuori ordine" T_RESET
-                    ", timer fermato " T_DIM "· send_base resta seq %d, in attesa del suo ACK",
+            tui_log(tm(_("{a}◀ ACK %u{0} received: {g}✓ acknowledged out of order{0}, timer stopped "
+                         "{m}· send_base stays seq %d, waiting for its ACK")),
                     seq, seq_of(s, s->base));
         }
         if (s->done)
-            tui_log(T_OK T_BOLD "✓ Trasferimento completato" T_RESET ": %d segmenti, %zu byte in %.1f s "
-                    T_DIM "· %u trasmissioni, %u ritrasmissioni",
+            tui_log(tm(_("{g}{b}✓ Transfer complete{0}: %d segments, %zu bytes in %.1f s {m}· %u "
+                         "transmissions, %u retransmissions")),
                     s->data.nseg, s->data.len, (s->t_end - s->t_begin) / 1000.0, s->tx, s->retx);
     }
 }
 
 /* ------------------------------------------------------------------ */
-/* Interfaccia                                                        */
+/* Interface                                                          */
 /* ------------------------------------------------------------------ */
 
 static void cell_info(long idx, tui_seqcell *c, const void *ctx)
@@ -281,15 +303,15 @@ static void cell_info(long idx, tui_seqcell *c, const void *ctx)
 static void draw_window(const sender *s, int x, int y, int w)
 {
     const tui_legend legend[] = {
-        { SC_DONE, "riscontrati" }, { SC_ACKED, "ACK fuori ordine" }, { SC_FLIGHT, "in volo + timer" },
-        { SC_RETX, "da ritrasmettere" }, { SC_USABLE, "utilizzabili" }, { SC_UNUSABLE, "non utilizzabili" },
+        { SC_DONE, _("acknowledged") }, { SC_ACKED, _("ACK out of order") }, { SC_FLIGHT, _("in flight + timer") },
+        { SC_RETX, _("to retransmit") }, { SC_USABLE, _("usable") }, { SC_UNUSABLE, _("not usable") },
     };
     char title[160], wl[32];
     tui_seqstrip st;
 
-    snprintf(title, sizeof(title), "Finestra del sender · N = %d · seq 0…%d (%d bit) · un invio ogni %.2f s",
+    snprintf(title, sizeof(title), _("Sender window · N = %d · seq 0…%d (%d bits) · one transmission every %.2f s"),
              s->N, s->M - 1, s->opt.seq_bits, s->opt.interval_ms / 1000.0);
-    snprintf(wl, sizeof(wl), "finestra N = %d", s->N);
+    snprintf(wl, sizeof(wl), _("window N = %d"), s->N);
     memset(&st, 0, sizeof(st));
     st.modulo         = s->M;
     st.count          = s->total;
@@ -332,9 +354,9 @@ static void draw_transfer(const sender *s, int x, int y, int w, long long now)
     tstyle dim = TS(C_DIM, C_DEFAULT, 0), txt = TS(C_TEXT, C_DEFAULT, 0);
     char nt[96];
 
-    tui_box(x, y, w, 6, TS(C_BORDER, C_DEFAULT, 0), "Trasferimento");
+    tui_box(x, y, w, 6, TS(C_BORDER, C_DEFAULT, 0), _("Transfer"));
 
-    /* un timer per pacchetto: si mostra quello che scade per primo */
+    /* one timer per packet: the one that expires first is shown */
     for (i = s->base; i < s->nextseq; i++) {
         if (s->acked[i])
             early++;
@@ -351,20 +373,19 @@ static void draw_transfer(const sender *s, int x, int y, int w, long long now)
         }
     }
     if (next >= 0)
-        snprintf(nt, sizeof(nt), T_DIM "prossimo timeout" T_RESET " " T_DATA "seq %d" T_RESET " tra %.1f s",
+        snprintf(nt, sizeof(nt), tm(_("{m}next timeout{0} {d}seq %d{0} in %.1f s")),
                  seq_of(s, next), next_left > 0 ? next_left / 1000.0 : 0.0);
     else
-        snprintf(nt, sizeof(nt), T_DIM "nessun timer attivo");
+        snprintf(nt, sizeof(nt), "%s", tm(_("{m}no timer running")));
     tui_print(ix, y + 1, lab, dim, "timer");
     tui_print(ix + lab, y + 1, iw - lab, txt,
-              T_DATA "%d in volo" T_RESET T_DIM " · " T_RESET T_OK "%d ACK fuori ordine" T_RESET T_DIM " · " T_RESET
-              T_WARN "%d da ritrasmettere" T_RESET "   %s", flying, early, retx, nt);
+              tm(_("{d}%d in flight{0}{m} · {0}{g}%d ACKs out of order{0}{m} · {0}{y}%d to retransmit{0}   %s")), flying, early, retx, nt);
 
-    tui_print(ix, y + 2, lab, dim, "confermati");
+    tui_print(ix, y + 2, lab, dim, "%s", _("confirmed"));
     tui_bar(ix + lab, y + 2, bw, s->data.nseg ? (double)done_segs / s->data.nseg : 0.0, C_ACK);
     tui_print(ix + lab + bw + 2, y + 2, 14, txt, "%d/%d", done_segs, s->data.nseg);
 
-    tui_print(ix, y + 3, lab, dim, "dati");
+    tui_print(ix, y + 3, lab, dim, "%s", _("data"));
     focus = s->view.n - 1;
     for (i = 0; i < s->view.n; i++)
         if (s->view.g[i].seg >= s->base) {
@@ -379,16 +400,14 @@ static void draw_stats(const sender *s, int x, int y, int w)
     int ix = x + 2, iw = w - 4;
     long long end = s->done ? s->t_end : rdt_now_ms();
 
-    tui_box(x, y, w, 4, TS(C_BORDER, C_DEFAULT, 0), "Statistiche");
+    tui_box(x, y, w, 4, TS(C_BORDER, C_DEFAULT, 0), _("Statistics"));
     tui_print(ix, y + 1, iw, TS(C_TEXT, C_DEFAULT, 0),
-              T_DATA T_BOLD "DATA" T_RESET "  " T_DIM "trasmessi" T_RESET " %u  " T_DIM "ritrasmessi" T_RESET " %u  "
-              T_TIME "timeout" T_RESET " %u" T_DIM "  │  " T_CHAN "canale ▶" T_RESET " " T_DIM "persi" T_RESET " %u/%u  "
-              T_DIM "corrotti" T_RESET " %u/%u",
+              tm(_("{d}{b}DATA{0}  {m}sent{0} %u  {m}retransmitted{0} %u  {t}timeouts{0} %u{m}  │  "
+                   "{c}channel ▶{0} {m}lost{0} %u/%u  {m}corrupted{0} %u/%u")),
               s->tx, s->retx, s->timeouts, s->ch.n_lost, s->ch.n_sent, s->ch.n_corrupted, s->ch.n_sent);
     tui_print(ix, y + 2, iw, TS(C_TEXT, C_DEFAULT, 0),
-              T_ACK T_BOLD "ACK " T_RESET "  " T_OK "nuovi" T_RESET " %u  " T_WARN "duplicati" T_RESET " %u  "
-              T_WARN "fuori finestra" T_RESET " %u  " T_ERR "corrotti" T_RESET " %u"
-              T_DIM "  │  durata" T_RESET " %.1f s  " T_DIM "utili" T_RESET " %.0f%%",
+              tm(_("{a}{b}ACK {0}  {g}new{0} %u  {y}duplicates{0} %u  {y}out of window{0} %u  "
+                   "{r}corrupted{0} %u{m}  │  duration{0} %.1f s  {m}useful{0} %.0f%%")),
               s->ack_new, s->ack_dup, s->ack_out, s->ack_bad,
               (end - s->t_begin) / 1000.0, s->tx ? 100.0 * s->base / s->tx : 0.0);
 }
@@ -415,17 +434,17 @@ static void render(sender *s, long long now)
     snprintf(l1, sizeof(l1),
              T_DATA "●" T_RESET " sender " T_BOLD "%s" T_RESET "   " T_DIM "──▶" T_RESET "   receiver " T_BOLD "%s" T_RESET "%s%s",
              s->local_s, s->remote_s,
-             s->N > s->M / 2 ? T_WARN "   N > 2^(k−1): il receiver può scambiare vecchi per nuovi!" T_RESET : "",
+             s->N > s->M / 2 ? tm(_("{y}   N > 2^(k−1): the receiver may take old packets for new ones!{0}")) : "",
              s->opt.timeout_ms <= 2 * s->opt.delay_ms ? T_WARN "   timeout ≤ RTT!" : "");
     snprintf(l2, sizeof(l2),
-             "timeout %.1f s · ritardo %.1f s · perdita %.0f%% · corruzione %.0f%% · %d×%d B · seed %u",
+             _("timeout %.1f s · delay %.1f s · loss %.0f%% · corruption %.0f%% · %d×%d B · seed %u"),
              s->opt.timeout_ms / 1000.0, s->opt.delay_ms / 1000.0, s->opt.loss * 100, s->opt.corrupt * 100,
              s->data.nseg, s->opt.chunk, s->opt.seed);
     tui_draw_header(y, W, PROTOCOL, ROLE_SENDER, l1, l2);
     y += 4;
 
     if (show_rules) {
-        tui_draw_rules(0, y, W, "Regole del sender Selective Repeat", RULES, 4,
+        tui_draw_rules(0, y, W, _("Selective Repeat sender rules"), rules_tr(), 4,
                        now - s->rule_t < HIGHLIGHT_MS ? s->rule : RULE_NONE);
         y += 6;
     }
@@ -437,7 +456,7 @@ static void render(sender *s, long long now)
     }
 
     if (s->done)
-        snprintf(note, sizeof(note), T_OK "✓ fine");
+        snprintf(note, sizeof(note), "%s", tm(_("{g}✓ done")));
     else
         snprintf(note, sizeof(note), "base " T_DATA T_BOLD "%d", seq_of(s, s->base));
     tui_draw_channel(0, y, W, &s->ch, ROLE_SENDER, now, note);
@@ -447,10 +466,10 @@ static void render(sender *s, long long now)
         draw_stats(s, 0, y, W);
         y += 4;
     }
-    tui_draw_log(0, y, W, H - 1 - y, "Registro eventi");
+    tui_draw_log(0, y, W, H - 1 - y, _("Event log"));
 
-    snprintf(foot, sizeof(foot), T_KEY " q " T_RESET " esci     selective repeat · sender · pid %d%s",
-             (int)getpid(), s->done ? T_OK "     ✓ trasferimento completato, premi q per uscire" : "");
+    snprintf(foot, sizeof(foot), tm(_("{K} q {0} quit     selective repeat · sender · pid %d%s")),
+             (int)getpid(), s->done ? tm(_("{g}     ✓ transfer complete, press q to quit")) : "");
     tui_draw_footer(H - 1, W, foot);
     tui_frame_end();
 }
@@ -463,7 +482,15 @@ int main(int argc, char **argv)
     int quit = 0, i;
     size_t n;
 
-    rdt_parse_options(argc, argv, ROLE_SENDER, &PROTO, &s->opt);
+    rdt_protocol proto = PROTO;
+
+    /* the catalog must be loaded before the default text and the help are translated */
+    nl_i18n_init(NULL);
+    if (proto.message)
+        proto.message = _(proto.message);
+    if (proto.note)
+        proto.note = _(proto.note);
+    rdt_parse_options(argc, argv, ROLE_SENDER, &proto, &s->opt);
     rdt_srand(s->opt.seed);
     s->sock = rdt_open_sender(&s->opt, &s->dst, s->local_s, s->remote_s, sizeof(s->local_s));
 
@@ -480,7 +507,7 @@ int main(int argc, char **argv)
     s->timer_start = calloc(n, sizeof(*s->timer_start));
     s->tx_count    = calloc(n, sizeof(*s->tx_count));
     if (!s->acked || !s->timer_on || !s->pending || !s->timer_start || !s->tx_count) {
-        fprintf(stderr, "memoria esaurita\n");
+        fprintf(stderr, "%s", _("out of memory\n"));
         return EXIT_FAILURE;
     }
     ch_init(&s->ch, s->sock, TO_RECEIVER, s->opt.loss, s->opt.corrupt, s->opt.delay_ms);
@@ -490,11 +517,11 @@ int main(int argc, char **argv)
     s->rule_t       = -HIGHLIGHT_MS;
     s->t_begin      = rdt_now_ms();
     s->next_tx_time = s->t_begin + 800;
-    tui_log(T_INFO "● Sender pronto" T_RESET ": %zu byte in %d segmenti + FIN, finestra N = %d, seq 0…%d, verso %s",
+    tui_log(tm(_("{i}● Sender ready{0}: %zu bytes in %d segments + FIN, window N = %d, seq 0…%d, to %s")),
             s->data.len, s->data.nseg, s->N, s->M - 1, s->remote_s);
     if (s->N > s->M / 2)
-        tui_log(T_WARN "N = %d con %d numeri di sequenza: le finestre di sender e receiver possono "
-                "sovrapporsi e un pacchetto ritrasmesso sembrare nuovo (serve N ≤ 2^(k−1))", s->N, s->M);
+        tui_log(tm(_("{y}N = %d with %d sequence numbers: the sender and receiver windows can "
+                     "overlap and a retransmitted packet look new (N ≤ 2^(k−1) is required)")), s->N, s->M);
 
     while (!quit && !tui_should_quit()) {
         long long now = rdt_now_ms();
@@ -524,11 +551,11 @@ int main(int argc, char **argv)
     tui_shutdown();
 
     if (s->done)
-        printf("Selective repeat: %d segmenti (%zu byte) consegnati in %.1f s · %u trasmissioni, "
-               "%u ritrasmissioni, %u timeout\n", s->data.nseg, s->data.len,
+        printf(_("Selective repeat: %d segments (%zu bytes) delivered in %.1f s · %u transmissions, "
+                 "%u retransmissions, %u timeouts\n"), s->data.nseg, s->data.len,
                (s->t_end - s->t_begin) / 1000.0, s->tx, s->retx, s->timeouts);
     else
-        printf("Selective repeat: interrotto dopo %d/%d segmenti confermati\n",
+        printf(_("Selective repeat: interrupted after %d/%d segments confirmed\n"),
                s->base < s->data.nseg ? s->base : s->data.nseg, s->data.nseg);
 
     close(s->sock);
