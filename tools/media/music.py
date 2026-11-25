@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-""""Round Trip" - the netlab theme, synthesised from scratch (numpy only).
+""""Round Trip" - the hoplab theme, synthesised from scratch (numpy only).
 
     music.py out.wav [seconds]
 

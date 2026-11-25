@@ -11,7 +11,7 @@ node web host role=web
 link h1 ns delay=5ms
 link ns web delay=5ms
 auto all
-run ns dns zone=example.com ttl=120 a=www:web a=@:web mx=@:mail txt=@:"hello from netlab"
+run ns dns zone=example.com ttl=120 a=www:web a=@:web mx=@:mail txt=@:"hello from hoplab"
 run web echo
 at 1s   run h1 dig www.example.com server=ns
 at 3s   run h1 dig example.com type=MX server=ns

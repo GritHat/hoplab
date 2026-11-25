@@ -1,12 +1,12 @@
 # The scenario language
 
-A netlab scenario (a *lab*) is a plain text file, by convention `NAME.nl`. It
+A hoplab scenario (a *lab*) is a plain text file, by convention `NAME.nl`. It
 describes a topology, its addressing, what runs on the nodes and when, the
 parameters the user may change, the commentary shown while it runs and the
 conditions that must hold at the end.
 
 For a step-by-step introduction read the guide topic *Writing your own labs*
-(`netlab guide writing`). This document is the reference; it follows
+(`hoplab guide writing`). This document is the reference; it follows
 `src/scenario.c` and `src/link.c`.
 
 - [Syntax](#syntax)
@@ -101,7 +101,7 @@ about  Things to try: select r1 and read its routing table.
 |---|---|---|
 | `title TEXT` | One line. | the file name |
 | `about TEXT` | Description shown in the catalog and in the Guide view of the lab. Consecutive `about` lines are joined with a space into one paragraph; an `about` line with no text starts a new paragraph. The text is rendered with the guide's Markdown subset (`**bold**`, `` `code` ``). At most about 4000 characters. | empty |
-| `level N` | Track in the catalog: 1 Foundations, 2 Core, 3 Advanced, 4 Frontier. Anything else is listed as *Other* by `netlab list`. Files in the user directory are always listed under *My scenarios*. | 0 |
+| `level N` | Track in the catalog: 1 Foundations, 2 Core, 3 Advanced, 4 Frontier. Anything else is listed as *Other* by `hoplab list`. Files in the user directory are always listed under *My scenarios*. | 0 |
 | `layer N` | Layer used by the catalog filter and shown as `L3` next to the title: 1 physical, 2 link, 3 network, 4 transport, 7 application, 8 distributed. | 0 |
 | `topic WORD` | Extra keyword matched by the catalog search (which also matches the title and the file name). | empty |
 
@@ -138,7 +138,7 @@ value. Consequences:
 
 ### Setting values
 
-- Command line: `netlab run FILE name=value ...` (also `windows`, and `node`
+- Command line: `hoplab run FILE name=value ...` (also `windows`, and `node`
   after the node list). Command-line values win over the defaults. A
   `name=value` for a name the file never declares is still substituted.
 - Menu: the launch form has one field per parameter and passes every value
@@ -161,8 +161,8 @@ param      loss 0 Packet loss on the h1 link (0..1)
 param[it]  loss Perdita di pacchetti sul collegamento di h1 (0..1)
 ```
 
-- A `[xx]` line is used only when netlab runs in language `xx` (see
-  `--lang`, `NETLAB_LANG`); otherwise it is skipped.
+- A `[xx]` line is used only when hoplab runs in language `xx` (see
+  `--lang`, `HOPLAB_LANG`); otherwise it is skipped.
 - `title[xx]` replaces the title.
 - `about[xx]` lines replace *all* the plain `about` lines, wherever they are
   in the file.
@@ -297,7 +297,7 @@ propagation (+ jitter, + the reordering penalty).
 | `prio` | Strict priority, three bands chosen by the DSCP: band 0 for DSCP ≥ 40 and ARP, band 1 for other non-zero DSCP, band 2 best effort. | |
 | `tbf` | Token bucket shaper; the link `bw` still applies underneath. | `shape=RATE`, `bucket=BYTES` |
 
-`netlab modules` lists the disciplines compiled in and `netlab help qdisc`
+`hoplab modules` lists the disciplines compiled in and `hoplab help qdisc`
 gives their parameters and counters.
 
 ```
@@ -353,7 +353,7 @@ second:
 (`0.05`) or a percentage (`5%`). `burst` and `ber` are plain numbers.
 
 **Sizes** given to modules (`bytes=5M`, `size=3000`) are defined by each
-module: see `netlab help MODULE`.
+module: see `hoplab help MODULE`.
 
 ## Addressing and routing
 
@@ -545,7 +545,7 @@ h1 tcp send h2 bytes=5M cc=cubic
 
 Starts a module on a node, or sends a command to a module that is already
 running there (what the arguments mean is up to the module: see
-`netlab modules` and `netlab help MODULE`). The short form without `run`
+`hoplab modules` and `hoplab help MODULE`). The short form without `run`
 works whenever the first word is a node name.
 
 In a file, a `run` line is not executed while the file is read: it is
@@ -675,13 +675,13 @@ Time series (`nl_sample`) are not counters and cannot be tested.
 
 **When they are checked.**
 
-- In a headless run (`--headless`, piped output, `netlab check`), when
+- In a headless run (`--headless`, piped output, `hoplab check`), when
   virtual time reaches `duration`. Each expectation is printed as
   `ok`/`FAIL` with the value found, then `PASS` or `FAIL` and the title; the
   exit status is 1 if any failed. `--quiet` prints only the final line.
 - In the interface, when the user quits: the list is printed for
   information, whatever time the lab had reached.
-- `netlab check [FILE ...]` runs each scenario (the whole catalog by
+- `hoplab check [FILE ...]` runs each scenario (the whole catalog by
   default) with `--quiet --seed 1` and prints a summary.
 - In a distributed run each process checks only the expectations about the
   nodes it hosts.
@@ -754,7 +754,7 @@ monitor 192.168.1.20
 ```
 
 `place` says on which machine a node runs when the lab is split across
-processes with `netlab node`; `HOST` is an address or a host name. A node
+processes with `hoplab node`; `HOST` is an address or a host name. A node
 with no `place` line is assumed at `127.0.0.1`. The default `PORT` is
 *baseport + index of the node* (47000 for the first `node` line, 47001 for
 the second, ...). `place` lines must come after the `node` lines they refer
@@ -765,7 +765,7 @@ their log and captures there and wait for it before starting their clocks.
 The default port is *baseport − 1* (46999). `--monitor HOST[:PORT]` on the
 command line takes precedence.
 
-Both directives are ignored by `netlab run`. See [distributed.md](distributed.md).
+Both directives are ignored by `hoplab run`. See [distributed.md](distributed.md).
 
 ## Runtime-only commands
 
@@ -826,16 +826,16 @@ create a link at run time, only change one.
 
 ## Where scenarios are found
 
-`netlab run NAME` (and `windows`, `node`, `monitor`, `plan`, `check`)
+`hoplab run NAME` (and `windows`, `node`, `monitor`, `plan`, `check`)
 resolves `NAME` in this order:
 
 1. a path to an existing file;
-2. `scenarios/NAME` in the netlab home;
+2. `scenarios/NAME` in the hoplab home;
 3. `scenarios/NAME.nl`;
 4. a catalog file whose name ends in `-NAME.nl` (`ping` finds `101-ping.nl`).
 
-The netlab home is `$NETLAB_HOME` if set, else the directory of the
-executable if it contains `scenarios/`, else `../share/netlab` relative to
-it. The menu's catalog also lists `~/.local/share/netlab/scenarios/*.nl`
+The hoplab home is `$HOPLAB_HOME` if set, else the directory of the
+executable if it contains `scenarios/`, else `../share/hoplab` relative to
+it. The menu's catalog also lists `~/.local/share/hoplab/scenarios/*.nl`
 (where the wizard and the distributed set-up write their files) under *My
 scenarios*; those are run by path.

@@ -50,41 +50,41 @@ Numbers of the lab: the link carries 500 kbit/s. Voice sends 160-byte packets at
 <!-- detail: 3 -->
 ## In depth: coding
 
-A Hamming code is *perfect*: the 2^r syndromes are exactly "no error" plus one per position, with nothing to spare; that is why two errors cannot be flagged and are miscorrected. Hamming codes suit channels with rare, independent errors: SECDED codes such as (72,64) protect server memory. Networks see bursts, which put several errors in one block; an interleaver spreads a burst over many blocks, and Reed-Solomon codes correct whole bytes. Forward error correction pays its redundancy always, ARQ (detect and retransmit) only on errors, at the cost of a round trip: wired links use detection and retransmission by upper layers, while radio, satellite and optical links combine FEC with ARQ. Shannon (1948) proved that reliable communication is possible at any rate below the channel capacity; Hamming's "Error Detecting and Error Correcting Codes" (1950) gave the first practical construction. In netlab frames are coded whole and Reed-Solomon uses fixed (255,223) blocks.
+A Hamming code is *perfect*: the 2^r syndromes are exactly "no error" plus one per position, with nothing to spare; that is why two errors cannot be flagged and are miscorrected. Hamming codes suit channels with rare, independent errors: SECDED codes such as (72,64) protect server memory. Networks see bursts, which put several errors in one block; an interleaver spreads a burst over many blocks, and Reed-Solomon codes correct whole bytes. Forward error correction pays its redundancy always, ARQ (detect and retransmit) only on errors, at the cost of a round trip: wired links use detection and retransmission by upper layers, while radio, satellite and optical links combine FEC with ARQ. Shannon (1948) proved that reliable communication is possible at any rate below the channel capacity; Hamming's "Error Detecting and Error Correcting Codes" (1950) gave the first practical construction. In hoplab frames are coded whole and Reed-Solomon uses fixed (255,223) blocks.
 
 ## In depth: medium access
 
-Backoff is unfair in the short term: the station that wins resets its window while the loser's keeps doubling (the *capture effect*). CSMA/CD limits network diameter: at 100 Mbit/s the slot shrinks to 5.12 µs and the collision domain to about 200 m; Gigabit Ethernet needed carrier extension. All this is history: with switches and full-duplex links there are no collisions, and CSMA/CD is disabled. Radios cannot listen while transmitting, so Wi-Fi uses collision *avoidance*. References: Metcalfe and Boggs, "Ethernet: Distributed Packet Switching for Local Computer Networks" (1976); Kleinrock and Tobagi's analysis of CSMA (1975); IEEE 802.3. In netlab's model time advances in ticks of one propagation delay, every station is one tick from every other, the slot is two ticks, the jam three, and each station queues at most 16 frames.
+Backoff is unfair in the short term: the station that wins resets its window while the loser's keeps doubling (the *capture effect*). CSMA/CD limits network diameter: at 100 Mbit/s the slot shrinks to 5.12 µs and the collision domain to about 200 m; Gigabit Ethernet needed carrier extension. All this is history: with switches and full-duplex links there are no collisions, and CSMA/CD is disabled. Radios cannot listen while transmitting, so Wi-Fi uses collision *avoidance*. References: Metcalfe and Boggs, "Ethernet: Distributed Packet Switching for Local Computer Networks" (1976); Kleinrock and Tobagi's analysis of CSMA (1975); IEEE 802.3. In hoplab's model time advances in ticks of one propagation delay, every station is one tick from every other, the slot is two ticks, the jam three, and each station queues at most 16 frames.
 
 ## In depth: priority
 
-Strict priority can **starve** the lower bands: if band 0 alone exceeds the link rate nothing else is ever sent. Real routers therefore police the priority class to a fixed rate (low-latency queueing) and admit only traffic that deserves it. Markings are trusted only inside one administrative domain and usually rewritten at its border. Fair queueing, by contrast, isolates flows without trusting any marking. The delay bound depends on the largest lower-priority packet: on slow links a 1500-byte packet delays voice by tens of milliseconds, which is why such links fragment and interleave. References: RFC 2474 and RFC 2475 (Differentiated Services), RFC 3246 (Expedited Forwarding). netlab's `prio` has three bands: DSCP ≥ 40 and ARP, other non-zero DSCP, best effort.
+Strict priority can **starve** the lower bands: if band 0 alone exceeds the link rate nothing else is ever sent. Real routers therefore police the priority class to a fixed rate (low-latency queueing) and admit only traffic that deserves it. Markings are trusted only inside one administrative domain and usually rewritten at its border. Fair queueing, by contrast, isolates flows without trusting any marking. The delay bound depends on the largest lower-priority packet: on slow links a 1500-byte packet delays voice by tens of milliseconds, which is why such links fragment and interleave. References: RFC 2474 and RFC 2475 (Differentiated Services), RFC 3246 (Expedited Forwarding). hoplab's `prio` has three bands: DSCP ≥ 40 and ARP, other non-zero DSCP, best effort.
 
 <!-- detail: 1 -->
 ## In the lab
 
-**Lab 260: `./netlab run 260-coding-bench`**
+**Lab 260: `./hoplab run 260-coding-bench`**
 
 - Select the node lab and open its `coding` tab: data bits blue, redundancy yellow, flipped bits red. Each step is explained in the log.
 - 9 s: Hamming(7,4), bit 9 flipped (bits are numbered from 0, so it is the third bit of the second block): `syndrome 3`, corrected.
 - 12 s: bits 7 and 8, positions 1 and 2 of that block: syndrome 1 ⊕ 2 = 3, the innocent bit 3 is flipped, and the text becomes «@ELLO». 15 s: the same error against Hamming(8,4) is detected and the frame discarded.
 - 24 s: the sweep. For each bit error rate read delivered, discarded and silently wrong.
 - Predict, then try: `:lab coding show text=HELLO code=hamming74 pos=0,7,14`. Three flipped bits: is the text right? Why? Then `pos=0,1,2`.
-- Predict, then try: `./netlab run 260-coding-bench code=hamming74` and compare the "silently wrong" column and the cost per data bit with the default hamming84. Which would you choose at a bit error rate of 1e-2?
+- Predict, then try: `./hoplab run 260-coding-bench code=hamming74` and compare the "silently wrong" column and the cost per data bit with the default hamming84. Which would you choose at a bit error rate of 1e-2?
 
-**Lab 261: `./netlab run 261-csma-cd`**
+**Lab 261: `./hoplab run 261-csma-cd`**
 
 - Three nodes run the same load under three disciplines. Open the `mac` tab of `nonpers`, `pers` and `ethernet` in turn: green is a success, red a collision. Compare the width of the red areas.
 - The log prints S (throughput) and G (attempts) every 20 frame times. Typical final values: about 0.8 for non-persistent, 0.4 for 1-persistent, 0.88 for CSMA/CD, with an offered load of 0.9.
-- Predict, then try: `./netlab run 261-csma-cd prop=10ms` (a = 0.1). Which protocol loses most? Compare CSMA/CD with 1 / (1 + 5a).
-- Predict, then try: `./netlab run 261-csma-cd load=2` and `load=0.3`. Which discipline degrades under overload, and which is limited only by the offered load?
+- Predict, then try: `./hoplab run 261-csma-cd prop=10ms` (a = 0.1). Which protocol loses most? Compare CSMA/CD with 1 / (1 + 5a).
+- Predict, then try: `./hoplab run 261-csma-cd load=2` and `load=0.3`. Which discipline degrades under overload, and which is limited only by the offered load?
 
-**Lab 272: `./netlab run 272-priority-queueing`**
+**Lab 272: `./hoplab run 272-priority-queueing`**
 
 - Select r1 and open the `qdisc` tab: three bands, their lengths and drops. Select v2 and b2 for loss, delay and jitter of the two flows. The graphs (`g`) show delay over time.
 - Until 3 s voice is alone; then the bulk flow starts and r1 drops only bulk packets (`✗ prio` in the log).
-- Predict, then try: `./netlab run 272-priority-queueing qdisc=droptail`. Estimate the voice delay from queue length and link rate before looking.
-- Predict, then try: `./netlab run 272-priority-queueing bulk=2M`. Does anything change for voice? And for bulk? Then `qdisc=fq`.
+- Predict, then try: `./hoplab run 272-priority-queueing qdisc=droptail`. Estimate the voice delay from queue length and link rate before looking.
+- Predict, then try: `./hoplab run 272-priority-queueing bulk=2M`. Does anything change for voice? And for bulk? Then `qdisc=fq`.
 
 ## Check yourself
 

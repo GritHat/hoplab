@@ -138,7 +138,7 @@ static int find_topic(const char *name)
 
 static void run_lab(const char *lab)
 {
-    char *argv[6], self[] = "netlab", path[1024];
+    char *argv[6], self[] = "hoplab", path[1024];
 
     if (!nl_scenario_path(lab, path, sizeof(path)))
         return;
@@ -160,7 +160,7 @@ int nl_guide(const char *name)
 
     load_topics();
     if (g_ntop == 0) {
-        fprintf(stderr, "netlab: %s %s/guide\n", _("no guide found in"), nl_home());
+        fprintf(stderr, "hoplab: %s %s/guide\n", _("no guide found in"), nl_home());
         return 1;
     }
     sel = find_topic(name);

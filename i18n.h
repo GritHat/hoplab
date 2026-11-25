@@ -18,10 +18,10 @@ const char *nl_tr(const char *s);
 #define _(s)  nl_tr_from(__FILE__, s)
 #define N_(s) (s)
 
-/* lang NULL or empty: NETLAB_LANG, then LC_ALL, LC_MESSAGES, LANG */
+/* lang NULL or empty: HOPLAB_LANG, then LC_ALL, LC_MESSAGES, LANG */
 void        nl_i18n_init(const char *lang);
 const char *nl_lang(void);              /* "en", "it", ... */
-/* Directory holding scenarios/, locale/ and guide/: NETLAB_HOME, or the
+/* Directory holding scenarios/, locale/ and guide/: HOPLAB_HOME, or the
  * directory of the executable */
 const char *nl_home(void);
 

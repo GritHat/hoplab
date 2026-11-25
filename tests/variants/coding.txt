@@ -1,4 +1,4 @@
-# Parameter variants verified by tests/run-variants.sh: each line is run with
+# Parameter variants verified by tests/regress.sh: each line is run with
 # seeds 1..5 and must give this result every time.
 #   PASS  scenario  key=value ...
 PASS  160-error-detection
@@ -24,7 +24,7 @@ PASS  260-coding-bench  code=parity
 PASS  260-coding-bench  code=rep3
 PASS  260-coding-bench  code=rs
 PASS  260-coding-bench  frames=200
-PASS  260-coding-bench  text=netlab
+PASS  260-coding-bench  text=hoplab
 PASS  360-rs-vs-hamming
 PASS  360-rs-vs-hamming  ber=1e-4
 PASS  360-rs-vs-hamming  ber=2e-2

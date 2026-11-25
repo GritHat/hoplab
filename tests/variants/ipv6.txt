@@ -24,4 +24,3 @@ FAIL  205-ipv6-pmtu     mtu=1000
 PASS  206-dual-stack
 PASS  206-dual-stack    delay=1ms
 PASS  206-dual-stack    delay=20ms
-</content>

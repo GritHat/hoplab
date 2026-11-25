@@ -56,12 +56,12 @@ In lab 202, r1 says "10.9.0.0/16 via r2" and r2 says "10.9.0.0/16 via r1". A pin
 
 **Asymmetry and filtering.** Forward and return paths are often different on the Internet. This breaks strict reverse-path filtering (RFC 3704), which drops packets arriving on an interface that would not be used to reach their source.
 
-**What netlab simplifies.** Routes have a single next hop (no equal-cost multipath) and the table is searched linearly. The `auto routes` option used by other labs computes shortest paths for you; labs 200 and 202 switch it off on purpose.
+**What hoplab simplifies.** Routes have a single next hop (no equal-cost multipath) and the table is searched linearly. The `auto routes` option used by other labs computes shortest paths for you; labs 200 and 202 switch it off on purpose.
 
 <!-- detail: 1 -->
 ## In the lab
 
-**Lab 200: `./netlab run 200-static-routing`**
+**Lab 200: `./hoplab run 200-static-routing`**
 
 - Press `n` to select r1, r2 and r3 in turn and read the **Routes** tab. Before 6 s, r2 has entries for 10.0.12.0/24, 10.0.23.0/24 and 10.0.1.0/24 only.
 - In the log (`l`) the first ping fails with `from 10.0.12.2: network unreachable`: the address tells you which router gave up.
@@ -70,11 +70,11 @@ In lab 202, r1 says "10.9.0.0/16 via r2" and r2 says "10.9.0.0/16 via r1". A pin
 - Predict, then try: `:route r3 del 10.0.1.0/24` and then `:h1 ping h2 count=2`. Does h2 receive the request? Who gets the ICMP error, and what does h1 print?
 - Predict, then try: `:route r2 add 10.0.4.10/32 via 10.0.12.1` and ping again. The /24 is still there and correct. Why does the ping now end with "time to live exceeded"? Undo with `:route r2 del 10.0.4.10/32`.
 
-**Lab 202: `./netlab run 202-routing-loop`**
+**Lab 202: `./hoplab run 202-routing-loop`**
 
 - Watch the map: one echo request bounces on the r1-r2 link. In the packets view the same packet appears again and again with a TTL one lower each time.
 - The error comes from 10.0.12.2 (r2) after about 0.14 s; the traceroute at 4 s alternates r1, r2, r1, r2.
-- Predict, then try: `./netlab run 202-routing-loop ttl=7`. How many times is the link crossed, and which router sends the error now?
+- Predict, then try: `./hoplab run 202-routing-loop ttl=7`. How many times is the link crossed, and which router sends the error now?
 - Predict, then try: `:route r2 del 10.9.0.0/16`, then `:h1 ping 10.9.1.1 count=1`. Which message replaces "time exceeded", and who sends it?
 
 ## Check yourself

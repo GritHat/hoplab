@@ -1,4 +1,4 @@
-# Italian translation of netlab: nat.c (nat, rendezvous)
+# Italian translation of hoplab: nat.c (nat, rendezvous)
 msgid ""
 msgstr ""
 "Language: it\n"

@@ -69,7 +69,7 @@ static void srv_pump(nl_tcp *c, srv_conn *s)
 
     if (!pat[0])
         for (i = 0; i < (int)sizeof(pat); i++)
-            pat[i] = (uint8_t)("netlab "[i % 7]);
+            pat[i] = (uint8_t)("hoplab "[i % 7]);
     while (s->body_left > 0) {
         w = nl_tcp_write(c, pat, s->body_left < (long long)sizeof(pat) ? (int)s->body_left : (int)sizeof(pat));
         if (w <= 0)
@@ -125,7 +125,7 @@ static void srv_request(nl_tcp *c, srv_conn *s, const char *path)
         nl_count(hn->n, "http.served_404", 1);
         nl_log(hn->n, NL_L_APP, 2, 0, T_FIN "HTTP" T_RESET " %s:%u GET %s → " T_ERR "404 Not Found", peer,
                rport, path);
-        snprintf(head, sizeof(head), "HTTP/1.1 404 Not Found\r\nServer: netlab\r\nContent-Type: text/html\r\n"
+        snprintf(head, sizeof(head), "HTTP/1.1 404 Not Found\r\nServer: hoplab\r\nContent-Type: text/html\r\n"
                  "Content-Length: %d\r\nConnection: %s\r\n\r\n", (int)sizeof(nf) - 1,
                  s->close_after ? "close" : "keep-alive");
         nl_tcp_write(c, head, (int)strlen(head));
@@ -137,7 +137,7 @@ static void srv_request(nl_tcp *c, srv_conn *s, const char *path)
     nl_count(hn->n, "http.served", 1);
     nl_log(hn->n, NL_L_APP, 2, 0, T_FIN "HTTP" T_RESET " %s:%u GET %s → " T_OK "200 OK" T_RESET " (%lld B)",
            peer, rport, path, size);
-    snprintf(head, sizeof(head), "HTTP/1.1 200 OK\r\nServer: netlab\r\nContent-Type: %s\r\n"
+    snprintf(head, sizeof(head), "HTTP/1.1 200 OK\r\nServer: hoplab\r\nContent-Type: %s\r\n"
              "Content-Length: %lld\r\nConnection: %s\r\n\r\n", html ? "text/html" : "application/octet-stream",
              size, s->close_after ? "close" : "keep-alive");
     nl_tcp_write(c, head, (int)strlen(head));
@@ -236,7 +236,7 @@ static void cl_send_request(client *s)
     s->blen = 0;
     s->t_req = nl_now();
     s->nreq++;
-    snprintf(req, sizeof(req), "GET %s HTTP/1.1\r\nHost: %s\r\nUser-Agent: netlab\r\nConnection: %s\r\n\r\n",
+    snprintf(req, sizeof(req), "GET %s HTTP/1.1\r\nHost: %s\r\nUser-Agent: hoplab\r\nConnection: %s\r\n\r\n",
              s->paths[s->cur], s->host, s->keepalive ? "keep-alive" : "close");
     nl_count(s->hn->n, "http.requests", 1);
     nl_log(s->hn->n, NL_L_APP, 2, 0, T_FIN "HTTP" T_RESET " → %s  GET %s", s->host, s->paths[s->cur]);

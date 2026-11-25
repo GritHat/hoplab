@@ -36,7 +36,7 @@ Un bilanciatore di livello 4 deve inviare ogni pacchetto di una connessione TCP 
 
 ## Il modello del laboratorio e la realtà
 
-Il bilanciatore di questo emulatore (si veda `./netlab help lb`) calcola l'hash di una quintupla UDP, e il client `reqgen` cicla su **40 flussi** al massimo, che vivono per tutta l'esecuzione. È un campione minuscolo: con quattro server ciascuno regge una decina di flussi, per cui una differenza di tre o quattro flussi fra schemi rientra nel rumore di campionamento, e i valori di "bilanciamento" sono dominati da dove capitano quaranta particolari porte. Peggio, l'hash è deterministico e i flussi sono fissi, quindi il seme non modifica il risultato: si dispone di un campione, non di una distribuzione. Per ottenerne altri occorre cambiare la popolazione dei flussi (parametro `flows`) o scrivere uno scenario con altri indirizzi.
+Il bilanciatore di questo emulatore (si veda `./hoplab help lb`) calcola l'hash di una quintupla UDP, e il client `reqgen` cicla su **40 flussi** al massimo, che vivono per tutta l'esecuzione. È un campione minuscolo: con quattro server ciascuno regge una decina di flussi, per cui una differenza di tre o quattro flussi fra schemi rientra nel rumore di campionamento, e i valori di "bilanciamento" sono dominati da dove capitano quaranta particolari porte. Peggio, l'hash è deterministico e i flussi sono fissi, quindi il seme non modifica il risultato: si dispone di un campione, non di una distribuzione. Per ottenerne altri occorre cambiare la popolazione dei flussi (parametro `flows`) o scrivere uno scenario con altri indirizzi.
 
 L'anello usa 100 nodi virtuali per server. La tabella Maglev ha **251 posizioni**, contro le 65537 dell'articolo, per cui sia il bilanciamento sia il disturbo sono più grossolani dei valori pubblicati. Rendezvous hashing, jump hashing e carichi limitati non sono implementati. Con `affinity=0`, round robin, least connections e `p2c` rischedulano ogni pacchetto e il conteggio "moved" riportato per essi è privo di significato: hanno senso solo con la tabella dei flussi. Le richieste sono singoli datagrammi UDP, quindi "una connessione interrotta" è dedotta dal cambio del server che risponde, non osservata come reset TCP. Infine il bilanciatore è uno solo: il disaccordo fra più bilanciatori, che motiva l'intero progetto, è emulato soltanto spegnendo la tabella dei flussi o riavviando il nodo.
 
@@ -59,12 +59,12 @@ L'anello usa 100 nodi virtuali per server. La tabella Maglev ha **251 posizioni*
 <!-- detail: 1 -->
 ## In laboratorio
 
-Eseguire `./netlab run 450-consistent-hashing`. Il client c1 invia 920 richieste, 40 al secondo, su 40 flussi verso il bilanciatore `lb`, che parte con s1, s2, s3; s4 viene aggiunto a 8 s e s1 rimosso a 16 s. Parametri: `algo` (consistent, hash, maglev; il modulo accetta anche rr, wrr, leastconn, p2c), `affinity` (0 = senza stato), `flows`.
+Eseguire `./hoplab run 450-consistent-hashing`. Il client c1 invia 920 richieste, 40 al secondo, su 40 flussi verso il bilanciatore `lb`, che parte con s1, s2, s3; s4 viene aggiunto a 8 s e s1 rimosso a 16 s. Parametri: `algo` (consistent, hash, maglev; il modulo accetta anche rr, wrr, leastconn, p2c), `affinity` (0 = senza stato), `flows`.
 
 Che cosa misurare: `reqgen.moved` su c1 (flussi il cui server di risposta è cambiato, da estremo a estremo), `lb.remapped` sul bilanciatore, le due righe di log stampate da `lb` a ogni cambio del pool ("N/40 flussi hanno perso il loro server, M/40 altri ora ricadono per hash su un server diverso") e la riga finale di `reqgen` con la quota di ciascun server. L'ideale per 40 flussi è di circa 10 spostamenti all'ingresso di s4, più i flussi di s1 alla sua uscita. In modalità headless:
 
 ```
-./netlab run 450-consistent-hashing algo=maglev --headless --detail 1
+./hoplab run 450-consistent-hashing algo=maglev --headless --detail 1
 ```
 
 **Esperimento 1 — disturbo.** Ipotesi: mod-N sposta circa 1 − 1/(N+1) dei flussi a ogni cambiamento; anello e Maglev restano vicini al minimo, Maglev leggermente sopra. Manipolazione: `algo=hash`, `algo=consistent`, `algo=maglev`. Metrica: `reqgen.moved` su 80 spostamenti possibili, e quanti dei flussi che si spostano all'aggiunta vanno su s4 (ogni altro spostamento è superfluo). Esito atteso: circa 60 per mod-N (più spostamenti che flussi: la maggior parte si sposta due volte), circa 20 per gli altri due; la verifica `disruption` del laboratorio enuncia entrambi i limiti. Si noti che all'aggiunta l'anello ha spostato 14 flussi, non 10: prima di incolpare lo schema si decida se si tratta di rumore di campionamento o di un arco sovradimensionato.

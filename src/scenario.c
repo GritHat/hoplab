@@ -867,7 +867,7 @@ static int load_file(const char *path, nl_meta *meta, int peek, int argc, char *
     int lineno = 0, errors = 0, i;
 
     if (!f) {
-        fprintf(stderr, "netlab: %s: %s\n", path, _("cannot open scenario"));
+        fprintf(stderr, "hoplab: %s: %s\n", path, _("cannot open scenario"));
         return -1;
     }
     memset(meta, 0, sizeof(*meta));

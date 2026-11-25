@@ -1,6 +1,6 @@
 # Writing a module
 
-Everything a node can run in netlab is a **module**: `ping`, `tcp`, `rip`,
+Everything a node can run in hoplab is a **module**: `ping`, `tcp`, `rip`,
 `dns`, `raft`... A module is one C file in `src/` that registers itself when
 the program starts and talks to the emulated network only through the API in
 [`src/nl.h`](../src/nl.h). Adding a protocol or a tool never requires editing
@@ -177,14 +177,14 @@ What each part does:
 
 ## Building and trying it
 
-`make` compiles every `.c` file in `src/` into `netlab`; there is nothing to
+`make` compiles every `.c` file in `src/` into `hoplab`; there is nothing to
 add to the Makefile. While developing, `tools/build-mod.sh` builds a private
 headless binary from the core plus the files you name:
 
 ```
-tools/build-mod.sh beacon src/beacon.c      # -> ./netlab-beacon
-./netlab-beacon help beacon
-./netlab-beacon run my-test.nl --detail 2 --seed 1
+tools/build-mod.sh beacon src/beacon.c      # -> ./hoplab-beacon
+./hoplab-beacon help beacon
+./hoplab-beacon run my-test.nl --detail 2 --seed 1
 ```
 
 A scenario to exercise the example:
@@ -230,10 +230,10 @@ struct nl_module {
 | `recover` | The node comes back up. | Re-arm timers and restart the protocol from cold. May be NULL. |
 | `panel` | Each frame, when the module's tab of the node inspector is visible and the node is simulated by this process. | Draw inside the rectangle `(x, y, w, h)`; `detail` is 1..3. Return the rows used. May be NULL: then the module has no tab. |
 
-Where the texts appear: `title` in `netlab modules`, the Modules screen and
-above the panel; `usage` in `netlab help NAME`, in `help NAME` on the
+Where the texts appear: `title` in `hoplab modules`, the Modules screen and
+above the panel; `usage` in `hoplab help NAME`, in `help NAME` on the
 console (one log line per line of text) and, from detail 2, in the Guide
-view of a lab; `theory` in `netlab help NAME`, the Modules screen and the
+view of a lab; `theory` in `hoplab help NAME`, the Modules screen and the
 Guide view of every lab where the module runs on the selected node.
 
 `layer` groups the module in listings; the list is kept sorted by layer and
@@ -713,7 +713,7 @@ not called for a node simulated by another process.
 
 ## Translations
 
-netlab is written in English and translated at run time from gettext PO
+hoplab is written in English and translated at run time from gettext PO
 files; see [`locale/README.md`](../locale/README.md).
 
 1. Wrap user-visible strings in `_("...")`. In static initialisers (the
@@ -721,7 +721,7 @@ files; see [`locale/README.md`](../locale/README.md).
    `N_("...")`: the core translates them when it displays them.
 2. Keep colour markup outside the translated string:
    `T_ERR "%s"` with `_("no reply")` as the argument.
-3. Run `tools/extract-strings.py` to rebuild `locale/netlab.pot`.
+3. Run `tools/extract-strings.py` to rebuild `locale/hoplab.pot`.
 4. Add the translations in a catalog named after the source file:
    `src/beacon.c` → `locale/it/beacon.po`. Every `.po` file in the language
    directory is loaded; when a `msgid` appears in several, the first one read
@@ -745,7 +745,7 @@ A module is not finished until a lab shows it. Create
   watch and what to try, `note` lines that narrate the run, and `param`
   lines for the values worth changing.
 - End with `expect` lines on your counters and a `duration`. Then
-  `netlab check NNN-name` must print `PASS`, and `netlab check` (the whole
+  `hoplab check NNN-name` must print `PASS`, and `hoplab check` (the whole
   catalog, seed 1) must still report 0 failures.
 - Add `title[it]`, `about[it]`, `note[it]` and `param[it]` lines if you
   maintain the Italian translation.
@@ -774,7 +774,7 @@ so that it is a complete short read on its own.
 The renderer understands a small subset of Markdown: `#`, `##`, `###`
 headings, paragraphs separated by blank lines, `- ` bullets (one source line
 each, no nesting), `**bold**`, `` `code` `` and fenced code blocks. No
-tables, images or numbered lists. Check the result with `netlab guide NAME`.
+tables, images or numbered lists. Check the result with `hoplab guide NAME`.
 
 ## Checklist
 
@@ -789,5 +789,5 @@ tables, images or numbered lists. Check the result with `netlab guide NAME`.
 - [ ] A `panel`, and a dissector if the protocol has its own messages.
 - [ ] Only `nl_rand*` for randomness; the same seed gives the same run.
 - [ ] Strings in `_()` / `N_()`; `tools/extract-strings.py --check` is clean.
-- [ ] A scenario with expectations; `netlab check` passes.
+- [ ] A scenario with expectations; `hoplab check` passes.
 - [ ] A guide topic, or a mention in an existing one.

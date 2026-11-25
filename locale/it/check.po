@@ -1,4 +1,4 @@
-# Italian translation of netlab: check
+# Italian translation of hoplab: check
 msgid ""
 msgstr ""
 "Language: it\n"

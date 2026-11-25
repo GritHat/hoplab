@@ -44,7 +44,7 @@ To read more: Kurose and Ross, chapter 6, section "Error-Detection and -Correcti
 
 **Lab 160-error-detection**: three identical noisy links, one above the other. Top (a1–a2): no check on the link. Middle (b1–b2): one parity bit. Bottom (c1–c2): CRC-32.
 
-- Start it with `./netlab run 160-error-detection` and read the log (`l`) at detail 2.
+- Start it with `./hoplab run 160-error-detection` and read the log (`l`) at detail 2.
 - Look for the lines with `bit errors`. They end either with `detected, frame discarded` or with `NOT detected by the link: delivered damaged`. On which link does each kind appear? On the parity link, look at the number of flipped bits in each line: what do you notice?
 - When a damaged frame gets through, a line `UDP wrong checksum: datagram discarded` follows a few milliseconds later: the transport layer caught it.
 - Select a2, then b2, then c2 with `n` and compare the counter `udp.bad_checksum` (at detail 2 the Node tab lists the counters of the selected node). Expect about 70, about 15 and exactly 0 out of 200 datagrams.
@@ -52,15 +52,15 @@ To read more: Kurose and Ross, chapter 6, section "Error-Detection and -Correcti
 
 **Lab 161-error-correction**: three links again, with more noise. Top: CRC only. Middle: Hamming(7,4). Bottom: three copies.
 
-- Start it with `./netlab run 161-error-correction`. The log now also shows `corrected by the link code`.
+- Start it with `./hoplab run 161-error-correction`. The log now also shows `corrected by the link code`.
 - At the end compare `sink.received` on c2, h2 and r2: about 60 of 200 on the CRC link, 200 of 200 on the others, with no retransmission at all.
 - Compare `sink.delay_ms`: about 9.4 ms with the CRC, 12.6 ms with Hamming, 18 ms with three copies. Correction is paid in time on the wire.
 
 **Change this and predict.**
 
-- `./netlab run 160-error-detection ber=1e-3`: how many datagrams will c2 receive? Does a perfect detector help?
-- `./netlab run 161-error-correction ber=3e-3`: what will start to happen on the Hamming link? Watch `udp.bad_checksum` on h2.
-- `./netlab run 161-error-correction ber=1e-5`: which link is now the best deal?
+- `./hoplab run 160-error-detection ber=1e-3`: how many datagrams will c2 receive? Does a perfect detector help?
+- `./hoplab run 161-error-correction ber=3e-3`: what will start to happen on the Hamming link? Watch `udp.bad_checksum` on h2.
+- `./hoplab run 161-error-correction ber=1e-5`: which link is now the best deal?
 - In lab 161 type `c1 coding show code=hamming74 pos=3` and then `pos=3,4`.
 
 ## Check yourself

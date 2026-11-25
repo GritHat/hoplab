@@ -13,7 +13,7 @@ I vantaggi derivano dall'avere la mappa. Un cambiamento viene inondato subito e 
 
 OSPF (RFC 2328) viaggia direttamente su IP, numero di protocollo 89, e invia gli Hello all'indirizzo multicast 224.0.0.5 ogni *hello interval* (10 s per default sulle LAN). Un Hello contiene l'identificatore del router mittente, gli intervalli e l'elenco dei vicini sentiti di recente. Vedere il *proprio* identificatore nell'Hello di un vicino dimostra che il collegamento funziona nei due versi: lo stato passa da **Init** a **2-Way**. Un vicino che tace per il *dead interval* (4 hello, 40 s) viene dichiarato caduto. I due intervalli devono coincidere, altrimenti l'adiacenza non si forma.
 
-Il vero OSPF sincronizza poi i database attraverso gli stati ExStart, Exchange e Loading (pacchetti database description, link-state request, link-state update) e raggiunge **Full**. netlab salta lo scambio delle descrizioni: una nuova adiacenza va direttamente a Full e ciascun lato invia l'intero database.
+Il vero OSPF sincronizza poi i database attraverso gli stati ExStart, Exchange e Loading (pacchetti database description, link-state request, link-state update) e raggiunge **Full**. hoplab salta lo scambio delle descrizioni: una nuova adiacenza va direttamente a Full e ciascun lato invia l'intero database.
 
 ## LSA e inondazione
 
@@ -52,11 +52,11 @@ A 20 s il costo dell'interfaccia di r1 verso r2 diventa 50. r1 inonda un nuovo L
 <!-- detail: 3 -->
 ## In profondità
 
-**Scalabilità.** Ogni cambiamento fa ricalcolare tutti i router, e il database cresce con la rete. OSPF divide un dominio grande in **aree**: i router conoscono la mappa completa solo della propria area, e i router di confine riassumono i prefissi verso la dorsale (area 0), che fra le aree si comporta come un vettore delle distanze. Su una LAN broadcast con n router, n(n−1)/2 adiacenze sarebbero uno spreco: i router eleggono un **designated router**, tutti si sincronizzano solo con lui, ed è lui a generare un network-LSA che rappresenta la LAN. netlab ha una sola area e nessun designated router.
+**Scalabilità.** Ogni cambiamento fa ricalcolare tutti i router, e il database cresce con la rete. OSPF divide un dominio grande in **aree**: i router conoscono la mappa completa solo della propria area, e i router di confine riassumono i prefissi verso la dorsale (area 0), che fra le aree si comporta come un vettore delle distanze. Su una LAN broadcast con n router, n(n−1)/2 adiacenze sarebbero uno spreco: i router eleggono un **designated router**, tutti si sincronizzano solo con lui, ed è lui a generare un network-LSA che rappresenta la LAN. hoplab ha una sola area e nessun designated router.
 
-**Invecchiamento e numeri di sequenza.** Ogni LSA ha un'età; chi lo ha generato lo rinfresca ogni 30 minuti, e a 1 ora viene eliminato, così l'informazione di un router morto prima o poi scompare. I numeri di sequenza sono valori lineari a 32 bit che partono da 0x80000001. ARPANET usava numeri circolari, e nel 1980 aggiornamenti corrotti, ciascuno dei quali sembrava più recente del successivo, continuarono a essere inondati all'infinito e fecero cadere la rete (RFC 789, Rosen): è la ragione per cui gli LSA moderni hanno un checksum e un'età. In netlab gli LSA non invecchiano.
+**Invecchiamento e numeri di sequenza.** Ogni LSA ha un'età; chi lo ha generato lo rinfresca ogni 30 minuti, e a 1 ora viene eliminato, così l'informazione di un router morto prima o poi scompare. I numeri di sequenza sono valori lineari a 32 bit che partono da 0x80000001. ARPANET usava numeri circolari, e nel 1980 aggiornamenti corrotti, ciascuno dei quali sembrava più recente del successivo, continuarono a essere inondati all'infinito e fecero cadere la rete (RFC 789, Rosen): è la ragione per cui gli LSA moderni hanno un checksum e un'età. In hoplab gli LSA non invecchiano.
 
-**Velocità di convergenza.** La parte lenta è il rilevamento: con i soli timer richiede il dead interval. I router reagiscono perciò alla perdita della portante, o usano BFD (RFC 5880) con decine di millisecondi. L'SPF viene ritardato e limitato in frequenza (200 ms in netlab) in modo che una raffica di LSA provochi un solo calcolo: si scambia un po' di velocità con la stabilità. Fra l'aggiornamento del primo router e quello dell'ultimo sono possibili micro-cicli; i loop-free alternate (RFC 5286) precalcolano next hop di riserva.
+**Velocità di convergenza.** La parte lenta è il rilevamento: con i soli timer richiede il dead interval. I router reagiscono perciò alla perdita della portante, o usano BFD (RFC 5880) con decine di millisecondi. L'SPF viene ritardato e limitato in frequenza (200 ms in hoplab) in modo che una raffica di LSA provochi un solo calcolo: si scambia un po' di velocità con la stabilità. Fra l'aggiornamento del primo router e quello dell'ultimo sono possibili micro-cicli; i loop-free alternate (RFC 5286) precalcolano next hop di riserva.
 
 **Costi.** La banda di riferimento di 100 Mbit/s fa costare 1 ogni collegamento più veloce, per cui gli operatori la alzano o fissano i costi a mano. Far dipendere il costo dal *carico* fu tentato su ARPANET e provocò oscillazioni: il traffico si spostava sul cammino vuoto, che diventava così quello carico (Khanna e Zinky, «The Revised ARPANET Routing Metric», 1989). I cammini di costo uguale vengono usati insieme (ECMP).
 
@@ -64,19 +64,19 @@ A 20 s il costo dell'interfaccia di r1 verso r2 diventa 50. r1 inonda un nuovo L
 
 **Riferimenti.** Dijkstra, «A Note on Two Problems in Connexion with Graphs» (1959); McQuillan, Richer e Rosen, «The New Routing Algorithm for the ARPANET» (1980); RFC 2328.
 
-**Che cosa semplifica netlab.** Oltre ai punti già detti, i formati dei pacchetti somigliano a quelli di OSPF ma non sono esatti al bit.
+**Che cosa semplifica hoplab.** Oltre ai punti già detti, i formati dei pacchetti somigliano a quelli di OSPF ma non sono esatti al bit.
 
 <!-- detail: 1 -->
 ## In laboratorio
 
-**Laboratorio 232: `./netlab run 232-ospf-costs`**
+**Laboratorio 232: `./hoplab run 232-ospf-costs`**
 
 - Rallenta (`-`) per i primi 50 ms: Hello, `nuovo vicino, stato Init`, `bidirezionale, adiacenza Full`, poi gli LSA `più recente: memorizzato e inoltrato agli altri`. Nota come ogni router rigenera il proprio LSA (seq=1, 2, 3) man mano che trova vicini.
 - Seleziona r1 e poi r4 (`n`) e apri la scheda `ospf`: i due database elencano gli stessi quattro LSA con gli stessi numeri di sequenza. Apri la scheda Rotte di r1: 10.0.6.0/24 via 10.0.2.2, metrica 3.
 - Nella vista Pacchetti (`p`) apri un Hello (trova l'elenco dei vicini) e un link-state update (trova collegamenti e costi).
 - A 14 s traceroute passa da r1, r2, r4. A 20 s il costo cambia: la rotta di r1 si sposta su 10.0.3.2 con metrica 21. Controlla la scheda Rotte di r4: la sua rotta verso 10.0.1.0/24 passa ancora da r2.
 - A 32 s il collegamento r1-r2 si guasta; entrambi gli estremi generano nuovi LSA ed entro circa 0,2 s tutte le rotte usano r3.
-- Prevedi, poi prova: `./netlab run 232-ospf-costs newcost=15`. Calcola prima il costo dei due cammini. r1 cambia next hop a 20 s? Quale metrica compare nella sua tabella?
+- Prevedi, poi prova: `./hoplab run 232-ospf-costs newcost=15`. Calcola prima il costo dei due cammini. r1 cambia next hop a 20 s? Quale metrica compare nella sua tabella?
 - Prevedi, poi prova: nell'esecuzione di default, dopo i 21 s digita `:r1 ospf cost eth1 1` e osserva il numero di sequenza dell'LSA di r1 e la rotta. Poi, dopo i 33 s, `:link r3 r4 down`: che cosa contengono ora le tabelle di r1 e r4, e che cosa segnala `:h1 ping h4 count=1`?
 
 ## Verifica

@@ -64,7 +64,7 @@ total    extra rounds or a leader; equivalent to consensus
 
 **Limits of the abstraction.** Cheriton and Skeen argued that message-level causality captures neither semantic dependencies that pass outside the system (a shared database, a human), nor constraints such as "these two updates together", and that the hold-back buffers and vectors do not scale; often the application can order what matters with version numbers of its own. The counter-argument (Birman) is that getting it right once in a layer is safer. Both views survive: group-communication toolkits (Isis, Horus, Spread) offered virtual synchrony with causal and total order; modern systems mostly take total order from a replicated log (Raft, Zab, Kafka partitions) and causality from data-level version vectors or CRDTs.
 
-**In netlab.** The `clock` module's vectors count every event, receptions included, so the vectors on screen are larger than the delivered-count vectors `D` used above; the dependency test is the same. `order=total` is Lamport's construction: it relies on FIFO channels and on every process being alive, and has no failure handling. `order=none` delivers on arrival and counts causality violations after the fact.
+**In hoplab.** The `clock` module's vectors count every event, receptions included, so the vectors on screen are larger than the delivered-count vectors `D` used above; the dependency test is the same. `order=total` is Lamport's construction: it relies on FIFO channels and on every process being alive, and has no failure handling. `order=none` delivers on arrival and counts causality violations after the fact.
 
 **Primary literature.**
 
@@ -81,13 +81,13 @@ total    extra rounds or a leader; equivalent to consensus
 <!-- detail: 1 -->
 ## In the lab
 
-`./netlab run 390-causal-broadcast`. Three processes in a triangle; the link n1–n3 is slow (150 ms). The same scene is played twice. Select n3 (`n`), open its `clock` tab, and press `s` for the sequence diagram: the crossing arrows are the whole story. Use the log at detail `2` to read the vectors.
+`./hoplab run 390-causal-broadcast`. Three processes in a triangle; the link n1–n3 is slow (150 ms). The same scene is played twice. Select n3 (`n`), open its `clock` tab, and press `s` for the sequence diagram: the crossing arrows are the whole story. Use the log at detail `2` to read the vectors.
 
 **Round 1 (1 s), no ordering.** n1 broadcasts "what time is it?", n2 delivers it and broadcasts "half past nine". At n3 the answer arrives first and is delivered at once: the log prints "causality violated … it depends on a message not delivered yet, from n1", and `clock.violations` becomes 1. Before looking, write the vector carried by each message and decide by comparison that the question happened before the answer.
 
 **Round 2 (4 s), causal order.** Same exchange. At n3 the log shows "held back «ten o'clock» from n2: a message it depends on has not arrived yet", then the question is delivered and "leaves the hold-back queue" follows immediately. Measure the time the answer spends in the queue (about 40 ms: the difference between the two paths) and note `clock.heldback` = 1.
 
-**Experiment 1: FIFO is not enough.** `./netlab run 390-causal-broadcast order2=fifo`. Predict the outcome before running: the two messages have different senders, so FIFO imposes nothing between them and n3 violates causality again (`clock.violations` = 2: the lab's check `causality` expects exactly that for `none` and `fifo`, and 1 for `causal` and `total`).
+**Experiment 1: FIFO is not enough.** `./hoplab run 390-causal-broadcast order2=fifo`. Predict the outcome before running: the two messages have different senders, so FIFO imposes nothing between them and n3 violates causality again (`clock.violations` = 2: the lab's check `causality` expects exactly that for `none` and `fifo`, and 1 for `causal` and `total`).
 
 **Experiment 2: the price of total order.** `order2=total`. Every process now queues each message ("queued … waiting for every process to acknowledge") and delivers only when all have acknowledged. Measure when n1 delivers its own question: about 300 ms after sending, a round trip on the slow link, against 0 ms before. All three deliver in the same order. Then raise `slow=500ms` and predict the new delivery times for causal and for total.
 

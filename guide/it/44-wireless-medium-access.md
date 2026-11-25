@@ -64,12 +64,12 @@ I terminali nascosti sono modellati come due gruppi, le stazioni di indice pari 
 <!-- detail: 1 -->
 ## In laboratorio
 
-Eseguire `./netlab run 460-hidden-terminal`. Tre celle indipendenti eseguono lo stesso CSMA/CA con lo stesso carico: `open` (tutti sentono tutti), `hidden` (due gruppi che non si sentono), `rtscts` (gli stessi gruppi nascosti, con RTS/CTS). Parametri: `load` (nuovi frame per tempo di frame, tutte le stazioni insieme), `stations`, `frame`. Contatori su ogni cella: `mac.throughput_pct`, `mac.sent`, `mac.success`, `mac.collisions`, `mac.dropped`. Nei pannelli mac si confrontino S e la quantità di rosso.
+Eseguire `./hoplab run 460-hidden-terminal`. Tre celle indipendenti eseguono lo stesso CSMA/CA con lo stesso carico: `open` (tutti sentono tutti), `hidden` (due gruppi che non si sentono), `rtscts` (gli stessi gruppi nascosti, con RTS/CTS). Parametri: `load` (nuovi frame per tempo di frame, tutte le stazioni insieme), `stations`, `frame`. Contatori su ogni cella: `mac.throughput_pct`, `mac.sent`, `mac.success`, `mac.collisions`, `mac.dropped`. Nei pannelli mac si confrontino S e la quantità di rosso.
 
 Con i valori di default ci si attende circa il 58% in `open`, il 14% in `hidden` e il 58% in `rtscts`. Per numeri che valga la pena confrontare servono un'esecuzione più lunga in tempi di frame e più semi:
 
 ```
-./netlab run 460-hidden-terminal frame=10ms --seed 1 --headless
+./hoplab run 460-hidden-terminal frame=10ms --seed 1 --headless
 ```
 
 **Esperimento 1 — a basso carico il throughput è la metrica sbagliata.** Ipotesi: i terminali nascosti causano collisioni a qualunque carico, ma fanno perdere throughput solo quando le ritrasmissioni non possono più essere assorbite. Manipolazione: `load=0.05`, `0.2`, `0.6`, `1.0`. Metrica: `mac.throughput_pct` e il rapporto di collisione `mac.collisions / mac.sent`, in `hidden` rispetto a `open`. Esito atteso: a 0.2 tutte e tre le celle smaltiscono circa il 20% (lo verifica il controllo `light` del laboratorio), mentre `hidden` mostra già da uno a due ordini di grandezza di collisioni in più; da 0.6 in su `hidden` satura intorno al 14% e comincia a scartare frame.

@@ -1,5 +1,5 @@
 /*
- * launch.c - `netlab windows`: the same lab as several processes in tiled
+ * launch.c - `hoplab windows`: the same lab as several processes in tiled
  *            windows on this machine. One pane (the hub) shows the whole
  *            network and runs every node that has no pane of its own; the
  *            others run one node each. Links between processes are UDP
@@ -51,7 +51,7 @@ int nl_launch_windows(const char *scenario, int argc, char **argv, const char *m
     size_t len = 0;
 
     if (!nl_scenario_path(scenario, path, sizeof(path))) {
-        fprintf(stderr, "netlab: %s: %s\n", scenario, _("scenario not found (see `netlab list`)"));
+        fprintf(stderr, "hoplab: %s: %s\n", scenario, _("scenario not found (see `hoplab list`)"));
         return 2;
     }
     if (path[0] != '/') {               /* panes may start in another directory */
@@ -128,20 +128,20 @@ int nl_launch_windows(const char *scenario, int argc, char **argv, const char *m
         mode = in_tmux ? "tmux" : gui && has("kitty") ? "kitty" : has("tmux") ? "tmux" : "print";
 
     if (!strcmp(mode, "kitty")) {
-        char file[] = "/tmp/netlab-session-XXXXXX", line[300];
+        char file[] = "/tmp/hoplab-session-XXXXXX", line[300];
         int fd = mkstemp(file);
         FILE *f = fd >= 0 ? fdopen(fd, "w") : NULL;
 
         if (!f)
             return 2;
-        fprintf(f, "new_tab netlab\nenabled_layouts tall:bias=55,grid\nlayout tall\n");
+        fprintf(f, "new_tab hoplab\nenabled_layouts tall:bias=55,grid\nlayout tall\n");
         for (i = 0; i < npanes; i++) {
             static char q[4600];
             quote(q, sizeof(q), cmd[i]);
             fprintf(f, "launch --title %s sh -c %s\n", i ? own[i - 1] : "network", q);
         }
         fclose(f);
-        snprintf(line, sizeof(line), "kitty --detach --start-as=maximized --title netlab --session %s", file);
+        snprintf(line, sizeof(line), "kitty --detach --start-as=maximized --title hoplab --session %s", file);
         if (system(line) != 0)
             return 2;
         snprintf(line, sizeof(line), "(sleep 20; rm -f %s) >/dev/null 2>&1 &", file);
@@ -153,10 +153,10 @@ int nl_launch_windows(const char *scenario, int argc, char **argv, const char *m
     if (!strcmp(mode, "tmux")) {
         static char line[5200], q[4600];
 
-        snprintf(sess, sizeof(sess), "netlab-%d", (int)getpid());
+        snprintf(sess, sizeof(sess), "hoplab-%d", (int)getpid());
         quote(q, sizeof(q), cmd[0]);
         if (in_tmux)
-            snprintf(line, sizeof(line), "tmux new-window -n netlab %s", q);
+            snprintf(line, sizeof(line), "tmux new-window -n hoplab %s", q);
         else
             snprintf(line, sizeof(line), "tmux new-session -d -s %s -x 220 -y 60 %s", sess, q);
         if (system(line) != 0)

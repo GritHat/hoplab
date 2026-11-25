@@ -1,4 +1,4 @@
-# Italian translation of netlab: lb.c (lb, whoami, reqgen)
+# Italian translation of hoplab: lb.c (lb, whoami, reqgen)
 msgid ""
 msgstr ""
 "Language: it\n"

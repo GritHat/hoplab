@@ -2,9 +2,8 @@
 
 | Command | What it does |
 |---|---|
-| `make test` (`./netlab check`) | every lab of the catalog, headless, seed 1, with its `expect` lines |
-| `tests/run-variants.sh [FILE...]` | every line of `tests/variants/*.txt`, seeds 1 to 5: labs run with the parameter values a student would try, and must still behave as their description says |
-| `tests/run-sanitized.sh` | every lab and every variant under AddressSanitizer and UBSan (builds `./netlab-asan`) |
+| `make test` (`./hoplab check`) | every lab of the catalog, headless, seed 1, with its `expect` lines |
+| `make regress` (`tests/regress.sh`, or `tests/regress.sh quick`) | every lab with seeds 1 to 5; every line of `tests/variants/*.txt` (labs run with the parameter values a student would try, which must still behave as their description says); the catalog under AddressSanitizer and UBSan; one lab split over three processes joined by UDP tunnels; a real transfer with each classic demo; translation and guide consistency |
 | `tests/try.sh LAB "k=v ..." ...` | quick look at a few variants of one lab: one line of P/F per variant, five seeds |
 | `tests/counters.sh LAB "node:counter ..." [k=v ...]` | print the final value of counters for one run, to design `expect` and `check` lines |
 

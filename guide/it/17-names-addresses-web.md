@@ -63,7 +63,7 @@ Per saperne di più: Kurose e Ross, capitolo 2 ("Livello di applicazione": Web e
 
 **Laboratorio 141-dhcp-join**: h1 arriva senza indirizzo; gw è router e server DHCP.
 
-- Avvialo con `./netlab run 141-dhcp-join`. Seleziona h1 (`n`): la sua interfaccia non ha indirizzo.
+- Avvialo con `./hoplab run 141-dhcp-join`. Seleziona h1 (`n`): la sua interfaccia non ha indirizzo.
 - A 1 s leggi i quattro messaggi nel Registro (`l`) e poi la riga `DHCP assegnato`. Apri la vista Pacchetti (`p`) e controlla il MAC di destinazione del DISCOVER.
 - Apri la scheda Rotte di h1: è comparsa una rotta predefinita marcata `dhcp`. Lo stesso ACK portava anche l'indirizzo di un name server (opzione 6: la riga dice `dns 10.0.1.1`).
 - A 4 s h1 fa ping verso h2, che sta su un'altra rete: funziona solo grazie al gateway imparato da DHCP.
@@ -71,13 +71,13 @@ Per saperne di più: Kurose e Ross, capitolo 2 ("Livello di applicazione": Web e
 
 **Laboratorio 140-dns-first**: h1 fa tre domande al name server ns.
 
-- Avvialo con `./netlab run 140-dns-first`. A 1 s, 3 s e 5 s leggi domanda e risposta nel registro: un record A, un record MX, NXDOMAIN.
+- Avvialo con `./hoplab run 140-dns-first`. A 1 s, 3 s e 5 s leggi domanda e risposta nel registro: un record A, un record MX, NXDOMAIN.
 - Apri la domanda DNS nella vista Pacchetti e trova: UDP, porta 53, il nome, il tipo. Nella risposta trova il TTL.
-- Il `ping` di netlab accetta indirizzi e nomi di nodo, non nomi DNS: per usare la risposta scrivi `:` e `h1 ping 10.0.2.11`.
+- Il `ping` di hoplab accetta indirizzi e nomi di nodo, non nomi DNS: per usare la risposta scrivi `:` e `h1 ping 10.0.2.11`.
 
 **Laboratorio 121-http-page**: h1 carica una pagina da www, due volte.
 
-- Avvialo con `./netlab run 121-http-page` e premi `2`. A 1 s la pagina viene caricata su una sola connessione persistente, a 4 s con una connessione per oggetto.
+- Avvialo con `./hoplab run 121-http-page` e premi `2`. A 1 s la pagina viene caricata su una sola connessione persistente, a 4 s con una connessione per oggetto.
 - Nel registro conta le righe `SYN` di ciascun caricamento e leggi le due righe `completata`: circa 422 ms e 559 ms. Il primo caricamento comprende anche circa 68 ms di ARP che il secondo non paga: la vera differenza sono tre handshake.
 - Nella vista Pacchetti trova un frame con `GET` e uno con `200 OK` e aprili: la richiesta è testo leggibile.
 
@@ -85,7 +85,7 @@ Per saperne di più: Kurose e Ross, capitolo 2 ("Livello di applicazione": Web e
 
 - Laboratorio 141: scrivi `h1 dhcp release`, poi `h1 ping h2`. Che cosa dice il registro? Poi `h1 dhcp client`.
 - Laboratorio 140: `h1 dig example.com type=TXT` e `h1 dig mail.example.com`. Quale dei due fallisce, e con quale risposta?
-- Laboratorio 121: `./netlab run 121-http-page delay=100ms`. L'andata e ritorno diventa di circa 208 ms: quanto durerà in più il secondo caricamento rispetto al primo? Poi prova `objects=8`.
+- Laboratorio 121: `./hoplab run 121-http-page delay=100ms`. L'andata e ritorno diventa di circa 208 ms: quanto durerà in più il secondo caricamento rispetto al primo? Poi prova `objects=8`.
 - Laboratorio 121: scrivi `h1 http get www/missing`. Quale codice di stato torna indietro?
 
 ## Verifica

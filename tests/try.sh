@@ -14,7 +14,7 @@ for v in "$@"; do
     row=""
     for seed in ${SEEDS:-1 2 3 4 5}; do
         # shellcheck disable=SC2086
-        out=$(./netlab run "$src" $v --quiet --seed "$seed" --lang en 2>&1 | tail -1)
+        out=$(./hoplab run "$src" $v --quiet --seed "$seed" --lang en 2>&1 | tail -1)
         case "$out" in PASS*) row+=P ;; FAIL*) row+=F ;; *) row+=E ;; esac
     done
     printf '%s  %s\n' "$row" "${v:-(defaults)}"

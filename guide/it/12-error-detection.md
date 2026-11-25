@@ -44,7 +44,7 @@ Per saperne di più: Kurose e Ross, capitolo 6, paragrafo "Tecniche di rilevazio
 
 **Laboratorio 160-error-detection**: tre collegamenti rumorosi identici, uno sopra l'altro. In alto (a1–a2): nessun controllo sul collegamento. Al centro (b1–b2): un bit di parità. In basso (c1–c2): CRC-32.
 
-- Avvialo con `./netlab run 160-error-detection` e leggi il Registro (`l`) a dettaglio 2.
+- Avvialo con `./hoplab run 160-error-detection` e leggi il Registro (`l`) a dettaglio 2.
 - Cerca le righe con `errori sui bit`. Finiscono con `rilevati, frame scartato` oppure con `NON rilevati dal collegamento: frame consegnato danneggiato`. Su quale collegamento compare ciascun tipo? Sul collegamento con la parità guarda il numero di bit invertiti in ogni riga: che cosa noti?
 - Quando un frame danneggiato passa, pochi millisecondi dopo segue una riga `UDP checksum errato: datagramma scartato`: l'ha fermato il livello di trasporto.
 - Seleziona a2, poi b2, poi c2 con `n` e confronta il contatore `udp.bad_checksum` (a dettaglio 2 la scheda Nodo elenca i contatori del nodo selezionato). Aspettati circa 70, circa 15 ed esattamente 0 su 200 datagrammi.
@@ -52,15 +52,15 @@ Per saperne di più: Kurose e Ross, capitolo 6, paragrafo "Tecniche di rilevazio
 
 **Laboratorio 161-error-correction**: ancora tre collegamenti, con più rumore. In alto: solo CRC. Al centro: Hamming(7,4). In basso: tre copie.
 
-- Avvialo con `./netlab run 161-error-correction`. Ora il registro mostra anche `corretti dal codice di linea`.
+- Avvialo con `./hoplab run 161-error-correction`. Ora il registro mostra anche `corretti dal codice di linea`.
 - Alla fine confronta `sink.received` su c2, h2 e r2: circa 60 su 200 sul collegamento con il CRC, 200 su 200 sugli altri, senza alcuna ritrasmissione.
 - Confronta `sink.delay_ms`: circa 9,4 ms con il CRC, 12,6 ms con Hamming, 18 ms con tre copie. La correzione si paga in tempo sul filo.
 
 **Cambia e prevedi.**
 
-- `./netlab run 160-error-detection ber=1e-3`: quanti datagrammi riceverà c2? Un rilevatore perfetto aiuta?
-- `./netlab run 161-error-correction ber=3e-3`: che cosa comincerà a succedere sul collegamento Hamming? Osserva `udp.bad_checksum` su h2.
-- `./netlab run 161-error-correction ber=1e-5`: quale collegamento è ora il più conveniente?
+- `./hoplab run 160-error-detection ber=1e-3`: quanti datagrammi riceverà c2? Un rilevatore perfetto aiuta?
+- `./hoplab run 161-error-correction ber=3e-3`: che cosa comincerà a succedere sul collegamento Hamming? Osserva `udp.bad_checksum` su h2.
+- `./hoplab run 161-error-correction ber=1e-5`: quale collegamento è ora il più conveniente?
 - Nel laboratorio 161 scrivi `c1 coding show code=hamming74 pos=3` e poi `pos=3,4`.
 
 ## Verifica

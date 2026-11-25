@@ -1,7 +1,7 @@
-# Italian translation of the netlab "twopc" module.
+# Italian translation of the hoplab "twopc" module.
 msgid ""
 msgstr ""
-"Project-Id-Version: netlab\n"
+"Project-Id-Version: hoplab\n"
 "Language: it\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"

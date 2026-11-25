@@ -52,7 +52,7 @@ Nel laboratorio 252 gli health check sono ICMP echo ogni secondo; un server vien
 <!-- detail: 3 -->
 ## In profondità: NAT
 
-**Comportamenti** (RFC 4787 per UDP, RFC 5382 per TCP, RFC 5508 per ICMP). *Mapping*: un NAT endpoint-independent usa la stessa porta pubblica per tutto ciò che un socket interno invia; uno simmetrico alloca una nuova porta per ogni destinazione. *Filtering*: chi può inviare a una porta associata: chiunque (full cone), solo gli indirizzi già contattati, solo le coppie indirizzo e porta già contattate (port-restricted, il default di netlab), o solo la destinazione dell'associazione. Queste proprietà decidono se due host dietro NAT possono collegarsi direttamente con l'**hole punching**: entrambi apprendono i propri endpoint pubblici da un server (STUN, RFC 8489), si inviano pacchetti nello stesso momento, e ciascun NAT scambia il pacchetto dell'altro per una risposta. Quando non funziona serve un relay (TURN, RFC 8656); ICE (RFC 8445) prova tutte le opzioni.
+**Comportamenti** (RFC 4787 per UDP, RFC 5382 per TCP, RFC 5508 per ICMP). *Mapping*: un NAT endpoint-independent usa la stessa porta pubblica per tutto ciò che un socket interno invia; uno simmetrico alloca una nuova porta per ogni destinazione. *Filtering*: chi può inviare a una porta associata: chiunque (full cone), solo gli indirizzi già contattati, solo le coppie indirizzo e porta già contattate (port-restricted, il default di hoplab), o solo la destinazione dell'associazione. Queste proprietà decidono se due host dietro NAT possono collegarsi direttamente con l'**hole punching**: entrambi apprendono i propri endpoint pubblici da un server (STUN, RFC 8489), si inviano pacchetti nello stesso momento, e ciascun NAT scambia il pacchetto dell'altro per una risposta. Quando non funziona serve un relay (TURN, RFC 8656); ICE (RFC 8445) prova tutte le opzioni.
 
 **Limiti.** Un indirizzo pubblico offre circa 64000 porte per protocollo, un tetto ai flussi contemporanei. Il carrier-grade NAT condivide un indirizzo fra molti clienti (intervallo condiviso 100.64.0.0/10, RFC 6598), aggiunge una seconda traduzione e rende difficile attribuire il traffico a un abbonato. Timeout tipici: da 30 s a qualche minuto per UDP, ore per le connessioni TCP stabilite.
 
@@ -68,31 +68,31 @@ Nel laboratorio 252 gli health check sono ICMP echo ogni secondo; un server vien
 
 **Livello 7.** Un proxy che termina TCP e TLS può instradare per URL o cookie, a un costo maggiore per connessione.
 
-**netlab semplifica:** i laboratori usano flussi UDP di richiesta/risposta, e un flusso termina dopo `life` richieste anziché con un FIN.
+**hoplab semplifica:** i laboratori usano flussi UDP di richiesta/risposta, e un flusso termina dopo `life` richieste anziché con un FIN.
 
 <!-- detail: 1 -->
 ## In laboratorio
 
-**Laboratorio 250: `./netlab run 250-nat-basics`**
+**Laboratorio 250: `./hoplab run 250-nat-basics`**
 
 - Prima dei 4 s non c'è NAT: il server risponde, e isp registra `nessuna rotta verso 192.168.1.10`. Nota chi riceve l'errore ICMP.
 - A 5 s apri la vista Pacchetti (`p`) e confronta la stessa echo request sul collegamento sw-r1 e su r1-isp: indirizzo sorgente, identifier, checksum. Seleziona r1 e apri la sua scheda `nat`.
 - A 9 s leggi le due associazioni UDP; a 12 s apri l'ICMP time exceeded di isp prima e dopo r1.
-- Prevedi, poi prova: `./netlab run 250-nat-basics preserve=1`. Quali porte pubbliche ottengono h1 e h2 a 9 s?
-- Prevedi, poi prova: `./netlab run 250-nat-basics timeout=500ms`. Quante associazioni crea il ping di tre pacchetti a 5 s, e perché? Poi `type=symmetric` e confronta i numeri di porta.
+- Prevedi, poi prova: `./hoplab run 250-nat-basics preserve=1`. Quali porte pubbliche ottengono h1 e h2 a 9 s?
+- Prevedi, poi prova: `./hoplab run 250-nat-basics timeout=500ms`. Quante associazioni crea il ping di tre pacchetti a 5 s, e perché? Poi `type=symmetric` e confronta i numeri di porta.
 
-**Laboratorio 251: `./netlab run 251-port-forwarding`**
+**Laboratorio 251: `./hoplab run 251-port-forwarding`**
 
 - A 1 s r1 registra `nessuna associazione, non c'è nessuno all'interno a cui consegnarlo`; a 4 s viene aggiunta la regola; a 5 s il datagramma raggiunge web. Nella vista Pacchetti confronta la sua destinazione prima e dopo r1, e la sorgente della risposta prima e dopo r1.
 - A 7 s h1 prova l'indirizzo pubblico dall'interno e fallisce.
-- Prevedi, poi prova: `./netlab run 251-port-forwarding hairpin=1`. Apri il pacchetto che web riceve a 7 s: qual è il suo indirizzo sorgente, e perché il NAT deve riscriverlo?
+- Prevedi, poi prova: `./hoplab run 251-port-forwarding hairpin=1`. Apri il pacchetto che web riceve a 7 s: qual è il suo indirizzo sorgente, e perché il NAT deve riscriverlo?
 
-**Laboratorio 252: `./netlab run 252-load-balancer`**
+**Laboratorio 252: `./hoplab run 252-load-balancer`**
 
 - Seleziona lb e apri la sua scheda `lb`: pool, tabella dei flussi, contatori. Nel registro `nuovo flusso ... → s2 (rr)` ruota fra s2, s3, s1. Seleziona c1 per il conteggio di chi ha risposto.
 - A 2 s s2 cade; a 4 s `health check fallito, escluso dal pool` e `10/30 flussi hanno perso il loro server`; a 9 s s2 ritorna.
-- Prevedi, poi prova: `./netlab run 252-load-balancer check=250ms`. Quando viene tolto s2 e quante richieste vanno perse? Poi `fall=1` con l'intervallo di default.
-- Prevedi, poi prova: `./netlab run 252-load-balancer algo=leastconn`. Dopo i 9 s, com'è la quota di nuovi flussi di s2 rispetto al round robin, e perché?
+- Prevedi, poi prova: `./hoplab run 252-load-balancer check=250ms`. Quando viene tolto s2 e quante richieste vanno perse? Poi `fall=1` con l'intervallo di default.
+- Prevedi, poi prova: `./hoplab run 252-load-balancer algo=leastconn`. Dopo i 9 s, com'è la quota di nuovi flussi di s2 rispetto al round robin, e perché?
 
 ## Verifica
 

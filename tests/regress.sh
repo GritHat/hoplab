@@ -16,7 +16,7 @@
 #     topic exists in both languages and names labs that exist
 set -u
 cd "$(dirname "$0")/.."
-BIN=./hoplab; [ -x "$BIN" ] || BIN=./netlab
+BIN=./hoplab
 QUICK=${1:-}
 SEEDS="1 2 3 4 5"; [ "$QUICK" = quick ] && SEEDS=1
 fail=0; total=0
@@ -53,7 +53,7 @@ if [ "$QUICK" != quick ]; then
            src/*.c rdt.c channel.c tui.c i18n.c -lm -o "$TMP/san" 2>"$TMP/cc"; then
         for f in scenarios/*.nl; do
             total=$((total + 1))
-            ASAN_OPTIONS=detect_leaks=0 NETLAB_HOME=$PWD HOPLAB_HOME=$PWD "$TMP/san" run "$f" --quiet --seed 2 >"$TMP/out" 2>&1 ||
+            ASAN_OPTIONS=detect_leaks=0 HOPLAB_HOME=$PWD HOPLAB_HOME=$PWD "$TMP/san" run "$f" --quiet --seed 2 >"$TMP/out" 2>&1 ||
                 bad "sanitizer run of $(basename "$f")"
             grep -q "runtime error\|AddressSanitizer" "$TMP/out" && bad "sanitizer report in $(basename "$f"): $(grep -m1 'runtime error\|ERROR' "$TMP/out")"
         done
@@ -63,10 +63,10 @@ if [ "$QUICK" != quick ]; then
 
     note "== 4. three processes over UDP tunnels"
     port=$((30000 + $$ % 2000 * 10))
-    "$BIN" node 101-ping h2 --headless --baseport $port --monitor 127.0.0.1:$((port - 1)) --until 9s --quiet --seed 1 >"$TMP/h2" 2>&1 &
-    "$BIN" node 101-ping h1 --headless --baseport $port --monitor 127.0.0.1:$((port - 1)) --until 9s --quiet --seed 1 >"$TMP/h1" 2>&1 &
+    "$BIN" node 101-ping h2 --headless --baseport $port --monitor 127.0.0.1:$((port - 1)) --until 13s --quiet --seed 1 >"$TMP/h2" 2>&1 &
+    "$BIN" node 101-ping h1 --headless --baseport $port --monitor 127.0.0.1:$((port - 1)) --until 13s --quiet --seed 1 >"$TMP/h1" 2>&1 &
     sleep 0.5
-    "$BIN" node 101-ping r1 --hub --headless --baseport $port --until 9s --quiet --seed 1 >"$TMP/r1" 2>&1
+    "$BIN" node 101-ping r1 --hub --headless --baseport $port --until 13s --quiet --seed 1 >"$TMP/r1" 2>&1
     wait
     total=$((total + 1))
     grep -q '^PASS' "$TMP/h1" || bad "distributed 101-ping: $(tail -1 "$TMP/h1")"

@@ -27,13 +27,13 @@ RIP version 2 (RFC 2453) runs over UDP port 520 and sends responses to the multi
 - IP address (4), subnet mask (4), next hop (4)
 - metric (4): 1 to 15, and 16 = unreachable
 
-The cost of every link is 1, so the metric is a hop count and no path may exceed 15 hops. Three timers per RFC: **update** every 30 s (with a small random jitter), **timeout** 180 s (a route not refreshed is marked unreachable), **garbage collection** 120 s (it is then advertised with metric 16 before being deleted). In netlab the update period is a parameter, timeout is 6 updates and garbage collection 4.
+The cost of every link is 1, so the metric is a hop count and no path may exceed 15 hops. Three timers per RFC: **update** every 30 s (with a small random jitter), **timeout** 180 s (a route not refreshed is marked unreachable), **garbage collection** 120 s (it is then advertised with metric 16 before being deleted). In hoplab the update period is a parameter, timeout is 6 updates and garbage collection 4.
 
 On receiving an entry with metric m from neighbour N, the router computes m' = min(m + 1, 16) and: installs the route if the destination is new and m' < 16; replaces its route if m' is smaller; and, crucially, **accepts m' even if larger when N is the current next hop**, because the neighbour it relies on knows best.
 
 ## Count to infinity, with numbers
 
-Lab 231 is a line `h1 - r1 - r2 - r3 - h3`, updates every 2 s, no protections. (netlab displays the stored metric with 0 for attached networks; on the wire the advertised value is one more, as in the RFC.) Before the failure r2 reaches h3's network at 1 and r1 at 2.
+Lab 231 is a line `h1 - r1 - r2 - r3 - h3`, updates every 2 s, no protections. (hoplab displays the stored metric with 0 for attached networks; on the wire the advertised value is one more, as in the RFC.) Before the failure r2 reaches h3's network at 1 and r1 at 2.
 
 - 12.0 s: link r2-r3 fails. r2 drops its route.
 - 12.5 s: r1's periodic update still says "I reach it" (stored metric 2): r2 installs it via r1 with metric 3. r1 points to r2 and r2 points to r1: a loop.
@@ -64,24 +64,24 @@ For thirteen seconds packets to h3 bounce between r1 and r2 until their TTL expi
 
 **Origins.** Bellman (1958) and Ford and Fulkerson (1962) gave the algorithm; the original ARPANET routing of 1969 was distance-vector with delay as the metric, and its slow reaction to bad news was the reason for the move to link state in 1979.
 
-**What netlab simplifies.** Real message format; no authentication and no route tags.
+**What hoplab simplifies.** Real message format; no authentication and no route tags.
 
 <!-- detail: 1 -->
 ## In the lab
 
-**Lab 230: `./netlab run 230-rip-convergence`**
+**Lab 230: `./hoplab run 230-rip-convergence`**
 
 - Select r1 (`n`) and open the Routes tab and the `rip` tab: within the first tenth of a second neighbours' networks arrive at metric 1, then h3's network (10.0.6.0/24) at metric 2 via r2.
 - In the packets view (`p`) press Enter on a RIP response: read the header and the 20-byte entries. Compare a periodic update with a triggered one ("only the routes that changed").
 - At 16 s traceroute shows r1, r2, r3. At 20 s the link r1-r2 fails: metric 16 in the log, triggered updates, and at 45 s traceroute goes through r4.
-- Predict, then try: `./netlab run 230-rip-convergence triggered=0`. When does r3 learn that r1's network is gone through r2, and when does r1 get a new route to h3's network? Compare the timestamps with the default run.
-- Predict, then try: `./netlab run 230-rip-convergence update=10s`. Which events are delayed and which are not? Then type `:link r1 r2 up` after 45 s and watch the shorter path return.
+- Predict, then try: `./hoplab run 230-rip-convergence triggered=0`. When does r3 learn that r1's network is gone through r2, and when does r1 get a new route to h3's network? Compare the timestamps with the default run.
+- Predict, then try: `./hoplab run 230-rip-convergence update=10s`. Which events are delayed and which are not? Then type `:link r1 r2 up` after 45 s and watch the shorter path return.
 
-**Lab 231: `./netlab run 231-rip-count-to-infinity`**
+**Lab 231: `./hoplab run 231-rip-count-to-infinity`**
 
 - Set detail 2 and follow the log from 12 s: the metric of 10.0.4.0/24 climbs alternately on r1 and r2. Keep the Routes tab of r1 open to see next hop and metric change.
 - At 17 s the ping from h1 reports `time to live exceeded` from 10.0.2.2: open the packets view to see the echo request bouncing.
-- Predict, then try: `./netlab run 231-rip-count-to-infinity split=1`. What does r1 advertise to r2 at 12.5 s? What does the ping report, and who sends the error? (The lab's checks know the setting: with any protection on they verify that nobody counts and no packet loops.) Then try `triggered=1` alone: why is that already enough in this small network, and why would you not rely on it?
+- Predict, then try: `./hoplab run 231-rip-count-to-infinity split=1`. What does r1 advertise to r2 at 12.5 s? What does the ping report, and who sends the error? (The lab's checks know the setting: with any protection on they verify that nobody counts and no packet loops.) Then try `triggered=1` alone: why is that already enough in this small network, and why would you not rely on it?
 - Predict, then try: `split=1 poison=1` and open a RIP response from r1 to r2: which entries have metric 16? Then `split=0 triggered=1`: does the loop still form? Why is this a race and not a guarantee?
 
 ## Check yourself

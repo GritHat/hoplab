@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Record the netlab demo: screenshots, preview GIF, video with music.
+"""Record the hoplab demo: screenshots, preview GIF, video with music.
 
     tools/media/record.py [--out media] [--only ping,tcp] [--keep]
 
@@ -28,7 +28,7 @@ import ansi2png  # noqa: E402
 COLS, ROWS, SIZE = 160, 44, 18
 W, H = 1920, 1080
 FPS = 12
-SOCK = "netlab-media"
+SOCK = "hoplab-media"
 SANS = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 SANS_BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 MONO_BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf"
@@ -37,29 +37,29 @@ BLUE, GREEN, YELLOW, PINK = (95, 175, 255), (135, 215, 135), (255, 215, 95), (25
 
 # name, command, seconds, [(time, tmux keys...)], [(time, caption)]
 SEGMENTS = [
-    ("ping", "./netlab run 101-ping --seed 1", 15.0,
+    ("ping", "./hoplab run 101-ping --seed 1", 15.0,
      [(8.6, "s"), (12.0, "p"), (12.4, "Up", "Up", "Up", "Up", "Enter"), (13.2, "]", "]", "]", "]"),
       (14.0, "]", "]", "]")],
      [(0, "Real frames on an emulated network: ARP, then the ping crosses the router"),
       (8.6, "The same exchange as a sequence diagram"),
       (12.0, "Every packet, dissected field by field down to the bytes")]),
-    ("tcp", "./netlab run 320-tcp-congestion --seed 1 --speed 2.5", 10.0,
+    ("tcp", "./hoplab run 320-tcp-congestion --seed 1 --speed 2.5", 10.0,
      [(0.4, "Tab", "Left"), (6.5, "g")],
      [(0, "TCP congestion control on a bottleneck: the sawtooth, live"),
       (6.5, "Any quantity a protocol records can be plotted")]),
-    ("ospf", "./netlab run 232-ospf-costs --seed 1", 8.0,
+    ("ospf", "./hoplab run 232-ospf-costs --seed 1", 8.0,
      [(0.4, "Tab", "Left")],
      [(0, "Routing protocols at work: OSPF floods link state and runs Dijkstra")]),
-    ("raft", "./netlab run 380-raft-election --seed 1 --speed 0.6", 10.0,
+    ("raft", "./hoplab run 380-raft-election --seed 1 --speed 0.6", 10.0,
      [(0.4, "Tab", "Left"), (5.0, "l")],
      [(0, "Distributed algorithms too: Raft elects a leader, loses it, elects another")]),
-    ("menu", "./netlab", 14.0,
+    ("menu", "./hoplab", 14.0,
      [(1.2, "1"), (2.0, "Down"), (2.5, "Down"), (3.0, "Down"), (3.5, "Down"), (4.0, "PageDown"),
       (4.6, "PageDown"), (5.2, "PageDown"), (5.8, "PageDown"), (6.6, "Escape"), (7.2, "2"),
       (8.2, "Down"), (8.6, "Down"), (9.0, "Down"), (9.4, "Down"), (9.8, "Down"), (10.6, "Right"),
       (11.4, "3"), (12.2, "PageDown"), (13.0, "PageDown")],
      [(0, "One menu: catalog, study guide, topology wizard"),
-      (1.2, "64 ready-made labs in four levels, from the first ping to consensus"),
+      (1.2, "71 ready-made labs in four levels, from the first ping to consensus"),
       (7.2, "A study guide by level and topic, readable at three depths, in English and Italian")]),
     ("windows", "WINDOWS", 11.0, [],
      [(0, "The same lab as separate processes joined by UDP tunnels — on one screen, or on several machines")]),
@@ -85,13 +85,13 @@ def caption_at(captions, t):
 def record_segment(seg, tmp):
     name, cmd, secs, keys, captions = seg
     inner_dir = os.path.join(tmp, "inner")
-    env = dict(os.environ, NETLAB_LANG="en", LANG="C.UTF-8")
+    env = dict(os.environ, HOPLAB_LANG="en", LANG="C.UTF-8")
     env.pop("TMUX", None)
     if cmd == "WINDOWS":
         # the tiled mode uses tmux itself: give it a private server too and
         # look at it through the recording pane
         os.makedirs(inner_dir, exist_ok=True)
-        cmd = f"env -u TMUX TMUX_TMPDIR={inner_dir} ./netlab windows 101-ping --mode tmux --seed 1"
+        cmd = f"env -u TMUX TMUX_TMPDIR={inner_dir} ./hoplab windows 101-ping --mode tmux --seed 1"
     tmux("kill-session", "-t", "rec")
     tmux("new-session", "-d", "-s", "rec", "-x", str(COLS), "-y", str(ROWS), cmd, env=env)
     frames, pending, t0 = [], list(keys), time.time()
@@ -191,13 +191,13 @@ def thumbnail(shot, out):
     d = ImageDraw.Draw(img)
     lg = logo(250)
     img.paste(lg, (50, 40), lg)
-    d.text((320, 62), "netlab", font=ImageFont.truetype(MONO_BOLD, 150), fill=(245, 246, 250),
+    d.text((320, 62), "hoplab", font=ImageFont.truetype(MONO_BOLD, 150), fill=(245, 246, 250),
            stroke_width=6, stroke_fill=BG)
     d.text((60, 330), "Watch the network\nthink.", font=ImageFont.truetype(SANS_BOLD, 62), fill=YELLOW,
            stroke_width=8, stroke_fill=BG, spacing=10)
     f = ImageFont.truetype(SANS_BOLD, 34)
     y = 520
-    for text, col in (("every packet, every layer", BLUE), ("30+ protocols · 64 labs", GREEN),
+    for text, col in (("every packet, every layer", BLUE), ("30+ protocols · 71 labs", GREEN),
                       ("in your terminal", PINK)):
         d.text((60, y), text, font=f, fill=col, stroke_width=6, stroke_fill=BG)
         y += 52
@@ -211,8 +211,8 @@ def main():
     ap.add_argument("--keep", action="store_true", help="keep the frames directory")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
-    # NETLAB_MEDIA_TMP: a SHORT directory (tmux socket paths are limited to about 100 bytes)
-    tmp = tempfile.mkdtemp(prefix="nlm-", dir=os.environ.get("NETLAB_MEDIA_TMP"))
+    # HOPLAB_MEDIA_TMP: a SHORT directory (tmux socket paths are limited to about 100 bytes)
+    tmp = tempfile.mkdtemp(prefix="nlm-", dir=os.environ.get("HOPLAB_MEDIA_TMP"))
     fdir = os.path.join(tmp, "frames")
     os.makedirs(fdir)
     only = [s for s in a.only.split(",") if s]
@@ -240,13 +240,13 @@ def main():
         return Image.open(os.path.join(fdir, f"{first[name] + int(t * FPS):05d}.png"))
 
     hero = frame("tcp", 9.0) if "tcp" in first else Image.open(jobs[len(jobs) // 2][2])
-    title = card("netlab", "A network laboratory in your terminal",
+    title = card("hoplab", "A network laboratory in your terminal",
                  ["Every packet, every layer, every protocol —", "from the first ping to consensus algorithms."],
                  shot=hero)
     for i in range(title_frames):
         title.save(os.path.join(fdir, f"{i:05d}.png"))
-    end = card("netlab", "make && ./netlab",
-               ["30+ protocols and tools · 64 labs · a study guide in four levels",
+    end = card("hoplab", "make && ./hoplab",
+               ["30+ protocols and tools · 71 labs · a study guide in four levels",
                 "One process, tiled windows, or several machines",
                 "C11, no dependencies · English and Italian"], shot=hero)
     for i in range(end_frames):
@@ -276,7 +276,7 @@ def main():
         subprocess.run(ff + ["-framerate", str(FPS), "-i", os.path.join(fdir, "%05d.png"), "-i", wav,
                              "-c:v", "libx264", "-preset", "slow", "-crf", "23", "-pix_fmt", "yuv420p", "-r", "24",
                              "-c:a", "aac", "-b:a", "160k", "-shortest", "-movflags", "+faststart",
-                             os.path.join(a.out, "netlab-demo.mp4")], check=True)
+                             os.path.join(a.out, "hoplab-demo.mp4")], check=True)
         subprocess.run(ff + ["-i", wav, "-c:a", "libvorbis", "-q:a", "5", os.path.join(a.out, "round-trip.ogg")],
                        check=True)
         # silent preview for the README: the ping lab, small

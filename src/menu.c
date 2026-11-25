@@ -17,7 +17,7 @@
 #define STB(fg) TS(fg, C_DEFAULT, TA_BOLD)
 
 /* ------------------------------------------------------------------ */
-/* Running a child netlab (or the demo script) and coming back        */
+/* Running a child hoplab (or the demo script) and coming back        */
 /* ------------------------------------------------------------------ */
 
 int nl_spawn_wait(const char *prog, char **argv, int pause)
@@ -52,7 +52,7 @@ static const char *user_dir(void)
     char cmd[700];
 
     if (!dir[0]) {
-        snprintf(dir, sizeof(dir), "%s/.local/share/netlab/scenarios", home ? home : "/tmp");
+        snprintf(dir, sizeof(dir), "%s/.local/share/hoplab/scenarios", home ? home : "/tmp");
         snprintf(cmd, sizeof(cmd), "mkdir -p '%s' 2>/dev/null", dir);
         if (system(cmd) != 0)
             snprintf(dir, sizeof(dir), "/tmp");
@@ -246,7 +246,7 @@ static void launch_scenario(nl_meta *m)
     static char seed[24], speed[24];
     field f[48];
     int pos = 0, n, i, r, start;
-    char *argv[80], pbuf[40][96], self[] = "netlab";
+    char *argv[80], pbuf[40][96], self[] = "hoplab";
     int argc;
 
     for (;;) {
@@ -310,7 +310,7 @@ static void distributed_setup(nl_meta *m)
 {
     static char hosts[NL_MAX_NODES][64], names[NL_MAX_NODES][16], monitor[64] = "127.0.0.1";
     field f[NL_MAX_NODES + 4];
-    char out[700], line[1024], *argv[6], self[] = "netlab";
+    char out[700], line[1024], *argv[6], self[] = "hoplab";
     const char *base;
     FILE *in, *o;
     int n = 0, nn = 0, pos = 0, i, r;
@@ -349,7 +349,7 @@ static void distributed_setup(nl_meta *m)
     while (fgets(line, sizeof(line), in))
         if (strncmp(line, "place ", 6) != 0 && strncmp(line, "monitor ", 8) != 0)
             fputs(line, o);
-    fprintf(o, "\n# where each node runs (written by the netlab menu)\n");
+    fprintf(o, "\n# where each node runs (written by the hoplab menu)\n");
     for (i = 0; i < nn; i++)
         fprintf(o, "place %s %s:%d\n", names[i], hosts[i], 47000 + i);
     fprintf(o, "monitor %s:46999\n", monitor);
@@ -626,7 +626,7 @@ static void wizard(void)
     if (!o)
         return;
     fprintf(o, "title %s (%s, %d)\nlevel 0\nlayer 3\n", name, TOPO[topo], N);
-    fprintf(o, "about Built with the netlab wizard. Edit this file freely: see docs/scenario-format.md.\n");
+    fprintf(o, "about Built with the hoplab wizard. Edit this file freely: see docs/scenario-format.md.\n");
     fprintf(o, "param bw %s Link bandwidth\nparam delay %s Link delay\nparam loss %s Link loss\n", bw, delay, loss);
     fprintf(o, "param+ queue %s Queue length (packets)\n", queue);
     if (topo == 6)
@@ -870,7 +870,7 @@ int nl_menu(void)
                 tui_print_center(0, y + i, Wd, STB(i % 2 ? C_ACK : C_INFO), "%s", logo[i]);
             if (H > 24)
                 y += 6;
-            tui_print_center(0, y, Wd, TS(C_BRIGHT, C_DEFAULT, TA_BOLD), "n e t l a b");
+            tui_print_center(0, y, Wd, TS(C_BRIGHT, C_DEFAULT, TA_BOLD), "h o p l a b");
             tui_print_center(0, y + 1, Wd, ST(C_DIM), "%s", _("a network laboratory in your terminal"));
             y += 4;
             for (i = 0; i < n; i++) {

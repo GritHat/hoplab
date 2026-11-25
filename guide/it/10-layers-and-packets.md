@@ -16,7 +16,7 @@ Ogni livello ha il proprio tipo di **indirizzo**: una porta indica un programma,
 
 Internet usa cinque livelli. Dall'alto:
 
-- **Applicazione** (livello 7 nel registro di netlab, `L7`): il programma e i suoi messaggi, per esempio una richiesta web. Per i livelli inferiori sono semplici byte.
+- **Applicazione** (livello 7 nel registro di hoplab, `L7`): il programma e i suoi messaggi, per esempio una richiesta web. Per i livelli inferiori sono semplici byte.
 - **Trasporto** (`L4`): consegna i dati al programma giusto su una macchina, usando numeri di **porta** a 16 bit. La sua unità è il **segmento** (TCP) o il **datagramma** (UDP).
 - **Rete** (`L3`): porta un **pacchetto** dalla macchina sorgente alla macchina di destinazione attraverso molte reti, usando **indirizzi IP** a 32 bit come `10.0.0.2`.
 - **Collegamento** (`L2`): porta un **frame** su un solo cavo o una sola tratta radio, usando **indirizzi MAC** a 48 bit come `02:00:4e:4c:01:00`.
@@ -41,7 +41,7 @@ La regola fondamentale è che gli indirizzi dei diversi livelli hanno durate div
 
 Perché i livelli? Perché ognuno può cambiare senza toccare gli altri. Il Wi-Fi ha sostituito i cavi sotto IP e nessun browser è stato riscritto; HTTP ha avuto nuove versioni e nessun router se n'è accorto. Il costo è una certa inefficienza (intestazioni ripetute, controlli ripetuti) e il fatto che a volte un livello avrebbe bisogno di informazioni che la stratificazione gli nasconde.
 
-Per parlare di livelli si usano due modelli. Il **modello OSI** ne ha sette; Internet in pratica ha i cinque elencati sopra, e i numeri OSI sono sopravvissuti come nomi: si dice "switch di livello 2" e "bilanciatore di livello 7", e netlab etichetta così le righe del registro. Non aspettarti che ogni protocollo si incastri bene: ARP sta fra i livelli 2 e 3, ICMP viaggia dentro IP ma fa parte del livello di rete, e i tunnel mettono un intero pacchetto dentro un altro pacchetto.
+Per parlare di livelli si usano due modelli. Il **modello OSI** ne ha sette; Internet in pratica ha i cinque elencati sopra, e i numeri OSI sono sopravvissuti come nomi: si dice "switch di livello 2" e "bilanciatore di livello 7", e hoplab etichetta così le righe del registro. Non aspettarti che ogni protocollo si incastri bene: ARP sta fra i livelli 2 e 3, ICMP viaggia dentro IP ma fa parte del livello di rete, e i tunnel mettono un intero pacchetto dentro un altro pacchetto.
 
 Il livello IP è volutamente minimo: promette solo il **best effort**, cioè i pacchetti possono andare persi, essere duplicati, ritardati o riordinati. Tutto il resto (affidabilità, ordine, sicurezza) si costruisce ai bordi, negli host. È il **principio end-to-end**, ed è la ragione per cui il nucleo della rete è potuto restare semplice e crescere tanto. Si parla anche di "clessidra": molte applicazioni sopra, molte tecnologie di collegamento sotto, un solo protocollo stretto, IP, nel mezzo.
 
@@ -55,14 +55,14 @@ Per saperne di più: Kurose e Ross, "Reti di calcolatori e Internet. Un approcci
 
 **Laboratorio 100-two-hosts**: la rete più piccola, due host e un cavo.
 
-- Avvialo con `./netlab run 100-two-hosts`. Premi spazio per mettere in pausa quando vuoi leggere.
+- Avvialo con `./hoplab run 100-two-hosts`. Premi spazio per mettere in pausa quando vuoi leggere.
 - Premi `p` per la vista Pacchetti. Ogni riga è un frame. Spostati sul primo frame ICMP e premi Invio: la dissezione mostra le intestazioni una dentro l'altra, Ethernet, poi IP, poi ICMP, con ogni campo e i byte che lo trasportano. Usa `[` e `]` per scorrere i campi.
 - Trova i tre tipi di indirizzo: gli indirizzi MAC nell'intestazione Ethernet, gli indirizzi IP nell'intestazione IP. Il ping non ha porte: quelle compaiono nel laboratorio 101, nel datagramma UDP a 8 s.
 - Somma le dimensioni delle intestazioni e confronta con i 102 byte calcolati sopra.
 
 **Laboratorio 101-ping**: aggiunge un router fra due reti.
 
-- Avvialo con `./netlab run 101-ping` e apri la vista Pacchetti.
+- Avvialo con `./hoplab run 101-ping` e apri la vista Pacchetti.
 - Confronta la stessa echo request sui due collegamenti, `h1 → r1` e `r1 → h2`. Prima prevedi: quali indirizzi sono uguali, quali diversi? Poi controlla nella dissezione. Guarda anche il campo TTL dell'intestazione IP: 64 sul primo collegamento, 63 sul secondo.
 - A 8 s parte un datagramma UDP: aprilo e trova la quarta intestazione, UDP, con le sue due porte.
 

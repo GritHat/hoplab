@@ -1,7 +1,7 @@
 # Italian translation of src/ip6.c (IPv6, Neighbor Discovery, SLAAC)
 msgid ""
 msgstr ""
-"Project-Id-Version: netlab\n"
+"Project-Id-Version: hoplab\n"
 "PO-Revision-Date: 2026-11-25 00:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: Italian\n"

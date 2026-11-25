@@ -1,5 +1,5 @@
 /*
- * core.c - netlab kernel: virtual time and events, random numbers, argument
+ * core.c - hoplab kernel: virtual time and events, random numbers, argument
  *          parsing, packets, counters, log and capture rings, registries,
  *          message catalogs (i18n).
  */
@@ -478,7 +478,7 @@ nl_pkt *nl_pkt_new(uint32_t id)
     nl_pkt *p = malloc(sizeof(*p));
 
     if (!p) {
-        fprintf(stderr, "netlab: out of memory\n");
+        fprintf(stderr, "hoplab: out of memory\n");
         exit(EXIT_FAILURE);
     }
     memset(p, 0, offsetof(nl_pkt, data));
@@ -492,7 +492,7 @@ nl_pkt *nl_pkt_clone(const nl_pkt *src)
     nl_pkt *p = malloc(sizeof(*p));
 
     if (!p) {
-        fprintf(stderr, "netlab: out of memory\n");
+        fprintf(stderr, "hoplab: out of memory\n");
         exit(EXIT_FAILURE);
     }
     memcpy(p, src, offsetof(nl_pkt, data) + src->len);
@@ -535,7 +535,7 @@ void nl_world_init(void)
     if (!W.logs)
         W.logs = calloc(NL_LOG_RING, sizeof(nl_logrec));
     if (!W.caps || !W.logs) {
-        fprintf(stderr, "netlab: out of memory\n");
+        fprintf(stderr, "hoplab: out of memory\n");
         exit(EXIT_FAILURE);
     }
     W.speed = 1.0;

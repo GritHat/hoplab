@@ -57,19 +57,19 @@ Per TCP la MTU del percorso fissa la dimensione dei segmenti: MSS = MTU del perc
 
 **I tunnel** rendono il problema permanente: ogni incapsulamento (VPN, VXLAN, GRE) sottrae la propria intestazione alla MTU, per cui percorsi con MTU effettiva fra 1400 e 1480 sono comuni.
 
-**Che cosa semplifica netlab.** Il laboratorio mostra il meccanismo ma non l'automatismo: il terzo ping è semplicemente previsto dallo script con una dimensione minore. La MTU di un collegamento è un parametro (`mtu=`) e vale in entrambe le direzioni.
+**Che cosa semplifica hoplab.** Il laboratorio mostra il meccanismo ma non l'automatismo: il terzo ping è semplicemente previsto dallo script con una dimensione minore. La MTU di un collegamento è un parametro (`mtu=`) e vale in entrambe le direzioni.
 
 <!-- detail: 1 -->
 ## In laboratorio
 
-**Laboratorio 201: `./netlab run 201-mtu-fragmentation`**
+**Laboratorio 201: `./hoplab run 201-mtu-fragmentation`**
 
 - Prima fase (0 s): nel registro r1 segnala `IP frammentazione: 1428 B > MTU 600 → 3 frammenti`, h2 riassembla e la risposta viene frammentata da r2 nell'altra direzione.
 - Apri la vista Pacchetti (`p`), scegli uno dei tre frammenti sul collegamento r1-r2 e premi Invio. Leggi identification, flag e fragment offset, e confronta i tre frammenti con la tabella qui sopra. Poi apri lo stesso pacchetto sul collegamento h1-r1: un solo pezzo, MF = 0.
 - Seconda fase (4 s): lo stesso ping con DF impostato. r1 lo scarta e invia `fragmentation needed`; apri il messaggio ICMP e trova la MTU del salto successivo e l'intestazione citata del pacchetto scartato.
 - Terza fase (8 s): 500 byte di dati con DF passano senza essere toccati.
-- Prevedi, poi prova: `./netlab run 201-mtu-fragmentation mtu=1000`. Quanti frammenti, con quali offset e lunghezze? Poi `mtu=500`: che cosa succede alla terza fase, e perché?
-- Prevedi, poi prova: `./netlab run 201-mtu-fragmentation loss=0.2` più volte (ogni esecuzione ha un seme diverso). Quale delle tre fasi perde più ping? Confronta con 0,8⁶ e 0,8².
+- Prevedi, poi prova: `./hoplab run 201-mtu-fragmentation mtu=1000`. Quanti frammenti, con quali offset e lunghezze? Poi `mtu=500`: che cosa succede alla terza fase, e perché?
+- Prevedi, poi prova: `./hoplab run 201-mtu-fragmentation loss=0.2` più volte (ogni esecuzione ha un seme diverso). Quale delle tre fasi perde più ping? Confronta con 0,8⁶ e 0,8².
 - Trova il limite a mano dalla riga di comando del laboratorio: `:h1 ping h2 count=1 size=572 df=1` e poi `size=573`. Spiega dove cade il confine.
 
 ## Verifica

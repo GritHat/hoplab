@@ -4,7 +4,7 @@
 # {x} are colour codes: keep them around the same words.
 msgid ""
 msgstr ""
-"Project-Id-Version: netlab classic demos\n"
+"Project-Id-Version: hoplab classic demos\n"
 "PO-Revision-Date: 2026-11-25 00:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: Italian\n"

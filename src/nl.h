@@ -1,16 +1,16 @@
 /*
- * nl.h - netlab core API.
+ * nl.h - hoplab core API.
  *
- * netlab is a userland network emulator for study: nodes (hosts, routers,
+ * hoplab is a userland network emulator for study: nodes (hosts, routers,
  * switches) exchange real byte-level frames (Ethernet / ARP / IPv4 / ICMP /
  * UDP / TCP ...) over emulated links with bandwidth, delay, loss, corruption
  * and queues. Everything runs on virtual time driven by an event queue.
  *
  * The same node code runs in three ways:
- *   - all nodes in one process (netlab run): links are in-memory;
- *   - one or more nodes per process (netlab node): links towards nodes hosted
+ *   - all nodes in one process (hoplab run): links are in-memory;
+ *   - one or more nodes per process (hoplab node): links towards nodes hosted
  *     elsewhere become UDP tunnels, on this machine or across machines;
- *   - no node at all (netlab monitor): the process only displays what the
+ *   - no node at all (hoplab monitor): the process only displays what the
  *     node processes report.
  *
  * Protocols and applications are "modules" (nl_module) that register

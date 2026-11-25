@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="t d">
-  <title id="t">netlab</title>
+  <title id="t">hoplab</title>
   <desc id="d">Three network nodes inside a terminal window. The direct link between two of them is dashed and loses a packet; an arc above it delivers one all the same: reliable transfer over an unreliable channel.</desc>
   <defs>
     <linearGradient id="arc" x1="0" y1="0" x2="1" y2="0">

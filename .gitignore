@@ -5,8 +5,8 @@ go_back_n_send
 go_back_n_recv
 selective_repeat_send
 selective_repeat_recv
-/netlab
+/hoplab
 build/
-/netlab-*
+/hoplab-*
 __pycache__/
 .claude/worktrees/

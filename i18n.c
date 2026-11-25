@@ -199,7 +199,7 @@ const char *nl_lang(void) { return g_lang; }
 
 const char *nl_home(void)
 {
-    const char *env = getenv("NETLAB_HOME");
+    const char *env = getenv("HOPLAB_HOME");
     char probe[PATH_MAX + 32];
     struct stat st;
     ssize_t n;
@@ -222,16 +222,16 @@ const char *nl_home(void)
         *slash = '\0';
     snprintf(probe, sizeof(probe), "%s/scenarios", g_home);
     if (stat(probe, &st) != 0) {
-        snprintf(probe, sizeof(probe), "%s/../share/netlab/scenarios", g_home);
+        snprintf(probe, sizeof(probe), "%s/../share/hoplab/scenarios", g_home);
         if (stat(probe, &st) == 0)
-            strncat(g_home, "/../share/netlab", sizeof(g_home) - strlen(g_home) - 1);
+            strncat(g_home, "/../share/hoplab", sizeof(g_home) - strlen(g_home) - 1);
     }
     return g_home;
 }
 
 void nl_i18n_init(const char *lang)
 {
-    static const char *const vars[] = { "NETLAB_LANG", "LC_ALL", "LC_MESSAGES", "LANG" };
+    static const char *const vars[] = { "HOPLAB_LANG", "LC_ALL", "LC_MESSAGES", "LANG" };
     char path[PATH_MAX + 64];
     size_t i;
 

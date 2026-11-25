@@ -50,41 +50,41 @@ I numeri del laboratorio: il collegamento porta 500 kbit/s. La voce invia pacche
 <!-- detail: 3 -->
 ## In profondità: codifica
 
-Un codice di Hamming è *perfetto*: le 2^r sindromi sono esattamente «nessun errore» più una per posizione, senza nulla d'avanzo; ecco perché due errori non possono essere segnalati e vengono corretti male. I codici di Hamming si adattano a canali con errori rari e indipendenti: codici SECDED come il (72,64) proteggono la memoria dei server. Le reti vedono raffiche, che mettono più errori in un blocco; un interleaver distribuisce una raffica su molti blocchi, e i codici di Reed-Solomon correggono byte interi. La correzione in avanti (FEC) paga la sua ridondanza sempre, l'ARQ (rilevare e ritrasmettere) solo in caso di errore, al costo di un giro di andata e ritorno: i collegamenti cablati usano rilevazione e ritrasmissione ai livelli superiori, mentre radio, satellite e fibra combinano FEC e ARQ. Shannon (1948) dimostrò che una comunicazione affidabile è possibile a qualsiasi tasso inferiore alla capacità del canale; «Error Detecting and Error Correcting Codes» di Hamming (1950) ne diede la prima costruzione pratica. In netlab i frame sono codificati per intero e Reed-Solomon usa blocchi fissi (255,223).
+Un codice di Hamming è *perfetto*: le 2^r sindromi sono esattamente «nessun errore» più una per posizione, senza nulla d'avanzo; ecco perché due errori non possono essere segnalati e vengono corretti male. I codici di Hamming si adattano a canali con errori rari e indipendenti: codici SECDED come il (72,64) proteggono la memoria dei server. Le reti vedono raffiche, che mettono più errori in un blocco; un interleaver distribuisce una raffica su molti blocchi, e i codici di Reed-Solomon correggono byte interi. La correzione in avanti (FEC) paga la sua ridondanza sempre, l'ARQ (rilevare e ritrasmettere) solo in caso di errore, al costo di un giro di andata e ritorno: i collegamenti cablati usano rilevazione e ritrasmissione ai livelli superiori, mentre radio, satellite e fibra combinano FEC e ARQ. Shannon (1948) dimostrò che una comunicazione affidabile è possibile a qualsiasi tasso inferiore alla capacità del canale; «Error Detecting and Error Correcting Codes» di Hamming (1950) ne diede la prima costruzione pratica. In hoplab i frame sono codificati per intero e Reed-Solomon usa blocchi fissi (255,223).
 
 ## In profondità: accesso al mezzo
 
-Il backoff è iniquo nel breve periodo: la stazione che vince azzera la propria finestra mentre quella di chi perde continua a raddoppiare (*effetto cattura*). CSMA/CD limita il diametro della rete: a 100 Mbit/s lo slot scende a 5,12 µs e il dominio di collisione a circa 200 m; Gigabit Ethernet ebbe bisogno della carrier extension. Tutto questo è storia: con gli switch e i collegamenti full-duplex non ci sono collisioni, e CSMA/CD è disattivato. Le radio non possono ascoltare mentre trasmettono, perciò il Wi-Fi usa la *prevenzione* delle collisioni (collision avoidance). Riferimenti: Metcalfe e Boggs, «Ethernet: Distributed Packet Switching for Local Computer Networks» (1976); l'analisi del CSMA di Kleinrock e Tobagi (1975); IEEE 802.3. Nel modello di netlab il tempo avanza a passi di un ritardo di propagazione, ogni stazione dista un passo da ogni altra, lo slot vale due passi, il jam tre, e ogni stazione accoda al massimo 16 frame.
+Il backoff è iniquo nel breve periodo: la stazione che vince azzera la propria finestra mentre quella di chi perde continua a raddoppiare (*effetto cattura*). CSMA/CD limita il diametro della rete: a 100 Mbit/s lo slot scende a 5,12 µs e il dominio di collisione a circa 200 m; Gigabit Ethernet ebbe bisogno della carrier extension. Tutto questo è storia: con gli switch e i collegamenti full-duplex non ci sono collisioni, e CSMA/CD è disattivato. Le radio non possono ascoltare mentre trasmettono, perciò il Wi-Fi usa la *prevenzione* delle collisioni (collision avoidance). Riferimenti: Metcalfe e Boggs, «Ethernet: Distributed Packet Switching for Local Computer Networks» (1976); l'analisi del CSMA di Kleinrock e Tobagi (1975); IEEE 802.3. Nel modello di hoplab il tempo avanza a passi di un ritardo di propagazione, ogni stazione dista un passo da ogni altra, lo slot vale due passi, il jam tre, e ogni stazione accoda al massimo 16 frame.
 
 ## In profondità: priorità
 
-La priorità stretta può **affamare** le bande inferiori (starvation): se la sola banda 0 supera la capacità del collegamento non viene più trasmesso nient'altro. I router reali limitano perciò la classe prioritaria a un tasso fisso con un policer (low-latency queueing) e vi ammettono solo il traffico che lo merita. Le marcature sono considerate attendibili solo all'interno di un dominio amministrativo e di solito vengono riscritte al confine. L'accodamento equo (fair queueing), al contrario, isola i flussi senza fidarsi di alcuna marcatura. Il limite sul ritardo dipende dal più grande pacchetto di priorità inferiore: sui collegamenti lenti un pacchetto da 1500 byte ritarda la voce di decine di millisecondi, ed è per questo che su tali collegamenti si frammenta e si intercala. Riferimenti: RFC 2474 e RFC 2475 (Differentiated Services), RFC 3246 (Expedited Forwarding). `prio` di netlab ha tre bande: DSCP ≥ 40 e ARP, altri DSCP non nulli, best effort.
+La priorità stretta può **affamare** le bande inferiori (starvation): se la sola banda 0 supera la capacità del collegamento non viene più trasmesso nient'altro. I router reali limitano perciò la classe prioritaria a un tasso fisso con un policer (low-latency queueing) e vi ammettono solo il traffico che lo merita. Le marcature sono considerate attendibili solo all'interno di un dominio amministrativo e di solito vengono riscritte al confine. L'accodamento equo (fair queueing), al contrario, isola i flussi senza fidarsi di alcuna marcatura. Il limite sul ritardo dipende dal più grande pacchetto di priorità inferiore: sui collegamenti lenti un pacchetto da 1500 byte ritarda la voce di decine di millisecondi, ed è per questo che su tali collegamenti si frammenta e si intercala. Riferimenti: RFC 2474 e RFC 2475 (Differentiated Services), RFC 3246 (Expedited Forwarding). `prio` di hoplab ha tre bande: DSCP ≥ 40 e ARP, altri DSCP non nulli, best effort.
 
 <!-- detail: 1 -->
 ## In laboratorio
 
-**Laboratorio 260: `./netlab run 260-coding-bench`**
+**Laboratorio 260: `./hoplab run 260-coding-bench`**
 
 - Seleziona il nodo lab e apri la sua scheda `coding`: bit di dati blu, ridondanza gialla, bit invertiti rossi. Ogni passo è spiegato nel registro.
 - 9 s: Hamming(7,4), bit 9 invertito (i bit sono numerati da 0, quindi è il terzo bit del secondo blocco): `sindrome 3`, corretto.
 - 12 s: bit 7 e 8, posizioni 1 e 2 di quel blocco: sindrome 1 ⊕ 2 = 3, viene invertito l'innocente bit 3 e il testo diventa «@ELLO». 15 s: lo stesso errore contro Hamming(8,4) viene rilevato e il frame scartato.
 - 24 s: la scansione. Per ogni tasso di errore sul bit leggi le percentuali di frame consegnati, scartati e sbagliati in silenzio.
 - Prevedi, poi prova: `:lab coding show text=HELLO code=hamming74 pos=0,7,14`. Tre bit invertiti: il testo è giusto? Perché? Poi `pos=0,1,2`.
-- Prevedi, poi prova: `./netlab run 260-coding-bench code=hamming74` e confronta la colonna «sbagliati in silenzio» e il costo per bit di dati con il default hamming84. Quale sceglieresti con un tasso di errore di 1e-2?
+- Prevedi, poi prova: `./hoplab run 260-coding-bench code=hamming74` e confronta la colonna «sbagliati in silenzio» e il costo per bit di dati con il default hamming84. Quale sceglieresti con un tasso di errore di 1e-2?
 
-**Laboratorio 261: `./netlab run 261-csma-cd`**
+**Laboratorio 261: `./hoplab run 261-csma-cd`**
 
 - Tre nodi eseguono lo stesso carico con tre discipline. Apri a turno la scheda `mac` di `nonpers`, `pers` ed `ethernet`: il verde è un successo, il rosso una collisione. Confronta la larghezza delle zone rosse.
 - Il registro stampa S (throughput) e G (tentativi) ogni 20 tempi di frame. Valori finali tipici: circa 0,8 per il non persistente, 0,4 per l'1-persistente, 0,88 per CSMA/CD, con un carico offerto di 0,9.
-- Prevedi, poi prova: `./netlab run 261-csma-cd prop=10ms` (a = 0,1). Quale protocollo perde di più? Confronta CSMA/CD con 1 / (1 + 5a).
-- Prevedi, poi prova: `./netlab run 261-csma-cd load=2` e `load=0.3`. Quale disciplina degrada in sovraccarico, e quale è limitata solo dal carico offerto?
+- Prevedi, poi prova: `./hoplab run 261-csma-cd prop=10ms` (a = 0,1). Quale protocollo perde di più? Confronta CSMA/CD con 1 / (1 + 5a).
+- Prevedi, poi prova: `./hoplab run 261-csma-cd load=2` e `load=0.3`. Quale disciplina degrada in sovraccarico, e quale è limitata solo dal carico offerto?
 
-**Laboratorio 272: `./netlab run 272-priority-queueing`**
+**Laboratorio 272: `./hoplab run 272-priority-queueing`**
 
 - Seleziona r1 e apri la scheda `qdisc`: tre bande, con lunghezze e scarti. Seleziona v2 e b2 per perdita, ritardo e jitter dei due flussi. I Grafici (`g`) mostrano il ritardo nel tempo.
 - Fino a 3 s la voce è sola; poi parte il flusso di massa e r1 scarta solo pacchetti di massa (`✗ prio` nel registro).
-- Prevedi, poi prova: `./netlab run 272-priority-queueing qdisc=droptail`. Stima il ritardo della voce da lunghezza della coda e velocità del collegamento prima di guardare.
-- Prevedi, poi prova: `./netlab run 272-priority-queueing bulk=2M`. Cambia qualcosa per la voce? E per il traffico di massa? Poi `qdisc=fq`.
+- Prevedi, poi prova: `./hoplab run 272-priority-queueing qdisc=droptail`. Stima il ritardo della voce da lunghezza della coda e velocità del collegamento prima di guardare.
+- Prevedi, poi prova: `./hoplab run 272-priority-queueing bulk=2M`. Cambia qualcosa per la voce? E per il traffico di massa? Poi `qdisc=fq`.
 
 ## Verifica
 

@@ -14,7 +14,7 @@ SELF="$DIR/$(basename "${BASH_SOURCE[0]}")"
 
 # Messages are in English, or Italian when the language of the environment
 # is Italian (same variables as the programs):  t "English" "Italiano"
-case "${NETLAB_LANG:-${LC_ALL:-${LC_MESSAGES:-${LANG:-}}}}" in
+case "${HOPLAB_LANG:-${LC_ALL:-${LC_MESSAGES:-${LANG:-}}}}" in
     it*) LANG_IT=1 ;;
     *)   LANG_IT=0 ;;
 esac
@@ -144,7 +144,7 @@ Environment variables:
                       (e.g. konsole)
   RDT_BASIC=1|0       forces or excludes 16 colours and Linux console
                       characters (by default only with TERM=linux)
-  NETLAB_LANG=it|en   language of messages (default: from LANG)
+  HOPLAB_LANG=it|en   language of messages (default: from LANG)
 
 Examples:
   ./demo.sh

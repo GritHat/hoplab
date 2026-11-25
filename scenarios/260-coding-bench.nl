@@ -5,10 +5,10 @@ layer  2
 topic  coding
 about  No network here: one node runs the coding bench, which encodes a short text, flips chosen bits, decodes and explains what happened. Open the node's `coding` panel: data bits are blue, redundancy bits yellow, flipped bits red.
 about  The script walks through the classic cases: one flip against a parity bit (caught), two flips (missed: the wrong text is delivered), the same two flips against a CRC (caught), one flip in a Hamming(7,4) block (the syndrome names the bit, which is flipped back), two flips in the same block (the syndrome points at an innocent bit: miscorrection), the same against Hamming(8,4) whose extra parity bit recognises the double error, three copies with a majority vote, and a burst of 80 bits repaired by Reed-Solomon. It ends with a sweep of the chosen code over a range of bit error rates.
-about  Try your own: `lab coding show text=NETLAB code=hamming74 flips=3`, `... burst=1`, `... pos=0,1,2`; `lab coding sweep code=rs size=500 burst=40`; `lab coding list`.
+about  Try your own: `lab coding show text=HOPLAB code=hamming74 flips=3`, `... burst=1`, `... pos=0,1,2`; `lab coding sweep code=rs size=500 burst=40`; `lab coding list`.
 about[it]  Qui non c'è rete: un nodo esegue il banco dei codici, che codifica un breve testo, inverte i bit scelti, decodifica e spiega cos'è successo. Apri il pannello `coding` del nodo: i bit di dati sono blu, quelli di ridondanza gialli, quelli invertiti rossi.
 about[it]  Lo script percorre i casi classici: un'inversione contro un bit di parità (scoperta), due inversioni (sfuggite: viene consegnato il testo sbagliato), le stesse due contro un CRC (scoperte), un'inversione in un blocco Hamming(7,4) (la sindrome indica il bit, che viene reinvertito), due nello stesso blocco (la sindrome indica un bit innocente: correzione sbagliata), le stesse contro Hamming(8,4), il cui bit di parità in più riconosce l'errore doppio, tre copie con voto a maggioranza, e un burst di 80 bit riparato da Reed-Solomon. Si chiude con una scansione del codice scelto su vari tassi di errore.
-about[it]  Prova: `lab coding show text=NETLAB code=hamming74 flips=3`, `... burst=1`, `... pos=0,1,2`; `lab coding sweep code=rs size=500 burst=40`; `lab coding list`.
+about[it]  Prova: `lab coding show text=HOPLAB code=hamming74 flips=3`, `... burst=1`, `... pos=0,1,2`; `lab coding sweep code=rs size=500 burst=40`; `lab coding list`.
 param      text HELLO Text to protect
 param[it]  text Testo da proteggere
 param      code hamming84 Code measured by the final sweep

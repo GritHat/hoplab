@@ -4,7 +4,7 @@
  *         exponential backoff, CSMA/CA with optional RTS/CTS and hidden
  *         terminals.
  *
- * The shared medium is modelled inside the module (netlab links are point
+ * The shared medium is modelled inside the module (hoplab links are point
  * to point): time advances in ticks of one propagation delay, so a station
  * that senses the channel sees what the others were doing one tick ago.
  * That single tick is the vulnerable period that makes carrier sensing

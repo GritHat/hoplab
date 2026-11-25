@@ -52,7 +52,7 @@ To read more: Kurose and Ross, chapter 3, section "Principles of Reliable Data T
 
 ## In the lab
 
-The labs of this topic are not netlab scenarios but the three original demo programs of this repository: a sender and a receiver that exchange **real UDP packets** on your machine through a channel that loses, corrupts and delays them on purpose. Start them from the main menu, entry "Reliable transfer demos", or from a shell.
+The labs of this topic are not hoplab scenarios but the three original demo programs of this repository: a sender and a receiver that exchange **real UDP packets** on your machine through a channel that loses, corrupts and delays them on purpose. Start them from the main menu, entry "Reliable transfer demos", or from a shell.
 
 - `./demo.sh` starts stop-and-wait, `./demo.sh gbn` Go-Back-N, `./demo.sh sr` Selective Repeat. The sender is on the left, the receiver on the right; `q` quits. `./demo.sh -h` lists all options.
 - Each side shows the packets travelling on the channel, the event log, the rules of the protocol with the one just applied highlighted, and the strip of sequence numbers with the window and the timers.
@@ -69,7 +69,7 @@ The labs of this topic are not netlab scenarios but the three original demo prog
 - `./demo.sh gbn -w 8 -b 3`: the window breaks N ≤ 2^k − 1 (the header of the window warns you). Wait for a whole window of ACKs to be lost.
 - `./demo.sh sr -w 3 -b 2 -s "-l 0.4" -r "-l 0.4"`: the window breaks N ≤ 2^(k−1). Read the text delivered by the receiver: what is wrong with it?
 
-**Next step.** Lab 120-tcp-handshake shows the same ideas inside TCP; run it with `./netlab run 120-tcp-handshake loss=0.1 bytes=50000` and look for the retransmissions in the log.
+**Next step.** Lab 120-tcp-handshake shows the same ideas inside TCP; run it with `./hoplab run 120-tcp-handshake loss=0.1 bytes=50000` and look for the retransmissions in the log.
 
 ## Check yourself
 

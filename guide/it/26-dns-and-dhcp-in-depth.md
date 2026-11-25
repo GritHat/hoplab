@@ -45,7 +45,7 @@ DHCP funziona su UDP, porta 67 per il server e 68 per il client. Il client non h
 
 Con un lease di L secondi il client imposta **T1 = L/2** e **T2 = 7L/8**. A T1 invia una REQUEST in unicast al proprio server (*renewing*); un ACK fa ripartire tutti i timer. Se entro T2 non arriva nulla, invia la REQUEST in broadcast a qualsiasi server (*rebinding*). A L deve smettere di usare l'indirizzo e ricominciare da DISCOVER. RELEASE restituisce l'indirizzo in anticipo.
 
-Nel laboratorio 241 L = 10 s: h1 ottiene l'indirizzo a 1,01 s e rinnova a 6,01 s, 11,02 s e così via, ogni 5 s. Il pool ha due indirizzi: li prendono h1 e h2, e alla DISCOVER di h3 non risponde nessuno (`pool esaurito, nessuna offerta`); h3 riprova ogni 2 s. Se il server muore dopo un rinnovo all'istante t, i client provano a t + 5 s (T1), vanno in broadcast a t + 8 s (T2, netlab arrotonda per difetto ai secondi interi) e perdono l'indirizzo a t + 10 s.
+Nel laboratorio 241 L = 10 s: h1 ottiene l'indirizzo a 1,01 s e rinnova a 6,01 s, 11,02 s e così via, ogni 5 s. Il pool ha due indirizzi: li prendono h1 e h2, e alla DISCOVER di h3 non risponde nessuno (`pool esaurito, nessuna offerta`); h3 riprova ogni 2 s. Se il server muore dopo un rinnovo all'istante t, i client provano a t + 5 s (T1), vanno in broadcast a t + 8 s (T2, hoplab arrotonda per difetto ai secondi interi) e perdono l'indirizzo a t + 10 s.
 
 <!-- detail: 3 -->
 ## In profondità: DNS
@@ -56,13 +56,13 @@ Nel laboratorio 241 L = 10 s: h1 ottiene l'indirizzo a 1,01 s e rinnova a 6,01 s
 
 **Il sistema reale.** Esistono 13 nomi di root server, ciascuno un gruppo anycast di centinaia di macchine. I resolver misurano i server e preferiscono i più rapidi, e la query minimisation (RFC 9156) rivela a ogni server solo le etichette che gli servono. DNS su TLS (RFC 7858) e su HTTPS (RFC 8484) nascondono le query fra stub e resolver. Riferimento: RFC 1034 e RFC 1035 (Mockapetris, 1987).
 
-**netlab semplifica:** solo la classe IN; niente TCP, EDNS o DNSSEC; le deleghe devono avere il glue.
+**hoplab semplifica:** solo la classe IN; niente TCP, EDNS o DNSSEC; le deleghe devono avere il glue.
 
 ## In profondità: DHCP
 
-**Relay.** I broadcast non attraversano i router. Un relay agent in ogni sottorete inoltra le DISCOVER in unicast a un server centrale e scrive il proprio indirizzo nel campo *giaddr*, che dice al server quale pool usare. Il server di netlab serve solo la propria sottorete.
+**Relay.** I broadcast non attraversano i router. Un relay agent in ogni sottorete inoltra le DISCOVER in unicast a un server centrale e scrive il proprio indirizzo nel campo *giaddr*, che dice al server quale pool usare. Il server di hoplab serve solo la propria sottorete.
 
-**Stato.** Un server reale salva i lease su disco, così un riavvio non distribuisce indirizzi ancora in uso, e molti sondano un indirizzo (ICMP echo) prima di offrirlo; i client verificano con ARP (RFC 5227) e rispondono DECLINE in caso di conflitto. Un client che si riavvia chiede direttamente il suo indirizzo precedente (INIT-REBOOT). Il server di netlab tiene i lease solo in memoria.
+**Stato.** Un server reale salva i lease su disco, così un riavvio non distribuisce indirizzi ancora in uso, e molti sondano un indirizzo (ICMP echo) prima di offrirlo; i client verificano con ARP (RFC 5227) e rispondono DECLINE in caso di conflitto. Un client che si riavvia chiede direttamente il suo indirizzo precedente (INIT-REBOOT). Il server di hoplab tiene i lease solo in memoria.
 
 **Sicurezza.** DHCP non ha autenticazione. Un server abusivo può rispondere più in fretta di quello vero e farsi gateway e DNS delle vittime; un client che falsifica molti indirizzi hardware può esaurire il pool (starvation). Gli switch si difendono con il DHCP snooping: i messaggi da server sono accettati solo dalle porte fidate.
 
@@ -71,7 +71,7 @@ Nel laboratorio 241 L = 10 s: h1 ottiene l'indirizzo a 1,01 s e rinnova a 6,01 s
 <!-- detail: 1 -->
 ## In laboratorio
 
-**Laboratorio 240: `./netlab run 240-dns-hierarchy`**
+**Laboratorio 240: `./hoplab run 240-dns-hierarchy`**
 
 - A 1 s segui il registro a dettaglio 2: il resolver r interroga a turno root, com, auth. Sulla mappa le query lasciano r su tre collegamenti diversi.
 - Nella vista Pacchetti (`p`) premi Invio sulla risposta della radice: contatore delle risposte a 0, NS nella sezione authority, glue nella sezione additional. Confronta con la risposta finale di auth (flag AA, una risposta).
@@ -80,14 +80,14 @@ Nel laboratorio 241 L = 10 s: h1 ottiene l'indirizzo a 1,01 s e rinnova a 6,01 s
 - Prevedi, poi prova: `:h1 dig example.com server=r`. Quante query a monte, e verso chi? Poi `:h1 dig mail.example.com server=r` due volte: qual è la risposta, e che cosa cambia la seconda volta?
 - Prevedi, poi prova: `:r dns flush` e poi `:h1 dig www.example.com server=r`. Quante query a monte adesso? Poi `:h1 dig example.com type=NS server=r` e leggi il TTL.
 
-**Laboratorio 241: `./netlab run 241-dhcp-leases`**
+**Laboratorio 241: `./hoplab run 241-dhcp-leases`**
 
 - Segui DISCOVER, OFFER, REQUEST, ACK per h1 a 1 s; apri ciascuno nella vista Pacchetti e trova xid, yiaddr e le opzioni 53, 51 e 54. Nota gli indirizzi sorgente e destinazione della DISCOVER.
 - A 3 s h3 trova il pool esaurito. A 6 s h1 raggiunge T1 e rinnova con una REQUEST in unicast. Apri la scheda `dhcp` di s per vedere la tabella dei lease.
 - Prevedi, poi prova: `:h1 dhcp release`. Che cosa succede a h3, ed entro quanti secondi?
 - A 14 s il laboratorio fa cadere il server per 26 secondi. Prima che succeda, scrivi quando h1 registrerà T1, T2 e `lease scaduto`, poi controlla. A 40 s il server torna con la sua tabella dei lease (è su memoria stabile, come il file dei lease di un server reale) e i client, che nel frattempo hanno continuato a inviare DISCOVER, vengono di nuovo serviti: guarda chi ottiene i due indirizzi questa volta, e spiega perché non devono essere per forza gli stessi due host.
-- Prevedi, poi prova: `./netlab run 241-dhcp-leases lease=60`. Qualche client si accorge dell'interruzione?
-- Prova anche `./netlab run 241-dhcp-leases lease=4`: a quali istanti rinnova h1?
+- Prevedi, poi prova: `./hoplab run 241-dhcp-leases lease=60`. Qualche client si accorge dell'interruzione?
+- Prova anche `./hoplab run 241-dhcp-leases lease=4`: a quali istanti rinnova h1?
 
 ## Verifica
 

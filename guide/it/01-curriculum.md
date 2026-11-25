@@ -2,7 +2,7 @@
 <!-- labs: 100-two-hosts, 101-ping, 120-tcp-handshake, 200-static-routing, 220-tcp-loss, 320-tcp-congestion, 380-raft-election, 420-tcp-fairness -->
 # Il percorso di studio
 
-I laboratori di netlab formano un programma di studio in quattro percorsi di difficoltà crescente. Ogni percorso è un gruppo nel catalogo e in questa guida, e all'interno di un percorso i laboratori vanno dal fondo della pila dei protocolli verso l'alto.
+I laboratori di hoplab formano un programma di studio in quattro percorsi di difficoltà crescente. Ogni percorso è un gruppo nel catalogo e in questa guida, e all'interno di un percorso i laboratori vanno dal fondo della pila dei protocolli verso l'alto.
 
 - **Rudimenti** è il primo contatto. Nessun prerequisito: se sai che aspetto ha un indirizzo IP, puoi cominciare. Frame, indirizzi, ping, una connessione TCP, una pagina web, la risoluzione di un nome e le prime idee del livello di collegamento.
 - **Fondamenti** è la materia di un corso universitario di reti del primo ciclo: tabelle e protocolli di instradamento, affidabilità e controllo di flusso di TCP, DNS e DHCP in profondità, NAT, switching, VLAN, spanning tree, accesso al mezzo.

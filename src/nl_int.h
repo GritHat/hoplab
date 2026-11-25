@@ -1,5 +1,5 @@
 /*
- * nl_int.h - netlab internals shared by the core files (not for modules).
+ * nl_int.h - hoplab internals shared by the core files (not for modules).
  */
 #ifndef NL_INT_H
 #define NL_INT_H

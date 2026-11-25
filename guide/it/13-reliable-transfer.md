@@ -52,7 +52,7 @@ Per saperne di più: Kurose e Ross, capitolo 3, paragrafo "Principi del trasferi
 
 ## In laboratorio
 
-I laboratori di questo argomento non sono scenari di netlab ma i tre programmi dimostrativi originali di questo repository: un sender e un receiver che si scambiano **veri pacchetti UDP** sulla tua macchina attraverso un canale che li perde, li corrompe e li ritarda di proposito. Avviali dal menu principale, voce "Demo di trasferimento affidabile", oppure da una shell.
+I laboratori di questo argomento non sono scenari di hoplab ma i tre programmi dimostrativi originali di questo repository: un sender e un receiver che si scambiano **veri pacchetti UDP** sulla tua macchina attraverso un canale che li perde, li corrompe e li ritarda di proposito. Avviali dal menu principale, voce "Demo di trasferimento affidabile", oppure da una shell.
 
 - `./demo.sh` avvia stop-and-wait, `./demo.sh gbn` Go-Back-N, `./demo.sh sr` Selective Repeat. Il sender è a sinistra, il receiver a destra; `q` esce. `./demo.sh -h` elenca tutte le opzioni.
 - Ogni lato mostra i pacchetti in viaggio sul canale, il registro degli eventi, le regole del protocollo con quella appena applicata evidenziata, e la striscia dei numeri di sequenza con la finestra e i timer.
@@ -69,7 +69,7 @@ I laboratori di questo argomento non sono scenari di netlab ma i tre programmi d
 - `./demo.sh gbn -w 8 -b 3`: la finestra viola N ≤ 2^k − 1 (l'intestazione della finestra ti avverte). Aspetta che vada persa un'intera finestra di ACK.
 - `./demo.sh sr -w 3 -b 2 -s "-l 0.4" -r "-l 0.4"`: la finestra viola N ≤ 2^(k−1). Leggi il testo consegnato dal receiver: che cosa non va?
 
-**Il passo successivo.** Il laboratorio 120-tcp-handshake mostra le stesse idee dentro TCP; eseguilo con `./netlab run 120-tcp-handshake loss=0.1 bytes=50000` e cerca le ritrasmissioni nel registro.
+**Il passo successivo.** Il laboratorio 120-tcp-handshake mostra le stesse idee dentro TCP; eseguilo con `./hoplab run 120-tcp-handshake loss=0.1 bytes=50000` e cerca le ritrasmissioni nel registro.
 
 ## Verifica
 

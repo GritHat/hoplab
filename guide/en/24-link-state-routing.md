@@ -13,7 +13,7 @@ The benefits follow from having the map. A change is flooded at once and everybo
 
 OSPF (RFC 2328) runs directly over IP, protocol number 89, and sends Hellos to the multicast address 224.0.0.5 every *hello interval* (10 s by default on LANs). A Hello carries the sender's router identifier, the intervals, and the list of neighbours recently heard. Seeing *your own* identifier in a neighbour's Hello proves the link works in both directions: the state goes from **Init** to **2-Way**. A neighbour silent for the *dead interval* (4 hellos, 40 s) is declared down. Both intervals must match or no adjacency forms.
 
-Real OSPF then synchronises databases through the states ExStart, Exchange and Loading (database description, link-state request, link-state update packets) and reaches **Full**. netlab skips the description exchange: a new adjacency goes straight to Full and each side sends its whole database.
+Real OSPF then synchronises databases through the states ExStart, Exchange and Loading (database description, link-state request, link-state update packets) and reaches **Full**. hoplab skips the description exchange: a new adjacency goes straight to Full and each side sends its whole database.
 
 ## LSAs and flooding
 
@@ -52,11 +52,11 @@ At 20 s the cost of r1's interface towards r2 becomes 50. r1 floods a new LSA; 2
 <!-- detail: 3 -->
 ## In depth
 
-**Scaling.** Every change makes every router recompute, and the database grows with the network. OSPF divides a large domain into **areas**: routers know the full map of their area only, and area border routers summarise prefixes into the backbone (area 0), which behaves like distance vector between areas. On a broadcast LAN with n routers, n(n−1)/2 adjacencies would be wasteful: the routers elect a **designated router**, everyone synchronises with it only, and it originates a network-LSA representing the LAN. netlab has one area and no designated router.
+**Scaling.** Every change makes every router recompute, and the database grows with the network. OSPF divides a large domain into **areas**: routers know the full map of their area only, and area border routers summarise prefixes into the backbone (area 0), which behaves like distance vector between areas. On a broadcast LAN with n routers, n(n−1)/2 adjacencies would be wasteful: the routers elect a **designated router**, everyone synchronises with it only, and it originates a network-LSA representing the LAN. hoplab has one area and no designated router.
 
-**Ageing and sequence numbers.** Each LSA has an age; the originator refreshes it every 30 minutes, and at 1 hour it is purged, so that the information of a dead router eventually disappears. Sequence numbers are linear 32-bit values starting at 0x80000001. The ARPANET used circular numbers, and in 1980 corrupted updates that each looked newer than the next kept flooding for ever and brought the network down (RFC 789, Rosen): the reason modern LSAs carry a checksum and an age. In netlab LSAs do not age.
+**Ageing and sequence numbers.** Each LSA has an age; the originator refreshes it every 30 minutes, and at 1 hour it is purged, so that the information of a dead router eventually disappears. Sequence numbers are linear 32-bit values starting at 0x80000001. The ARPANET used circular numbers, and in 1980 corrupted updates that each looked newer than the next kept flooding for ever and brought the network down (RFC 789, Rosen): the reason modern LSAs carry a checksum and an age. In hoplab LSAs do not age.
 
-**Speed of convergence.** Detection is the slow part: with timers alone it takes the dead interval. Routers therefore react to loss of carrier, or run BFD (RFC 5880) with tens of milliseconds. SPF is delayed and throttled (200 ms in netlab) so that a burst of LSAs causes one computation; this trades a little speed for stability. Between the first and the last router's update, micro-loops are possible; loop-free alternates (RFC 5286) precompute backup next hops.
+**Speed of convergence.** Detection is the slow part: with timers alone it takes the dead interval. Routers therefore react to loss of carrier, or run BFD (RFC 5880) with tens of milliseconds. SPF is delayed and throttled (200 ms in hoplab) so that a burst of LSAs causes one computation; this trades a little speed for stability. Between the first and the last router's update, micro-loops are possible; loop-free alternates (RFC 5286) precompute backup next hops.
 
 **Costs.** The reference bandwidth of 100 Mbit/s makes every faster link cost 1, so operators raise it or set costs by hand. Making the cost follow the *load* was tried on the ARPANET and caused oscillations: traffic moved to the empty path, which then became the loaded one (Khanna and Zinky, "The Revised ARPANET Routing Metric", 1989). Equal-cost paths are used together (ECMP).
 
@@ -64,19 +64,19 @@ At 20 s the cost of r1's interface towards r2 becomes 50. r1 floods a new LSA; 2
 
 **References.** Dijkstra, "A Note on Two Problems in Connexion with Graphs" (1959); McQuillan, Richer and Rosen, "The New Routing Algorithm for the ARPANET" (1980); RFC 2328.
 
-**What netlab simplifies.** Besides the points above, packet layouts are OSPF-like but not bit-exact.
+**What hoplab simplifies.** Besides the points above, packet layouts are OSPF-like but not bit-exact.
 
 <!-- detail: 1 -->
 ## In the lab
 
-**Lab 232: `./netlab run 232-ospf-costs`**
+**Lab 232: `./hoplab run 232-ospf-costs`**
 
 - Slow down (`-`) for the first 50 ms: Hello, `new neighbor, state Init`, `two-way, adjacency Full`, then LSAs `newer: stored and flooded on`. Note how each router re-originates its LSA (seq=1, 2, 3) as it finds neighbours.
 - Select r1 and then r4 (`n`) and open the `ospf` tab: the two databases list the same four LSAs with the same sequence numbers. Open the Routes tab of r1: 10.0.6.0/24 via 10.0.2.2, metric 3.
 - In the packets view (`p`) open a Hello (find the neighbour list) and a link-state update (find links and costs).
 - At 14 s traceroute goes r1, r2, r4. At 20 s the cost changes: r1's route moves to 10.0.3.2 with metric 21. Check the Routes tab of r4: its route to 10.0.1.0/24 still goes via r2.
 - At 32 s the link r1-r2 fails; both ends originate new LSAs and within about 0.2 s all routes use r3.
-- Predict, then try: `./netlab run 232-ospf-costs newcost=15`. Compute the cost of both paths first. Does r1 change next hop at 20 s? Which metric appears in its table?
+- Predict, then try: `./hoplab run 232-ospf-costs newcost=15`. Compute the cost of both paths first. Does r1 change next hop at 20 s? Which metric appears in its table?
 - Predict, then try: in the default run, after 21 s type `:r1 ospf cost eth1 1` and watch the sequence number of r1's LSA and the route. Then, after 33 s, `:link r3 r4 down`: what do the tables of r1 and r4 contain now, and what does `:h1 ping h4 count=1` report?
 
 ## Check yourself

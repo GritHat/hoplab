@@ -70,7 +70,7 @@ Per saperne di più: Kurose e Ross, capitolo 6, paragrafo "Collegamenti broadcas
 
 **Laboratorio 162-aloha**: due canali indipendenti con dieci stazioni ciascuno e lo stesso traffico. Il nodo `pure` esegue ALOHA puro, il nodo `slotted` esegue slotted ALOHA. Qui sulla mappa non viaggiano pacchetti: tutto accade nel pannello di ciascun nodo.
 
-- Avvialo con `./netlab run 162-aloha`.
+- Avvialo con `./hoplab run 162-aloha`.
 - Seleziona `pure` con `n` e spostati sulla scheda `mac` con i tasti freccia (premi Tab finché il pannello del nodo ha il focus; `z` lo ingrandisce). C'è una riga per stazione: verde è un frame consegnato, rosso una collisione, i puntini gialli una stazione in attesa di riprovare.
 - Metti in pausa con spazio e cerca una coppia rossa che si sovrappone solo per un pezzetto: entrambi i frame sono persi per intero.
 - Seleziona `slotted` e apri la stessa scheda: tutti i frame partono allineati. Riesci a trovare una sovrapposizione parziale?
@@ -78,11 +78,11 @@ Per saperne di più: Kurose e Ross, capitolo 6, paragrafo "Collegamenti broadcas
 
 **Cambia e prevedi.** Per ogni esecuzione calcola prima S con le due formule.
 
-- `./netlab run 162-aloha load=0.1`: i due protocolli saranno molto diversi?
-- `./netlab run 162-aloha load=0.2`: siamo vicini al limite di ALOHA puro. Trasporta ancora tutto? Poi `load=0.25`.
-- `./netlab run 162-aloha load=1`: quale frazione degli slot porta un frame buono in slotted ALOHA? Che cosa succede alle code delle stazioni?
-- `./netlab run 162-aloha stations=3`: con poche stazioni le formule sono ancora una buona guida?
-- `./netlab run 162-aloha frame=500ms` rallenta la linea del tempo, così puoi seguire i singoli frame.
+- `./hoplab run 162-aloha load=0.1`: i due protocolli saranno molto diversi?
+- `./hoplab run 162-aloha load=0.2`: siamo vicini al limite di ALOHA puro. Trasporta ancora tutto? Poi `load=0.25`.
+- `./hoplab run 162-aloha load=1`: quale frazione degli slot porta un frame buono in slotted ALOHA? Che cosa succede alle code delle stazioni?
+- `./hoplab run 162-aloha stations=3`: con poche stazioni le formule sono ancora una buona guida?
+- `./hoplab run 162-aloha frame=500ms` rallenta la linea del tempo, così puoi seguire i singoli frame.
 
 ## Verifica
 

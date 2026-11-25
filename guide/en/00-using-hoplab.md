@@ -1,17 +1,17 @@
 <!-- level: 0 -->
 <!-- labs: 100-two-hosts, 101-ping, 102-link-properties, 120-tcp-handshake -->
-# Using netlab
+# Using hoplab
 
-netlab is a network laboratory that lives in your terminal. It emulates hosts, routers and switches that exchange real frames, byte for byte (Ethernet, ARP, IPv4, ICMP, UDP, TCP and the protocols above them), over links that have a bandwidth, a delay, a queue and, when you want, losses and bit errors. Nothing touches your real network: everything runs on a virtual clock that you can slow down, pause and step.
+hoplab is a network laboratory that lives in your terminal. It emulates hosts, routers and switches that exchange real frames, byte for byte (Ethernet, ARP, IPv4, ICMP, UDP, TCP and the protocols above them), over links that have a bandwidth, a delay, a queue and, when you want, losses and bit errors. Nothing touches your real network: everything runs on a virtual clock that you can slow down, pause and step.
 
-A **lab** (or scenario) is a small text file that describes a network and what happens on it. netlab ships with a catalog of labs ordered from the first ping to consensus algorithms, and this guide tells you what to look for in each one.
+A **lab** (or scenario) is a small text file that describes a network and what happens on it. hoplab ships with a catalog of labs ordered from the first ping to consensus algorithms, and this guide tells you what to look for in each one.
 
 ## Starting
 
 Run the program with no arguments to get the menu:
 
 ```
-./netlab
+./hoplab
 ```
 
 Move with the arrow keys and press Enter, or press the number of an entry. **Scenario catalog** lists the ready-made labs: choose one, press Enter, then Enter again on **Start**. From this guide you can also start the labs listed at the bottom of a topic by pressing their letter (`a`, `b`, `c`, ...).
@@ -19,21 +19,21 @@ Move with the arrow keys and press Enter, or press the number of an entry. **Sce
 If you already know the name of a lab you can skip the menu:
 
 ```
-./netlab run 101-ping
-./netlab run ping
+./hoplab run 101-ping
+./hoplab run ping
 ```
 
 <!-- detail: 2 -->
 The menu has seven entries: **Scenario catalog**, **Study guide** (what you are reading), **Build your own network** (a form that writes a scenario for you: topology, link parameters, routing, traffic), **Open a scenario file**, **Modules** (the reference of every protocol and tool), **Reliable transfer demos** (the original stop-and-wait, Go-Back-N and Selective Repeat programs over real UDP) and **Quit**.
 
-In the catalog, `/` searches titles and topics, `Tab` filters by layer, and the right-hand side shows the description of the selected lab, its level, the number of nodes and links, and its parameters. Networks built with the wizard are saved in `~/.local/share/netlab/scenarios/` and appear in the catalog under **My scenarios**.
+In the catalog, `/` searches titles and topics, `Tab` filters by layer, and the right-hand side shows the description of the selected lab, its level, the number of nodes and links, and its parameters. Networks built with the wizard are saved in `~/.local/share/hoplab/scenarios/` and appear in the catalog under **My scenarios**.
 
 In this guide: `↑` `↓` choose a topic, `→` or Enter moves to the text, `←` goes back to the list, `PgUp` `PgDn` scroll, `1` `2` `3` choose the reading depth, `/` searches, `Esc` leaves.
 
 <!-- detail: 3 -->
-A scenario name on the command line can be a path to a file, a catalog name with or without `.nl`, or just the part after the number: `ping` finds `101-ping.nl`. `./netlab list` prints the catalog, `./netlab guide` this guide, `./netlab guide TOPIC` one topic (as plain text when the output is piped).
+A scenario name on the command line can be a path to a file, a catalog name with or without `.nl`, or just the part after the number: `ping` finds `101-ping.nl`. `./hoplab list` prints the catalog, `./hoplab guide` this guide, `./hoplab guide TOPIC` one topic (as plain text when the output is piped).
 
-netlab looks for `scenarios/`, `guide/` and `locale/` next to its executable, or in `../share/netlab` relative to it; set the environment variable `NETLAB_HOME` to point somewhere else.
+hoplab looks for `scenarios/`, `guide/` and `locale/` next to its executable, or in `../share/hoplab` relative to it; set the environment variable `HOPLAB_HOME` to point somewhere else.
 
 <!-- detail: 1 -->
 ## The screen
@@ -62,7 +62,7 @@ On the map, from detail 2 each node shows its first IP address and a link whose 
 
 In a window narrower than 100 columns or shorter than 28 rows the layout becomes a single column: the map or the inspector (whichever had the focus last) above the bottom panel. Press `z` to give the whole window to the focused area. The minimum is 44 by 12.
 
-When you quit a lab that declares expectations, netlab prints them with their result: a quick way to see whether the run went as the author intended.
+When you quit a lab that declares expectations, hoplab prints them with their result: a quick way to see whether the run went as the author intended.
 
 <!-- detail: 1 -->
 ## Keys
@@ -84,7 +84,7 @@ A few keys have synonyms: `h` also opens the help, `/` also opens the command li
 <!-- detail: 1 -->
 ## Time and detail
 
-Time in a lab is virtual. A frame that takes 10 ms to cross a link would be invisible at real speed, so netlab chooses a slow-motion speed at which a frame takes about a second to cross a typical link, and shows it in the top line (for example `1/50×`). Press `+` or `-` to double or halve it. When nothing is moving, netlab jumps straight to the next event instead of making you wait: that is the `+skip` next to the speed, and `a` turns it off when you want to feel real pauses such as a retransmission timeout.
+Time in a lab is virtual. A frame that takes 10 ms to cross a link would be invisible at real speed, so hoplab chooses a slow-motion speed at which a frame takes about a second to cross a typical link, and shows it in the top line (for example `1/50×`). Press `+` or `-` to double or halve it. When nothing is moving, hoplab jumps straight to the next event instead of making you wait: that is the `+skip` next to the speed, and `a` turns it off when you want to feel real pauses such as a retransmission timeout.
 
 Pause with `space` and then press `.` repeatedly to advance one event at a time: it is the best way to read a handshake or a routing update.
 
@@ -124,7 +124,7 @@ More commands:
 - `set speed X` and `set detail N` do what the keys do; `pause`, `resume` and `quit` too.
 - `log some text` writes a line of your own in the log.
 
-Everything a module accepts is described in the **Modules** entry of the menu and by `./netlab help MODULE`.
+Everything a module accepts is described in the **Modules** entry of the menu and by `./hoplab help MODULE`.
 
 <!-- detail: 1 -->
 ## Parameters
@@ -134,8 +134,8 @@ Many labs have parameters: a loss probability, a bandwidth, the congestion contr
 On the command line, parameters are `name=value` pairs after the scenario:
 
 ```
-./netlab run 101-ping loss=0.2
-./netlab run 320-tcp-congestion cc=cubic queue=100
+./hoplab run 101-ping loss=0.2
+./hoplab run 320-tcp-congestion cc=cubic queue=100
 ```
 
 The catalog shows the parameters of the selected lab with their default values.
@@ -143,49 +143,49 @@ The catalog shows the parameters of the selected lab with their default values.
 <!-- detail: 2 -->
 ## Without the interface
 
-With `--headless`, or whenever the output is not a terminal, netlab runs the lab as fast as it can and prints the event log, one line per event. It stops at the scenario's `duration`, or at the time given with `--until`.
+With `--headless`, or whenever the output is not a terminal, hoplab runs the lab as fast as it can and prints the event log, one line per event. It stops at the scenario's `duration`, or at the time given with `--until`.
 
 ```
-./netlab run 101-ping --headless --detail 2
-./netlab run 101-ping --headless --until 20s --seed 7 | less
+./hoplab run 101-ping --headless --detail 2
+./hoplab run 101-ping --headless --until 20s --seed 7 | less
 ```
 
-A lab may end with **expectations**, statements such as "h1 received 3 ping replies". A headless run checks them and prints `PASS` or `FAIL`; `--quiet` prints only that. `./netlab check` runs every lab of the catalog this way (or the ones you name) and reports how many failed: use it after changing a scenario or a protocol.
+A lab may end with **expectations**, statements such as "h1 received 3 ping replies". A headless run checks them and prints `PASS` or `FAIL`; `--quiet` prints only that. `./hoplab check` runs every lab of the catalog this way (or the ones you name) and reports how many failed: use it after changing a scenario or a protocol.
 
 ```
-./netlab check
-./netlab check 101-ping my-lab.nl
+./hoplab check
+./hoplab check 101-ping my-lab.nl
 ```
 
 <!-- detail: 3 -->
-`netlab check` always uses seed 1, so its verdicts do not change from run to run. The exit status of a headless run is 0 when every expectation holds, 1 when one fails, 2 when the scenario could not be loaded.
+`hoplab check` always uses seed 1, so its verdicts do not change from run to run. The exit status of a headless run is 0 when every expectation holds, 1 when one fails, 2 when the scenario could not be loaded.
 
 <!-- detail: 2 -->
 ## Tiled windows
 
-`./netlab windows NAME` (or **Run in: tiled windows** in the launch form) runs the same lab as several processes side by side: one pane shows the whole network, and up to five other panes each run a single node with its own interface, exactly as if each were a separate computer. The links between panes are real UDP datagrams on your machine.
+`./hoplab windows NAME` (or **Run in: tiled windows** in the launch form) runs the same lab as several processes side by side: one pane shows the whole network, and up to five other panes each run a single node with its own interface, exactly as if each were a separate computer. The links between panes are real UDP datagrams on your machine.
 
 ```
-./netlab windows 101-ping
-./netlab windows 230-rip-convergence --nodes r1,r3
+./hoplab windows 101-ping
+./hoplab windows 230-rip-convergence --nodes r1,r3
 ```
 
-netlab uses kitty or tmux, whichever it finds; `--mode print` only prints the commands, to run by hand in your own terminals. By default every host and router gets a pane (the first five); `--nodes` chooses them.
+hoplab uses kitty or tmux, whichever it finds; `--mode print` only prints the commands, to run by hand in your own terminals. By default every host and router gets a pane (the first five); `--nodes` chooses them.
 
 ## Several machines
 
-A lab can also be spread over real computers. Each one runs some of the nodes with `netlab node`, and one of them can show the global view with `netlab monitor`:
+A lab can also be spread over real computers. Each one runs some of the nodes with `hoplab node`, and one of them can show the global view with `hoplab monitor`:
 
 ```
-./netlab plan my-lab.nl
-./netlab node my-lab.nl h1
-./netlab node my-lab.nl r1,h2
-./netlab monitor my-lab.nl
+./hoplab plan my-lab.nl
+./hoplab node my-lab.nl h1
+./hoplab node my-lab.nl r1,h2
+./hoplab monitor my-lab.nl
 ```
 
 Three rules make it work. Every machine must use **the same scenario file**, which says where each node runs with `place NODE HOST` lines and where the monitor is with a `monitor HOST` line. The machines must reach each other over **UDP**: by default node number i of the file (counting from 0) listens on port 47000 + i and the monitor on 46999; `--baseport N` moves them all. And all processes must use the same `--speed`.
 
-The easy way is the menu: choose a lab, set **Run in** to **several machines**, type the address of the machine for each node, and netlab writes the scenario copy with the `place` lines and prints the command for each machine.
+The easy way is the menu: choose a lab, set **Run in** to **several machines**, type the address of the machine for each node, and hoplab writes the scenario copy with the `place` lines and prints the command for each machine.
 
 <!-- detail: 3 -->
 A process that reports to a monitor does not start its clock at once: it shows "waiting for the monitor to start the lab" until the monitor answers, so that the first frames are not sent to processes that do not exist yet. The monitor starts everybody together when it has heard every node, so the order in which you start the processes does not matter; pressing Enter in a waiting process starts it anyway. There is no global pause in a distributed lab: each process has its own clock, and pausing one only stops that one. See `docs/distributed.md` for the details.
@@ -193,11 +193,11 @@ A process that reports to a monitor does not start its clock at once: it shows "
 <!-- detail: 1 -->
 ## Language
 
-netlab speaks the language of your system when it has a translation for it (English and Italian at the moment). To choose explicitly:
+hoplab speaks the language of your system when it has a translation for it (English and Italian at the moment). To choose explicitly:
 
 ```
-./netlab --lang it
-NETLAB_LANG=it ./netlab
+./hoplab --lang it
+HOPLAB_LANG=it ./hoplab
 ```
 
 The interface, the lab descriptions and this guide follow the language; protocol jargon in the log (`ARP who has ...`, `[SYN, ACK]`) stays as it is on the wire.

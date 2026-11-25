@@ -2,9 +2,9 @@
 <!-- labs: 101-ping, 200-static-routing, 102-link-properties -->
 # Scrivere i propri laboratori
 
-Un laboratorio è un semplice file di testo con estensione `.nl`. Ogni riga è una direttiva: una parola seguita dai suoi argomenti. Descrivi i nodi, li unisci con dei collegamenti, dai loro degli indirizzi, dici che cosa gira e quando, e netlab fa il resto. Questo argomento costruisce un laboratorio completo passo per passo; il riferimento completo del linguaggio è in `docs/scenario-format.md`.
+Un laboratorio è un semplice file di testo con estensione `.nl`. Ogni riga è una direttiva: una parola seguita dai suoi argomenti. Descrivi i nodi, li unisci con dei collegamenti, dai loro degli indirizzi, dici che cosa gira e quando, e hoplab fa il resto. Questo argomento costruisce un laboratorio completo passo per passo; il riferimento completo del linguaggio è in `docs/scenario-format.md`.
 
-Il modo più rapido di cominciare non è un file vuoto. Scegli **Costruisci la tua rete** nel menu: la procedura guidata scrive uno scenario per la topologia che chiedi e lo salva in `~/.local/share/netlab/scenarios/`. Apri quel file nel tuo editor e modificalo. Oppure copia un laboratorio del catalogo da `scenarios/` e modifica la copia.
+Il modo più rapido di cominciare non è un file vuoto. Scegli **Costruisci la tua rete** nel menu: la procedura guidata scrive uno scenario per la topologia che chiedi e lo salva in `~/.local/share/hoplab/scenarios/`. Apri quel file nel tuo editor e modificalo. Oppure copia un laboratorio del catalogo da `scenarios/` e modifica la copia.
 
 ## Passo 1: nodi e collegamenti
 
@@ -84,7 +84,7 @@ duration 14s
 Dopo `at` puoi scrivere tutto ciò che potresti digitare sulla riga di comando di un laboratorio in esecuzione: `run ...`, `link A B down`, `link A B loss=0.2`, `node N down`, `route ...`, `stop NODO MODULO`.
 
 <!-- detail: 2 -->
-I moduli e i loro argomenti sono elencati nella voce **Moduli** del menu e da `./netlab modules` e `./netlab help MODULO`. Una destinazione può essere il nome di un nodo (`srv`), un'interfaccia (`gw1:eth1`) o un indirizzo.
+I moduli e i loro argomenti sono elencati nella voce **Moduli** del menu e da `./hoplab modules` e `./hoplab help MODULO`. Una destinazione può essere il nome di un nodo (`srv`), un'interfaccia (`gw1:eth1`) o un indirizzo.
 
 Gli eventi che dipendono dal caso (perdite, timer casuali) dipendono da un seme. Un'esecuzione avviata con `--seed N` va sempre allo stesso modo; senza, ogni esecuzione è diversa. Scrivere `seed 7` nel file fissa il seme per chiunque non passi `--seed`.
 
@@ -123,7 +123,7 @@ param+ delay 20ms One-way delay of the slow line
 link gw1 gw2 bw=1M delay=$delay loss=$loss queue=20
 ```
 
-Il modulo di avvio del catalogo mostra un campo per ogni parametro. `param+` dichiara un parametro **avanzato**, mostrato solo quando il modulo è impostato sulle impostazioni avanzate. Dalla riga di comando: `./netlab run two-offices.nl loss=0.1`.
+Il modulo di avvio del catalogo mostra un campo per ogni parametro. `param+` dichiara un parametro **avanzato**, mostrato solo quando il modulo è impostato sulle impostazioni avanzate. Dalla riga di comando: `./hoplab run two-offices.nl loss=0.1`.
 
 <!-- detail: 2 -->
 Una riga `param` deve venire prima delle righe che usano il parametro. Funziona anche `${nome}`, per quando segue direttamente una lettera. Un valore dato sulla riga di comando prevale su quello predefinito.
@@ -147,9 +147,9 @@ Le verifiche vengono controllate quando un'esecuzione senza interfaccia raggiung
 ## Passo 7: esegui e controlla
 
 ```
-./netlab run two-offices.nl
-./netlab run two-offices.nl --headless --detail 1
-./netlab check two-offices.nl
+./hoplab run two-offices.nl
+./hoplab run two-offices.nl --headless --detail 1
+./hoplab check two-offices.nl
 ```
 
 Il primo comando apre l'interfaccia. Il secondo stampa il registro, poi le verifiche con i loro valori e `PASS` o `FAIL`. Il terzo fa lo stesso in silenzio con un seme fisso, per un file o per molti. Un errore nel file viene segnalato con il numero di riga:
@@ -158,7 +158,7 @@ Il primo comando apre l'interfaccia. Il secondo stampa il registro, poi le verif
 two-offices.nl:7: unknown node or interface in 'link gw1 gw3'
 ```
 
-Per vedere il tuo laboratorio nel catalogo, metti il file in `~/.local/share/netlab/scenarios/`: compare sotto **I miei scenari**.
+Per vedere il tuo laboratorio nel catalogo, metti il file in `~/.local/share/hoplab/scenarios/`: compare sotto **I miei scenari**.
 
 <!-- detail: 2 -->
 ## Le traduzioni
@@ -175,7 +175,7 @@ param      loss 0 Loss on the slow line (0..1)
 param[it]  loss Perdita sulla linea lenta (0..1)
 ```
 
-Quando netlab gira in italiano le righe `[it]` sostituiscono quelle semplici; in qualunque altra lingua vengono ignorate. Una nota tradotta sostituisce la nota con lo stesso tempo, e `param[it]` dà soltanto il nome e l'etichetta tradotta: il valore predefinito resta nella riga `param` semplice, che deve venire prima.
+Quando hoplab gira in italiano le righe `[it]` sostituiscono quelle semplici; in qualunque altra lingua vengono ignorate. Una nota tradotta sostituisce la nota con lo stesso tempo, e `param[it]` dà soltanto il nome e l'etichetta tradotta: il valore predefinito resta nella riga `param` semplice, che deve venire prima.
 
 <!-- detail: 3 -->
 ## Il file completo

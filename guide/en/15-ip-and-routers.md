@@ -54,7 +54,7 @@ To read more: Kurose and Ross, chapter 4, section "The Internet Protocol (IP): I
 
 **Lab 101-ping**: h1, the router r1 and h2, on two networks.
 
-- Start it with `./netlab run 101-ping`.
+- Start it with `./hoplab run 101-ping`.
 - Select h1 with `n` and open its Routes tab: one line for its own network, one default route via `10.0.1.1`. Select r1: one line for each of the two networks it is connected to.
 - 0 s, ping. In the log (`l`) the first exchange shows two ARP questions: h1 asks for the gateway, r1 asks for h2. Nobody asks h1 for the MAC of h2: why? The replies show `ttl=63`.
 - Open the Sequence view (`s`) to see each packet stop at r1 and leave again.
@@ -66,7 +66,7 @@ To read more: Kurose and Ross, chapter 4, section "The Internet Protocol (IP): I
 - `h1 ping h2 ttl=1`: who will answer, and with which message?
 - `h1 ping 10.0.9.9`: no network has this address. Which node will notice, and what will it tell h1?
 - `link r1 h2 down` and then `h1 ping h2`: h1 still has its default route. What does r1 answer now? Bring the link back with `link r1 h2 up`.
-- Run `./netlab run 101-ping loss=0.3`: the loss acts on the link h1–r1 in both directions. What fraction of pings should succeed?
+- Run `./hoplab run 101-ping loss=0.3`: the loss acts on the link h1–r1 in both directions. What fraction of pings should succeed?
 
 ## Check yourself
 

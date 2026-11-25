@@ -36,7 +36,7 @@ A layer-4 balancer must send every packet of a TCP connection to the same server
 
 ## The lab's model versus reality
 
-The balancer of this emulator (see `./netlab help lb`) hashes a UDP five-tuple and the `reqgen` client cycles over at most **40 flows**, which live for the whole run. That is a tiny sample: with four servers each holds about ten flows, so a difference of three or four flows between schemes is within sampling noise, and the "balance" figures are dominated by where forty particular ports happen to land. Worse, the hash is deterministic and the flows are fixed, so the seed does not change the result: you have one sample, not a distribution. To obtain others you must change the flow population (the `flows` parameter) or write a scenario with other addresses.
+The balancer of this emulator (see `./hoplab help lb`) hashes a UDP five-tuple and the `reqgen` client cycles over at most **40 flows**, which live for the whole run. That is a tiny sample: with four servers each holds about ten flows, so a difference of three or four flows between schemes is within sampling noise, and the "balance" figures are dominated by where forty particular ports happen to land. Worse, the hash is deterministic and the flows are fixed, so the seed does not change the result: you have one sample, not a distribution. To obtain others you must change the flow population (the `flows` parameter) or write a scenario with other addresses.
 
 The ring uses 100 virtual nodes per server. The Maglev table has **251 slots**, against 65537 in the paper, so both its balance and its disruption are coarser than the published figures. Rendezvous hashing, jump hashing and bounded loads are not implemented. With `affinity=0`, round robin, least connections and `p2c` schedule every packet afresh and the reported "moved" count is meaningless for them; they only make sense with the flow table. Requests are single UDP datagrams, so "a broken connection" is inferred from a change of answering server, not observed as a TCP reset. Finally there is one balancer: the multi-balancer disagreement that motivates the whole design is emulated only by turning the flow table off or by restarting the node.
 
@@ -59,12 +59,12 @@ The ring uses 100 virtual nodes per server. The Maglev table has **251 slots**, 
 <!-- detail: 1 -->
 ## In the lab
 
-Run `./netlab run 450-consistent-hashing`. Client c1 sends 920 requests at 40 per second over 40 flows to the balancer `lb`, which starts with s1, s2, s3; s4 is added at 8 s and s1 removed at 16 s. Parameters: `algo` (consistent, hash, maglev; the module also accepts rr, wrr, leastconn, p2c), `affinity` (0 = stateless), `flows`.
+Run `./hoplab run 450-consistent-hashing`. Client c1 sends 920 requests at 40 per second over 40 flows to the balancer `lb`, which starts with s1, s2, s3; s4 is added at 8 s and s1 removed at 16 s. Parameters: `algo` (consistent, hash, maglev; the module also accepts rr, wrr, leastconn, p2c), `affinity` (0 = stateless), `flows`.
 
 What to measure: `reqgen.moved` on c1 (flows whose answering server changed, end to end), `lb.remapped` on the balancer, the two log lines printed by `lb` at each pool change ("N/40 flows lost their server, M/40 more now hash to a different server"), and the final `reqgen` line with the share of each server. The ideal for 40 flows is about 10 moves when s4 joins plus the flows of s1 when it leaves. Headless:
 
 ```
-./netlab run 450-consistent-hashing algo=maglev --headless --detail 1
+./hoplab run 450-consistent-hashing algo=maglev --headless --detail 1
 ```
 
 **Experiment 1 — disruption.** Hypothesis: mod-N moves about 1 − 1/(N+1) of the flows per change; ring and Maglev stay near the minimum, Maglev slightly above. Manipulation: `algo=hash`, `algo=consistent`, `algo=maglev`. Metric: `reqgen.moved` out of 80 possible flow-moves, and how many of the flows that move on the addition go to s4 (any other move is unnecessary). Expected: about 60 for mod-N (more moves than flows: most of them move twice), about 20 for the other two; the lab's check `disruption` states both bounds. Note that the ring moved 14 flows, not 10, on the addition: decide whether this is sampling noise or an oversized arc before blaming the scheme.

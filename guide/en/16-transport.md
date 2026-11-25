@@ -18,7 +18,7 @@ Web pages, mail and file transfers use TCP. Name lookups, live voice and many ga
 
 ## How it works
 
-A **port** is a 16-bit number, 0 to 65535. Servers wait on well-known ports (80 for web, 53 for DNS; in netlab the echo service uses 7). A client lets the system pick a temporary **ephemeral port**: in the labs you will see 49152. A conversation is identified by four values: source address, source port, destination address, destination port.
+A **port** is a 16-bit number, 0 to 65535. Servers wait on well-known ports (80 for web, 53 for DNS; in hoplab the echo service uses 7). A client lets the system pick a temporary **ephemeral port**: in the labs you will see 49152. A conversation is identified by four values: source address, source port, destination address, destination port.
 
 **UDP** adds a header of only 8 bytes: source port, destination port, length, checksum. One send by the program becomes one **datagram**. If nobody listens on the destination port, the host answers with an ICMP "port unreachable".
 
@@ -42,7 +42,7 @@ A **port** is a 16-bit number, 0 to 65535. Servers wait on well-known ports (80 
 
 **Why three messages to open?** Each side must learn the other's initial sequence number and confirm it. Two messages would leave the server unsure that its number was received; and an old, delayed SYN could open a connection that nobody wants. Initial numbers are chosen unpredictably, so that segments of an earlier connection, or forged by an attacker, are not accepted as valid.
 
-**Closing is subtle too.** The side that closes first waits in the `TIME_WAIT` state before forgetting the connection, in case its last ACK was lost and the other FIN is repeated. You can read the state names in the netlab log.
+**Closing is subtle too.** The side that closes first waits in the `TIME_WAIT` state before forgetting the connection, in case its last ACK was lost and the other FIN is repeated. You can read the state names in the hoplab log.
 
 **TCP's reliability is the machinery of topic 13**, grown up: sequence numbers count bytes instead of packets; the timeout adapts to the measured round-trip time; three duplicate ACKs trigger a fast retransmit without waiting for the timer (lab 220). On top of it TCP adjusts how much it sends: **flow control** obeys the window advertised by the receiver (lab 221), **congestion control** estimates what the network can carry and backs off on loss (lab 320). The parameter `iw` of lab 120 is the initial value of that estimate.
 
@@ -60,7 +60,7 @@ To read more: Kurose and Ross, chapter 3 ("Transport Layer": multiplexing, UDP, 
 
 **Lab 120-tcp-handshake**: the whole life of a TCP connection between h1 and h2, with 50 ms of delay each way.
 
-- Start it with `./netlab run 120-tcp-handshake` and press `2` for detail 2.
+- Start it with `./hoplab run 120-tcp-handshake` and press `2` for detail 2.
 - Open the Sequence view (`s`): the arrows draw the handshake at 1 s, the data segments, the ACKs coming back, and the two FINs.
 - Open the Packets view (`p`) and press Enter on the SYN, the SYN+ACK and the ACK. Read the ports (49152 and 5001), the flags, and check the rule ack = sequence number of the other side + 1.
 - Open the three data segments and their ACKs: by how much does the sequence number grow from one to the next? What does each ACK say?
@@ -69,14 +69,14 @@ To read more: Kurose and Ross, chapter 3 ("Transport Layer": multiplexing, UDP, 
 
 **Lab 101-ping**, the UDP part.
 
-- Start `./netlab run 101-ping` and go to 8 s: `udp → 10.0.2.10:7`. No handshake: the datagram leaves at once and the echo comes back after a single round trip.
+- Start `./hoplab run 101-ping` and go to 8 s: `udp → 10.0.2.10:7`. No handshake: the datagram leaves at once and the echo comes back after a single round trip.
 - This datagram is so large that it is cut into three fragments, and only the first carries the UDP header. For a cleaner view type `:` and `h1 udp h2 msg=ciao`, then open that frame in the Packets view and find the UDP header with its four fields. Compare its 8 bytes with the TCP header of lab 120.
 
 **Change this and predict.**
 
-- `./netlab run 120-tcp-handshake delay=100ms`: after how long will the connection be established?
-- `./netlab run 120-tcp-handshake bytes=20000`: how many segments? Watch in the Sequence view how many travel together at the start and later.
-- `./netlab run 120-tcp-handshake loss=0.1 bytes=50000`: look for `fast retransmit` and `retransmission timeout` in the log, and read the final summary line. Every run is different. A lost ACK often causes no retransmission at all: why?
+- `./hoplab run 120-tcp-handshake delay=100ms`: after how long will the connection be established?
+- `./hoplab run 120-tcp-handshake bytes=20000`: how many segments? Watch in the Sequence view how many travel together at the start and later.
+- `./hoplab run 120-tcp-handshake loss=0.1 bytes=50000`: look for `fast retransmit` and `retransmission timeout` in the log, and read the final summary line. Every run is different. A lost ACK often causes no retransmission at all: why?
 - In lab 101 type `:` and `h1 udp h2 port=9 msg=hi`: nobody listens on port 9. What will come back? Compare with what TCP did on port 81.
 
 ## Check yourself

@@ -64,12 +64,12 @@ Hidden terminals are modelled as two groups, the even-numbered and odd-numbered 
 <!-- detail: 1 -->
 ## In the lab
 
-Run `./netlab run 460-hidden-terminal`. Three independent cells run the same CSMA/CA under the same load: `open` (everyone hears everyone), `hidden` (two groups that cannot hear each other), `rtscts` (the same hidden groups, with RTS/CTS). Parameters: `load` (new frames per frame time, all stations together), `stations`, `frame`. Counters on each cell: `mac.throughput_pct`, `mac.sent`, `mac.success`, `mac.collisions`, `mac.dropped`. In the mac panels, compare S and the amount of red.
+Run `./hoplab run 460-hidden-terminal`. Three independent cells run the same CSMA/CA under the same load: `open` (everyone hears everyone), `hidden` (two groups that cannot hear each other), `rtscts` (the same hidden groups, with RTS/CTS). Parameters: `load` (new frames per frame time, all stations together), `stations`, `frame`. Counters on each cell: `mac.throughput_pct`, `mac.sent`, `mac.success`, `mac.collisions`, `mac.dropped`. In the mac panels, compare S and the amount of red.
 
 With the defaults expect roughly 58% in `open`, 14% in `hidden` and 58% in `rtscts`. For numbers worth comparing use a longer run in frame times and several seeds:
 
 ```
-./netlab run 460-hidden-terminal frame=10ms --seed 1 --headless
+./hoplab run 460-hidden-terminal frame=10ms --seed 1 --headless
 ```
 
 **Experiment 1 — throughput is the wrong metric at low load.** Hypothesis: hidden terminals cause collisions at any load, but lose throughput only when retransmissions can no longer be absorbed. Manipulation: `load=0.05`, `0.2`, `0.6`, `1.0`. Metric: `mac.throughput_pct`, and the collision ratio `mac.collisions / mac.sent`, in `hidden` against `open`. Expected: at 0.2 all three cells carry about 20% (the lab's check `light` verifies it), while `hidden` already shows one to two orders of magnitude more collisions; from 0.6 upwards `hidden` saturates near 14% and starts dropping frames.

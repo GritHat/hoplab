@@ -11,9 +11,9 @@ interface that shows the packets in flight between sender and receiver.
 | Go-Back-N | `go_back_n_send` | `go_back_n_recv` |
 | Selective Repeat | `selective_repeat_send` | `selective_repeat_recv` |
 
-They differ from the netlab labs in one way worth knowing: here two real
+They differ from the hoplab labs in one way worth knowing: here two real
 processes exchange real datagrams through the operating system, in real time;
-in netlab everything above the cable is emulated and runs on virtual time.
+in hoplab everything above the cable is emulated and runs on virtual time.
 
 ## Running them
 
@@ -24,7 +24,7 @@ make                 # builds everything
 ./demo.sh sr         # Selective Repeat
 ```
 
-or choose **Reliable transfer demos** in the `./netlab` menu.
+or choose **Reliable transfer demos** in the `./hoplab` menu.
 
 `demo.sh` opens sender and receiver in a new maximised window of the terminal
 you launch it from, when it is one of the supported ones: kitty,
@@ -89,7 +89,7 @@ loss and corruption to the packets *it* sends: the sender to DATA, the
 receiver to ACKs. Press `q` to quit. When the output is redirected to a file
 the programs print only the event log as plain text.
 
-The interface language follows `NETLAB_LANG` / `LANG` (English and Italian).
+The interface language follows `HOPLAB_LANG` / `LANG` (English and Italian).
 
 ## Stop-and-wait
 
@@ -167,8 +167,8 @@ instead of overlapping. With N·interval ≥ RTT the channel is never empty.
   packets in flight.
 - `tui.h/.c`: terminal graphics (panels, event log, channel animation, rules,
   window strip), drawing in half of the screen (`RDT_PANE`) and the Linux
-  console mode. netlab's interface is built on the same library.
-- `i18n.h/.c`: message catalogs (shared with netlab).
+  console mode. hoplab's interface is built on the same library.
+- `i18n.h/.c`: message catalogs (shared with hoplab).
 - `stop_and_wait_*.c`, `go_back_n_*.c`, `selective_repeat_*.c`: senders and
   receivers of the three protocols.
 - `demo.sh`: builds and opens sender and receiver side by side.

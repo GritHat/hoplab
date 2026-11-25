@@ -1,5 +1,5 @@
 /*
- * main.c - netlab command line.
+ * main.c - hoplab command line.
  */
 #include "nl_int.h"
 #include "rdt.h"
@@ -12,25 +12,25 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#define NETLAB_VERSION "1.0"
+#define HOPLAB_VERSION "1.0"
 
 static void usage(void)
 {
     printf("%s",
-           _("netlab — a network laboratory in your terminal\n"
+           _("hoplab — a network laboratory in your terminal\n"
              "\n"
              "Usage:\n"
-             "  netlab                         interactive menu: catalog, guide, wizard\n"
-             "  netlab run SCENARIO [k=v ...]  simulate every node in this window\n"
-             "  netlab windows SCENARIO [...]  one tiled window per node plus a monitor\n"
-             "  netlab node SCENARIO NODE[,NODE...]   run only these nodes (other machines\n"
+             "  hoplab                         interactive menu: catalog, guide, wizard\n"
+             "  hoplab run SCENARIO [k=v ...]  simulate every node in this window\n"
+             "  hoplab windows SCENARIO [...]  one tiled window per node plus a monitor\n"
+             "  hoplab node SCENARIO NODE[,NODE...]   run only these nodes (other machines\n"
              "                                 or windows run the others; links are UDP tunnels)\n"
-             "  netlab monitor SCENARIO        global view of a distributed run\n"
-             "  netlab plan SCENARIO           print the commands for a distributed run\n"
-             "  netlab check [SCENARIO ...]    run headless and verify the `expect` lines\n"
-             "  netlab list                    scenarios in the catalog\n"
-             "  netlab modules | help MODULE   protocols and tools, and how to use them\n"
-             "  netlab guide [TOPIC]           study guide and curriculum\n"
+             "  hoplab monitor SCENARIO        global view of a distributed run\n"
+             "  hoplab plan SCENARIO           print the commands for a distributed run\n"
+             "  hoplab check [SCENARIO ...]    run headless and verify the `expect` lines\n"
+             "  hoplab list                    scenarios in the catalog\n"
+             "  hoplab modules | help MODULE   protocols and tools, and how to use them\n"
+             "  hoplab guide [TOPIC]           study guide and curriculum\n"
              "\n"
              "Options:\n"
              "  --headless        no interface: print the event log (default when not a terminal)\n"
@@ -44,9 +44,9 @@ static void usage(void)
              "  --nodes a,b,c     windows: the nodes that get a window of their own\n"
              "  --hub             node mode: also be the monitor for the other processes\n"
              "  --baseport N      first UDP port used by tunnels (monitor: N-1)\n"
-             "  --lang xx         language (default from NETLAB_LANG / LANG)\n"
+             "  --lang xx         language (default from HOPLAB_LANG / LANG)\n"
              "\n"
-             "SCENARIO is a file or a catalog name (see `netlab list`); k=v pairs set the\n"
+             "SCENARIO is a file or a catalog name (see `hoplab list`); k=v pairs set the\n"
              "scenario parameters.\n"));
 }
 
@@ -91,11 +91,11 @@ static int load(const options *o, int first_param)
     char path[1024];
 
     if (o->npos < 2) {
-        fprintf(stderr, "netlab: %s\n", _("which scenario? (see `netlab list`)"));
+        fprintf(stderr, "hoplab: %s\n", _("which scenario? (see `hoplab list`)"));
         return -1;
     }
     if (!nl_scenario_path(o->pos[1], path, sizeof(path))) {
-        fprintf(stderr, "netlab: %s: %s\n", o->pos[1], _("scenario not found (see `netlab list`)"));
+        fprintf(stderr, "hoplab: %s: %s\n", o->pos[1], _("scenario not found (see `hoplab list`)"));
         return -1;
     }
     W.seed = o->seed;
@@ -127,7 +127,7 @@ static int load(const options *o, int first_param)
         W.speed_set = 1;
     }
     if (o->until && !nl_parse_time(o->until, &W.duration)) {
-        fprintf(stderr, "netlab: --until: %s\n", _("bad time"));
+        fprintf(stderr, "hoplab: --until: %s\n", _("bad time"));
         return -1;
     }
     return 0;
@@ -192,7 +192,7 @@ static int cmd_run(const options *o, int mode)
     W.mode = mode;
     if (mode == NL_MODE_NODE) {
         if (o->npos < 3) {
-            fprintf(stderr, "netlab: %s\n", _("usage: netlab node SCENARIO NODE[,NODE...]"));
+            fprintf(stderr, "hoplab: %s\n", _("usage: hoplab node SCENARIO NODE[,NODE...]"));
             return 2;
         }
         first_param = 3;
@@ -209,7 +209,7 @@ static int cmd_run(const options *o, int mode)
         for (tok = strtok_r(list, ",", &save); tok; tok = strtok_r(NULL, ",", &save)) {
             nl_node *n = nl_node_find(tok);
             if (!n) {
-                fprintf(stderr, "netlab: %s '%s'\n", _("unknown node"), tok);
+                fprintf(stderr, "hoplab: %s '%s'\n", _("unknown node"), tok);
                 return 2;
             }
             n->local = 1;
@@ -319,7 +319,7 @@ static int cmd_modules(const char *name)
     if (name) {
         m = nl_module_find(name);
         if (!m) {
-            fprintf(stderr, "netlab: %s '%s'\n", _("unknown module"), name);
+            fprintf(stderr, "hoplab: %s '%s'\n", _("unknown module"), name);
             return 1;
         }
         printf("%s — %s\n\n%s\n", m->name, _(m->title), m->usage ? _(m->usage) : "");
@@ -355,14 +355,14 @@ static int cmd_plan(const options *o)
     W.mode = NL_MODE_RUN;
     if (load(o, 2) != 0)
         return 2;
-    printf("%s\n\n", _("# Copy netlab and the scenario file to every machine, then run:"));
+    printf("%s\n\n", _("# Copy hoplab and the scenario file to every machine, then run:"));
     for (i = 0; i < W.nnodes; i++) {
         nl_node *n = &W.nodes[i];
-        printf("  [%s]  netlab node %s %s\n", n->under_host[0] ? n->under_host : "127.0.0.1", o->pos[1], n->name);
+        printf("  [%s]  hoplab node %s %s\n", n->under_host[0] ? n->under_host : "127.0.0.1", o->pos[1], n->name);
     }
-    printf("\n%s\n  netlab monitor %s\n\n%s\n", _("# and, on the machine named in the `monitor` line:"), o->pos[1],
+    printf("\n%s\n  hoplab monitor %s\n\n%s\n", _("# and, on the machine named in the `monitor` line:"), o->pos[1],
            _("# Each node listens on the UDP port of its `place` line (default: baseport + index).\n"
-             "# Nodes placed on the same machine can share one process: netlab node FILE a,b,c"));
+             "# Nodes placed on the same machine can share one process: hoplab node FILE a,b,c"));
     return 0;
 }
 
@@ -382,7 +382,7 @@ int main(int argc, char **argv)
         return 0;
     }
     if (!strcmp(cmd, "version") || !strcmp(cmd, "--version")) {
-        printf("netlab %s\n", NETLAB_VERSION);
+        printf("hoplab %s\n", HOPLAB_VERSION);
         return 0;
     }
     if (!strcmp(cmd, "run"))     return cmd_run(&o, NL_MODE_RUN);
@@ -395,7 +395,7 @@ int main(int argc, char **argv)
     if (!strcmp(cmd, "guide"))   return nl_guide(o.npos > 1 ? o.pos[1] : NULL);
     if (!strcmp(cmd, "windows")) {
         if (o.npos < 2) {
-            fprintf(stderr, "netlab: %s\n", _("which scenario? (see `netlab list`)"));
+            fprintf(stderr, "hoplab: %s\n", _("which scenario? (see `hoplab list`)"));
             return 2;
         }
         return nl_launch_windows(o.pos[1], o.npos - 2, o.pos + 2, o.mode ? o.mode : "auto", o.nodes, o.speed);
@@ -407,7 +407,7 @@ int main(int argc, char **argv)
         }
         return nl_menu();
     }
-    fprintf(stderr, "netlab: %s '%s'\n\n", _("unknown command"), cmd);
+    fprintf(stderr, "hoplab: %s '%s'\n\n", _("unknown command"), cmd);
     usage();
     return 2;
 }

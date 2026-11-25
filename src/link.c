@@ -334,7 +334,7 @@ int nl_net_open(void)
     /* the monitor, or a node process that also collects the reports (hub) */
     if (W.mode == NL_MODE_MONITOR || (W.mode == NL_MODE_NODE && W.hub)) {
         if (rdt_resolve("0.0.0.0", W.baseport - 1, &a) != 0 || (W.mon_listen = rdt_udp_socket(&a)) < 0) {
-            fprintf(stderr, "netlab: %s %d: %s\n", _("cannot listen on UDP port"), W.baseport - 1, strerror(errno));
+            fprintf(stderr, "hoplab: %s %d: %s\n", _("cannot listen on UDP port"), W.baseport - 1, strerror(errno));
             return -1;
         }
         W.waiting = 1;
@@ -346,7 +346,7 @@ int nl_net_open(void)
         if (!n->local)
             continue;
         if (rdt_resolve("0.0.0.0", n->under_port, &a) != 0 || (n->sock = rdt_udp_socket(&a)) < 0) {
-            fprintf(stderr, "netlab: %s: %s %d: %s\n", n->name, _("cannot listen on UDP port"),
+            fprintf(stderr, "hoplab: %s: %s %d: %s\n", n->name, _("cannot listen on UDP port"),
                     n->under_port, strerror(errno));
             return -1;
         }

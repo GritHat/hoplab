@@ -1,24 +1,24 @@
 <!-- level: 4 -->
 <!-- labs: 420-tcp-fairness, 481-raft-split-votes -->
-# Fare ricerca con netlab
+# Fare ricerca con hoplab
 
 I laboratori di questo percorso sono dimostrazioni: una topologia, un'esecuzione, un effetto che si vede. Un esperimento è un'altra cosa. Parte da un'**ipotesi** che potrebbe rivelarsi falsa, varia **un solo fattore** tenendo fisso il resto, riporta una **metrica** con la sua variabilità, e dichiara in quali condizioni la conclusione non varrebbe. Questo argomento riguarda come trasformare l'emulatore dal primo tipo di strumento nel secondo, e come riconoscere dove smette di essere affidabile.
 
-netlab ha tre proprietà che ne fanno una ragionevole piccola piattaforma sperimentale. Un'esecuzione è una funzione deterministica del file di scenario, dei parametri e del seme: i risultati si riproducono esattamente e si condividono in tre righe di testo. Funziona in modalità headless, molto più in fretta del tempo reale: una scansione di parametri è un ciclo di shell. E ogni protocollo è un unico file C leggibile che si registra da sé: un nuovo meccanismo si può aggiungere e confrontare ad armi pari con quelli esistenti.
+hoplab ha tre proprietà che ne fanno una ragionevole piccola piattaforma sperimentale. Un'esecuzione è una funzione deterministica del file di scenario, dei parametri e del seme: i risultati si riproducono esattamente e si condividono in tre righe di testo. Funziona in modalità headless, molto più in fretta del tempo reale: una scansione di parametri è un ciclo di shell. E ogni protocollo è un unico file C leggibile che si registra da sé: un nuovo meccanismo si può aggiungere e confrontare ad armi pari con quelli esistenti.
 
 Ha anche proprietà che limitano ciò che si può concludere: al più 64 nodi, protocolli semplificati, orologi perfetti, tempo di elaborazione nullo. **Un risultato ottenuto qui è un'affermazione su un modello.** Diventa un'affermazione sulle reti solo attraverso un argomento che mostri che le semplificazioni non contano per la domanda posta, e costruire quell'argomento fa parte del lavoro.
 
 <!-- detail: 2 -->
 ## Parametri, semi e riproducibilità
 
-Uno scenario dichiara i parametri con `param NOME DEFAULT descrizione` e li usa come `$NOME`; la riga di comando li ridefinisce con `NOME=valore`. I numeri casuali provengono da un unico generatore inizializzato da `--seed N`, oppure da una riga `seed N` nel file, oppure dall'orologio; il seme in uso è stampato nella prima riga dell'uscita headless. Per ogni numero riportato si registrino il file di scenario (o il suo hash), i valori dei parametri, il seme e la versione del programma. `netlab check` esegue gli scenari con seme 1.
+Uno scenario dichiara i parametri con `param NOME DEFAULT descrizione` e li usa come `$NOME`; la riga di comando li ridefinisce con `NOME=valore`. I numeri casuali provengono da un unico generatore inizializzato da `--seed N`, oppure da una riga `seed N` nel file, oppure dall'orologio; il seme in uso è stampato nella prima riga dell'uscita headless. Per ogni numero riportato si registrino il file di scenario (o il suo hash), i valori dei parametri, il seme e la versione del programma. `hoplab check` esegue gli scenari con seme 1.
 
 Il seme conta solo dove qualcosa estrae numeri casuali: perdite, jitter, timeout casuali, backoff, scelta dei pari nel gossip. Uno scenario privo di tali elementi produce lo stesso risultato per ogni seme, e ripeterlo non dice nulla sulla variabilità. In quel caso si introduca la variazione che il sistema reale avrebbe: istanti di partenza, un piccolo ritardo su un collegamento, una diversa popolazione di flussi.
 
 ## Esecuzioni headless e metriche
 
 ```
-./netlab run NOME k=v ... --headless --detail 1 --seed 7 --lang en
+./hoplab run NOME k=v ... --headless --detail 1 --seed 7 --lang en
 ```
 
 stampa il log degli eventi e poi una riga per ogni `expect`, con il valore trovato: `ok    h1 tcp.goodput_kbps >= 0   (got 1862.27)`. Lo stato di uscita è 1 se un'aspettativa fallisce, e `--quiet` stampa solo il verdetto. `--until TEMPO` sostituisce la durata dello scenario. I messaggi del log sono tradotti (in italiano `got` diventa `ottenuto`): quando uno script li analizza conviene fissare la lingua.
@@ -29,7 +29,7 @@ Uno scenario viene cercato come percorso prima che nel catalogo, quindi le copie
 
 ```
 cp scenarios/420-tcp-fairness.nl fair.nl
-./netlab run ./fair.nl cc1=bbr queue=10 --headless
+./hoplab run ./fair.nl cc1=bbr queue=10 --headless
 ```
 
 Il linguaggio completo (topologia, parametri dei collegamenti, `at`, `run`, `expect`, discipline di coda) è descritto in `docs/scenario-format.md`.
@@ -40,7 +40,7 @@ Un modulo è un file C in `src/` che compila una struttura `nl_module` (nome, si
 
 ## Esecuzioni distribuite
 
-`netlab plan SCENARIO` stampa i comandi per eseguire un laboratorio come più processi, `netlab node SCENARIO a,b` esegue alcuni nodi, `netlab monitor` ne raccoglie i rapporti; le righe `place` e `monitor` dello scenario dicono dove gira ogni cosa. I collegamenti fra processi diventano tunnel UDP. Si esercita così lo stesso codice di protocollo su macchine reali, cosa preziosa come dimostrazione e come prova di robustezza. Non è una modalità di misura: ogni processo segue il proprio orologio reale, la rete reale aggiunge latenza, `--seed` non rende più identiche le esecuzioni, e nessun processo fornisce un verdetto globale (si veda `docs/distributed.md`).
+`hoplab plan SCENARIO` stampa i comandi per eseguire un laboratorio come più processi, `hoplab node SCENARIO a,b` esegue alcuni nodi, `hoplab monitor` ne raccoglie i rapporti; le righe `place` e `monitor` dello scenario dicono dove gira ogni cosa. I collegamenti fra processi diventano tunnel UDP. Si esercita così lo stesso codice di protocollo su macchine reali, cosa preziosa come dimostrazione e come prova di robustezza. Non è una modalità di misura: ogni processo segue il proprio orologio reale, la rete reale aggiunge latenza, `--seed` non rende più identiche le esecuzioni, e nessun processo fornisce un verdetto globale (si veda `docs/distributed.md`).
 
 <!-- detail: 3 -->
 ## Limiti dell'emulatore
@@ -79,20 +79,20 @@ Ne discende la buona pratica: scrivere ipotesi e analisi prima di eseguire; tene
 
 I tre esercizi che seguono riguardano il metodo; usano laboratori già noti.
 
-**Esperimento 1 — che cosa fa il seme.** Ipotesi: semi uguali danno esecuzioni identiche, e semi diversi cambiano il risultato solo dove lo scenario estrae numeri casuali. Manipolazione: eseguire due volte `./netlab run 481-raft-split-votes --seed 7 --headless --detail 2` e confrontare le uscite con `diff`; poi eseguirlo con i semi da 1 a 10; poi fare lo stesso con `420-tcp-fairness cc1=reno cc2=reno`. Metrica: righe differenti; dispersione del tempo senza leader e del goodput. Esito atteso: uscite identiche a parità di seme; una vera distribuzione per Raft; nessuna variazione per i due flussi Reno. Si decida che cosa variare nel secondo caso per ottenere una barra d'errore onesta.
+**Esperimento 1 — che cosa fa il seme.** Ipotesi: semi uguali danno esecuzioni identiche, e semi diversi cambiano il risultato solo dove lo scenario estrae numeri casuali. Manipolazione: eseguire due volte `./hoplab run 481-raft-split-votes --seed 7 --headless --detail 2` e confrontare le uscite con `diff`; poi eseguirlo con i semi da 1 a 10; poi fare lo stesso con `420-tcp-fairness cc1=reno cc2=reno`. Metrica: righe differenti; dispersione del tempo senza leader e del goodput. Esito atteso: uscite identiche a parità di seme; una vera distribuzione per Raft; nessuna variazione per i due flussi Reno. Si decida che cosa variare nel secondo caso per ottenere una barra d'errore onesta.
 
 **Esperimento 2 — da un laboratorio a una misura.** Ipotesi: chi vince fra BBR e CUBIC dipende dal buffer, e un'esecuzione per punto non basta a dire come. Manipolazione: il laboratorio sull'equità fa già partire i due flussi insieme, con uno scarto casuale, e riporta velocità a regime e indice di Jain; si scandiscano la coda e il seme conservando i numeri:
 
 ```
 for q in 10 20 40 80 160; do for s in 1 2 3 4 5; do
-  ./netlab run 420-tcp-fairness cc1=bbr cc2=cubic queue=$q --seed $s --headless --detail 1 --lang en \
+  ./hoplab run 420-tcp-fairness cc1=bbr cc2=cubic queue=$q --seed $s --headless --detail 1 --lang en \
     | grep Jain | awk -v q=$q -v s=$s '{print q, s, $(NF-4)}'
 done; done > fair.dat
 ```
 
 Metrica: indice di Jain per ogni dimensione della coda, con la sua dispersione sui semi; si aggiungano le due cifre `steady` delle righe `done` per vedere chi è in vantaggio. Atteso: BBR in vantaggio, con un costo pesante in timeout per CUBIC, a `queue=10`, i due vicini intorno a 40 pacchetti, CUBIC in vantaggio a 160: un incrocio intorno a qualche BDP di buffer. Si controlli quanto si muove l'indice fra un seme e l'altro in ogni punto prima di tracciare la curva: dove la dispersione è grande quanto la differenza fra punti vicini, l'incrocio non è stato localizzato.
 
-**Esperimento 3 — un controllo di sensibilità.** Ipotesi: una conclusione tratta da una sola configurazione può essere un artefatto di fase. Manipolazione: `./netlab run 420-tcp-fairness cc1=reno cc2=reno` con `delay2` da 2 ms a 12 ms a passi di 1 ms, cinque semi ciascuno. Metrica: rapporto fra le velocità a regime in funzione di `delay2`. Atteso: il rapporto salta fra valori vicini, e cambia perfino segno, invece di variare in modo regolare, e i semi di uno stesso valore concordano fra loro più di quanto concordino valori vicini: si stanno osservando effetti di fase, non l'RTT, e occorre fare la media su perturbazioni (ritardi, o una disciplina come `qdisc=red` che rende casuali gli scarti) prima di affermare qualcosa sull'RTT.
+**Esperimento 3 — un controllo di sensibilità.** Ipotesi: una conclusione tratta da una sola configurazione può essere un artefatto di fase. Manipolazione: `./hoplab run 420-tcp-fairness cc1=reno cc2=reno` con `delay2` da 2 ms a 12 ms a passi di 1 ms, cinque semi ciascuno. Metrica: rapporto fra le velocità a regime in funzione di `delay2`. Atteso: il rapporto salta fra valori vicini, e cambia perfino segno, invece di variare in modo regolare, e i semi di uno stesso valore concordano fra loro più di quanto concordino valori vicini: si stanno osservando effetti di fase, non l'RTT, e occorre fare la media su perturbazioni (ritardi, o una disciplina come `qdisc=red` che rende casuali gli scarti) prima di affermare qualcosa sull'RTT.
 
 ## Dieci idee di progetto
 

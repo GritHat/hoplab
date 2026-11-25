@@ -63,7 +63,7 @@ To read more: Kurose and Ross, chapter 2 ("Application Layer": the Web and HTTP,
 
 **Lab 141-dhcp-join**: h1 arrives with no address; gw is router and DHCP server.
 
-- Start it with `./netlab run 141-dhcp-join`. Select h1 (`n`): its interface has no address.
+- Start it with `./hoplab run 141-dhcp-join`. Select h1 (`n`): its interface has no address.
 - At 1 s read the four messages in the log (`l`) and then the line `DHCP bound`. Open the Packets view (`p`) and check the destination MAC of the DISCOVER.
 - Open the Routes tab of h1: a default route marked `dhcp` has appeared. The same ACK also carried the address of a name server (option 6: the line says `dns 10.0.1.1`).
 - At 4 s h1 pings h2, which is on another network: it works only thanks to the gateway learned from DHCP.
@@ -71,13 +71,13 @@ To read more: Kurose and Ross, chapter 2 ("Application Layer": the Web and HTTP,
 
 **Lab 140-dns-first**: h1 asks the name server ns three questions.
 
-- Start it with `./netlab run 140-dns-first`. At 1 s, 3 s and 5 s read the question and the answer in the log: an A record, an MX record, NXDOMAIN.
+- Start it with `./hoplab run 140-dns-first`. At 1 s, 3 s and 5 s read the question and the answer in the log: an A record, an MX record, NXDOMAIN.
 - Open the DNS query in the Packets view and find: UDP, port 53, the name, the type. In the answer find the TTL.
-- Netlab's `ping` accepts addresses and node names, not DNS names: to use the answer type `:` and `h1 ping 10.0.2.11`.
+- Hoplab's `ping` accepts addresses and node names, not DNS names: to use the answer type `:` and `h1 ping 10.0.2.11`.
 
 **Lab 121-http-page**: h1 loads a page from www, twice.
 
-- Start it with `./netlab run 121-http-page` and press `2`. At 1 s the page is loaded on one persistent connection, at 4 s with one connection per object.
+- Start it with `./hoplab run 121-http-page` and press `2`. At 1 s the page is loaded on one persistent connection, at 4 s with one connection per object.
 - In the log count the `SYN` lines of each load, and read the two `complete` lines: about 422 ms and 559 ms. The first load also includes about 68 ms of ARP that the second does not pay: the true difference is three handshakes.
 - In the Packets view find a frame with `GET` and one with `200 OK` and open them: the request is readable text.
 
@@ -85,7 +85,7 @@ To read more: Kurose and Ross, chapter 2 ("Application Layer": the Web and HTTP,
 
 - Lab 141: type `h1 dhcp release`, then `h1 ping h2`. What does the log say? Then `h1 dhcp client`.
 - Lab 140: `h1 dig example.com type=TXT` and `h1 dig mail.example.com`. Which one fails, and with which answer?
-- Lab 121: `./netlab run 121-http-page delay=100ms`. The round trip becomes about 208 ms: how much longer will the second load take than the first? Then try `objects=8`.
+- Lab 121: `./hoplab run 121-http-page delay=100ms`. The round trip becomes about 208 ms: how much longer will the second load take than the first? Then try `objects=8`.
 - Lab 121: type `h1 http get www/missing`. Which status code comes back?
 
 ## Check yourself

@@ -67,7 +67,7 @@ If `Q` is at least one MTU, the byte counts of any two backlogged flows over any
 
 **What deployed systems do.** `fq_codel` (RFC 8290), the Linux default, runs CoDel inside each DRR queue and gives priority to new flows; CAKE adds shaping and per-host fairness; DOCSIS 3.1 modems use PIE; data centres use DCTCP with a single instantaneous marking threshold; L4S (RFC 9330) defines a dual queue for scalable congestion controls.
 
-**In netlab.** `fq` takes flows from the IP 5-tuple with a single shared buffer, dropping from the longest queue when full; `tbf` runs above the link rate; RED thresholds are in packets. The sources in these four labs do not react to drops or marks.
+**In hoplab.** `fq` takes flows from the IP 5-tuple with a single shared buffer, dropping from the longest queue when full; `tbf` runs above the link rate; RED thresholds are in packets. The sources in these four labs do not react to drops or marks.
 
 **Primary literature.**
 
@@ -85,17 +85,17 @@ If `Q` is at least one MTU, the byte counts of any two backlogged flows over any
 <!-- detail: 1 -->
 ## In the lab
 
-**371-bufferbloat-codel.** `./netlab run 371-bufferbloat-codel`. Two identical paths with 1.3 Mbit/s offered to a 1 Mbit/s link: a1–ra–a2 with a 200-packet FIFO, b1–rb–b2 with CoDel. Open the `ping` tab of a1 and of b1 (graph `ping rtt (ms)`), the `qdisc` tab of ra and rb (queue and wait graphs), and at the end the `sink` tab of a2 and b2. Measure: ping on A climbs towards 0.9 s, on B it stays around 0.1 s; both sinks receive about the same number of datagrams. Predict before trying:
+**371-bufferbloat-codel.** `./hoplab run 371-bufferbloat-codel`. Two identical paths with 1.3 Mbit/s offered to a 1 Mbit/s link: a1–ra–a2 with a 200-packet FIFO, b1–rb–b2 with CoDel. Open the `ping` tab of a1 and of b1 (graph `ping rtt (ms)`), the `qdisc` tab of ra and rb (queue and wait graphs), and at the end the `sink` tab of a2 and b2. Measure: ping on A climbs towards 0.9 s, on B it stays around 0.1 s; both sinks receive about the same number of datagrams. Predict before trying:
 
 - `buffer=20`: the FIFO delay is bounded by `20*540*8/1e6`, about 90 ms. A small buffer hides the problem.
 - `load=900k`: no overload, CoDel never drops and the two paths are identical (about 12 ms).
 - `aqm=pie`, then `aqm=red`: PIE holds the delay lower than CoDel against this unresponsive source (tens of ms); RED with its default thresholds on a 200-packet buffer does much worse. Explain both from the control laws.
 
-**372-red-ecn.** `./netlab run 372-red-ecn`. On r1 open the `qdisc` tab: graphs `queue` and `avg queue`, the drop probability, counters `red.early`, `red.forced`, `red.marks`. In the packets view (`p`) find a datagram of h1 after r1 and read the ECN field (CE). Experiments: `wq=0.002` (the average needs about 500 arrivals, over a second, to follow: predict more marks, because it lingers between `min` and `max`, and a later reaction); `wq=0.2` (the average is nearly the instantaneous queue); `ecn=0` (marks become drops: `red.marks` is 0); `gentle=0` (above `max` every arrival is a forced drop: `red.forced` grows, `red.early` shrinks).
+**372-red-ecn.** `./hoplab run 372-red-ecn`. On r1 open the `qdisc` tab: graphs `queue` and `avg queue`, the drop probability, counters `red.early`, `red.forced`, `red.marks`. In the packets view (`p`) find a datagram of h1 after r1 and read the ECN field (CE). Experiments: `wq=0.002` (the average needs about 500 arrivals, over a second, to follow: predict more marks, because it lingers between `min` and `max`, and a later reaction); `wq=0.2` (the average is nearly the instantaneous queue); `ecn=0` (marks become drops: `red.marks` is 0); `gentle=0` (above `max` every arrival is a forced drop: `red.forced` grows, `red.early` shrinks).
 
-**373-fair-queueing.** `./netlab run 373-fair-queueing`. On r1 the `qdisc` tab shows the backlog per flow; sinks d1 (hog) and d2 (mouse) show loss and delay. Expected: the mouse loses nothing and waits about 15 ms. Then `qdisc=droptail` (prediction: the mouse loses about 68%, like the hog, and inherits its delay), `mouse=600k` (above the fair share: both are held to about 500 kbit/s and both lose), `quantum=300` (finer interleaving, slightly lower mouse delay).
+**373-fair-queueing.** `./hoplab run 373-fair-queueing`. On r1 the `qdisc` tab shows the backlog per flow; sinks d1 (hog) and d2 (mouse) show loss and delay. Expected: the mouse loses nothing and waits about 15 ms. Then `qdisc=droptail` (prediction: the mouse loses about 68%, like the hog, and inherits its delay), `mouse=600k` (above the fair share: both are held to about 500 kbit/s and both lose), `quantum=300` (finer interleaving, slightly lower mouse delay).
 
-**374-token-bucket.** `./netlab run 374-token-bucket`. On r1 watch `tokens (B)` and `queue`; on h2 the `sink` tab, graph `rx (kbit/s)`. Three phases: 300 kbit/s (bucket full, no wait), 2 Mbit/s for 4 s (burst, then clamp to 500 kbit/s, queue full, loss), 300 kbit/s again. Compute first how many datagrams pass in the second phase (burst + 4 s at the shaping rate + one queue). Experiments: `bucket=100000` (predict the extra packets delivered: about 90000 bytes more of burst), `shape=1M`, `queue=500` (less loss, but a delay of `500*540*8/5e5`, over 4 s).
+**374-token-bucket.** `./hoplab run 374-token-bucket`. On r1 watch `tokens (B)` and `queue`; on h2 the `sink` tab, graph `rx (kbit/s)`. Three phases: 300 kbit/s (bucket full, no wait), 2 Mbit/s for 4 s (burst, then clamp to 500 kbit/s, queue full, loss), 300 kbit/s again. Compute first how many datagrams pass in the second phase (burst + 4 s at the shaping rate + one queue). Experiments: `bucket=100000` (predict the extra packets delivered: about 90000 bytes more of burst), `shape=1M`, `queue=500` (less loss, but a delay of `500*540*8/5e5`, over 4 s).
 
 ## Check yourself
 

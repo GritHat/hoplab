@@ -20,7 +20,7 @@ I tipi di indirizzo che si incontrano nei laboratori:
 - **multicast** `ff00::/8`: `ff02::1` sono tutti i nodi del collegamento, `ff02::2` tutti i router, `ff02::1:ffXX:XXXX` il gruppo *solicited-node* degli indirizzi che terminano con XX:XXXX
 - **non specificato** `::`, la sorgente di un nodo che non ha ancora un indirizzo
 
-netlab costruisce l'identificatore di interfaccia dall'indirizzo MAC (EUI-64 modificato): il MAC `02:00:4e:4c:01:00` dà `fe80::4eff:fe4c:100` — si inserisce `ff:fe` al centro e si inverte un bit del primo byte.
+hoplab costruisce l'identificatore di interfaccia dall'indirizzo MAC (EUI-64 modificato): il MAC `02:00:4e:4c:01:00` dà `fe80::4eff:fe4c:100` — si inserisce `ff:fe` al centro e si inverte un bit del primo byte.
 
 ## L'intestazione
 
@@ -34,7 +34,7 @@ Il prezzo dell'eliminazione del checksum dell'intestazione è che il **checksum 
 
 ## Neighbor Discovery
 
-Cinque messaggi ICMPv6 (tipi 133–137; netlab realizza i primi quattro) svolgono il lavoro di ARP, della scoperta dei router e altro ancora. Tutti sono inviati con hop limit 255 e scartati se arrivano con un valore inferiore, quindi non possono provenire da un altro collegamento.
+Cinque messaggi ICMPv6 (tipi 133–137; hoplab realizza i primi quattro) svolgono il lavoro di ARP, della scoperta dei router e altro ancora. Tutti sono inviati con hop limit 255 e scartati se arrivano con un valore inferiore, quindi non possono provenire da un altro collegamento.
 
 - **Neighbor Solicitation / Advertisement.** Per risolvere `2001:db8:1::1` un nodo invia una NS al gruppo solicited-node `ff02::1:ff00:1`, trasportata in un frame per il MAC multicast `33:33:ff:00:00:01`. Sono interessati solo i nodi i cui indirizzi terminano con quei 24 bit, invece di tutti come con un broadcast ARP. Il proprietario risponde con una NA unicast che porta il suo MAC. Le voci della **cache dei vicini** hanno uno stato: *incompleto* mentre si chiede, *raggiungibile* per circa 30 secondi dopo una conferma, poi *da verificare* (stale); una voce stale viene ancora usata, ma fa partire una verifica unicast.
 - **Duplicate address detection (DAD).** Prima di usare un indirizzo, un nodo invia una NS *per il proprio indirizzo* dalla sorgente `::`. Se qualcuno risponde, l'indirizzo è occupato. Solo dopo un secondo di silenzio l'indirizzo smette di essere *provvisorio*.
@@ -42,7 +42,7 @@ Cinque messaggi ICMPv6 (tipi 133–137; netlab realizza i primi quattro) svolgon
 
 ## Autoconfigurazione (SLAAC)
 
-A un host bastano quattro passi e nessun server. Forma il proprio indirizzo link-local e lo verifica con la DAD. Invia una Router Solicitation. Da ogni prefisso del Router Advertisement marcato *autonomo* forma prefisso + identificatore di interfaccia, e verifica anche quello. Installa una rotta predefinita attraverso l'indirizzo link-local del router. In netlab un router annuncia con `run r1 ra`; la rotta predefinita compare nella scheda Rotte con sorgente `ra`.
+A un host bastano quattro passi e nessun server. Forma il proprio indirizzo link-local e lo verifica con la DAD. Invia una Router Solicitation. Da ogni prefisso del Router Advertisement marcato *autonomo* forma prefisso + identificatore di interfaccia, e verifica anche quello. Installa una rotta predefinita attraverso l'indirizzo link-local del router. In hoplab un router annuncia con `run r1 ra`; la rotta predefinita compare nella scheda Rotte con sorgente `ra`.
 
 ## Frammentazione e MTU del percorso
 
@@ -55,11 +55,11 @@ Ogni collegamento IPv6 deve trasportare pacchetti di **1280 byte**. Un router ch
 
 **La scoperta della MTU del percorso è fragile.** Dipende dall'arrivo del messaggio Packet Too Big. I firewall che scartano tutto ICMPv6 creano buchi neri: i pacchetti grandi spariscono senza errore. La RFC 4890 elenca i messaggi ICMPv6 che non vanno mai filtrati; la RFC 8899 descrive una scoperta che non si affida a ICMP, sondando con pacchetti di dimensione crescente. Nota inoltre che la MTU del percorso si impara **per ciascun verso**: nel laboratorio la richiesta del secondo ping arriva, ed è la risposta a morire.
 
-**Privacy e identificatore di interfaccia.** Un identificatore ricavato dall'indirizzo MAC è lo stesso su ogni rete che il dispositivo visita, quindi lo rende tracciabile. Gli host reali usano oggi identificatori casuali temporanei (RFC 8981) o stabili ma opachi (RFC 7217). netlab mantiene la forma EUI-64 perché permette di riconoscere il nodo in un indirizzo.
+**Privacy e identificatore di interfaccia.** Un identificatore ricavato dall'indirizzo MAC è lo stesso su ogni rete che il dispositivo visita, quindi lo rende tracciabile. Gli host reali usano oggi identificatori casuali temporanei (RFC 8981) o stabili ma opachi (RFC 7217). hoplab mantiene la forma EUI-64 perché permette di riconoscere il nodo in un indirizzo.
 
 **Sicurezza del Neighbor Discovery.** Come ARP, ND si fida del collegamento: chiunque può rispondere a una solicitation, o annunciarsi come router. La regola dell'hop limit 255 prova soltanto che il messaggio viene dallo stesso collegamento. Gli switch si difendono con RA Guard (RFC 6105); la risposta crittografica, SEND (RFC 3971), è quasi assente nella pratica.
 
-**Che cosa netlab tralascia.** Non c'è MLD: i nodi non annunciano i gruppi multicast che ascoltano, e gli switch si limitano a inondare il multicast, quindi il risparmio dei gruppi solicited-node rispetto al broadcast si vede in chi *elabora* una solicitation, non in chi la riceve. Non ci sono DHCPv6, il messaggio redirect, gli indirizzi di privacy; le intestazioni di estensione diverse da Fragment vengono saltate senza essere interpretate; gli indirizzi appresi con SLAAC non scadono; la cache dei vicini non ha lo stato DELAY (una voce stale passa direttamente a una verifica dopo cinque secondi). UDP, TCP e HTTP funzionano su entrambe le famiglie (il laboratorio `207-tcp-over-ipv6` mostra TCP scoprire la MTU del percorso dai Packet Too Big); i protocolli di instradamento del laboratorio (RIP, OSPF, BGP), il DNS e DHCP funzionano solo su IPv4: le rotte IPv6 sono statiche o automatiche, e non ci sono record AAAA.
+**Che cosa hoplab tralascia.** Non c'è MLD: i nodi non annunciano i gruppi multicast che ascoltano, e gli switch si limitano a inondare il multicast, quindi il risparmio dei gruppi solicited-node rispetto al broadcast si vede in chi *elabora* una solicitation, non in chi la riceve. Non ci sono DHCPv6, il messaggio redirect, gli indirizzi di privacy; le intestazioni di estensione diverse da Fragment vengono saltate senza essere interpretate; gli indirizzi appresi con SLAAC non scadono; la cache dei vicini non ha lo stato DELAY (una voce stale passa direttamente a una verifica dopo cinque secondi). UDP, TCP e HTTP funzionano su entrambe le famiglie (il laboratorio `207-tcp-over-ipv6` mostra TCP scoprire la MTU del percorso dai Packet Too Big); i protocolli di instradamento del laboratorio (RIP, OSPF, BGP), il DNS e DHCP funzionano solo su IPv4: le rotte IPv6 sono statiche o automatiche, e non ci sono record AAAA.
 
 **Transizione.** Il dual stack è il caso semplice: entrambi i protocolli ovunque. Dove non è possibile, i tunnel trasportano un protocollo dentro l'altro, e i traduttori (NAT64 con DNS64, RFC 6146/6147; 464XLAT, RFC 6877) permettono a reti solo IPv6 di raggiungere l'Internet IPv4. Nulla di tutto ciò è nel laboratorio.
 

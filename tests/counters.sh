@@ -17,6 +17,6 @@ grep -v '^expect ' "$src" > "$tmp"
 for item in $list; do
     echo "expect ${item%%:*} ${item#*:} >= -1e18" >> "$tmp"
 done
-./netlab run "$tmp" "$@" --headless --detail 1 --lang en | grep -E '^  (ok|FAIL) ' | sed 's/ >= -1e+18//; s/^  ok  *//; s/(got /= /; s/)$//' | tr '\n' ';'
+./hoplab run "$tmp" "$@" --headless --detail 1 --lang en | grep -E '^  (ok|FAIL) ' | sed 's/ >= -1e+18//; s/^  ok  *//; s/(got /= /; s/)$//' | tr '\n' ';'
 echo
 rm -f "$tmp"

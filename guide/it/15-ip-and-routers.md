@@ -54,7 +54,7 @@ Per saperne di più: Kurose e Ross, capitolo 4, paragrafo "Il protocollo Interne
 
 **Laboratorio 101-ping**: h1, il router r1 e h2, su due reti.
 
-- Avvialo con `./netlab run 101-ping`.
+- Avvialo con `./hoplab run 101-ping`.
 - Seleziona h1 con `n` e apri la scheda Rotte: una riga per la sua rete, una rotta predefinita via `10.0.1.1`. Seleziona r1: una riga per ciascuna delle due reti a cui è connesso.
 - 0 s, ping. Nel Registro (`l`) il primo scambio mostra due domande ARP: h1 chiede del gateway, r1 chiede di h2. Nessuno chiede a h1 il MAC di h2: perché? Le risposte mostrano `ttl=63`.
 - Apri la vista Sequenza (`s`) per vedere ogni pacchetto fermarsi su r1 e ripartire.
@@ -66,7 +66,7 @@ Per saperne di più: Kurose e Ross, capitolo 4, paragrafo "Il protocollo Interne
 - `h1 ping h2 ttl=1`: chi risponderà, e con quale messaggio?
 - `h1 ping 10.0.9.9`: nessuna rete ha questo indirizzo. Quale nodo se ne accorgerà, e che cosa dirà a h1?
 - `link r1 h2 down` e poi `h1 ping h2`: h1 ha ancora la sua rotta predefinita. Che cosa risponde ora r1? Ripristina il collegamento con `link r1 h2 up`.
-- Esegui `./netlab run 101-ping loss=0.3`: la perdita agisce sul collegamento h1–r1 in entrambe le direzioni. Quale frazione dei ping dovrebbe riuscire?
+- Esegui `./hoplab run 101-ping loss=0.3`: la perdita agisce sul collegamento h1–r1 in entrambe le direzioni. Quale frazione dei ping dovrebbe riuscire?
 
 ## Verifica
 

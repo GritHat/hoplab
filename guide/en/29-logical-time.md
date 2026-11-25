@@ -75,19 +75,19 @@ Many algorithms need every process to agree on a single sequence. Order events b
 
 **Reference.** Lamport, "Time, Clocks, and the Ordering of Events in a Distributed System", Communications of the ACM, 1978.
 
-**What netlab does.** Events are scripted with `clock event` and `clock send`; processes do not fail; the process identifier is the position in the `peers` list.
+**What hoplab does.** Events are scripted with `clock event` and `clock send`; processes do not fail; the process identifier is the position in the `peers` list.
 
 <!-- detail: 1 -->
 ## In the lab
 
-**Lab 290: `./netlab run 290-lamport-clocks`**
+**Lab 290: `./hoplab run 290-lamport-clocks`**
 
 - Keep the log (`l`) at detail 2: each line marked ● is an event with the clock after it. Follow the table above and recompute every receive with max(L, T) + 1.
 - Open the sequence view (`s`): the three messages a, b, c form a causal chain, and the slow link of n3 is visible as slanted arrows. Select a node (`n`) and open its `clock` tab.
 - Open one of the messages in the packets view (`p`) and find the timestamp it carries.
 - At 6 s n1 and n3 each have a local event. Decide from the definition whether they are concurrent, then compare their Lamport values.
-- Predict, then try: `./netlab run 290-lamport-clocks mode=vector`. Write the vector of each of the twelve events before looking. Which pairs of events are concurrent? Compare the two events at 6 s yourself, then look at the log: after each event netlab compares its vector with the latest event of every other process and marks the concurrent ones with ∥ (an outside observer's view, which no process has).
-- Predict, then try: `./netlab run 290-lamport-clocks slow=500ms`. Message b now reaches n3 *after* n3 has sent c. Recompute the whole table: what is the clock of the send of c, of n1's event at 6 s, and of n1's reception of c? Is causality still respected? (The final clock values change with this setting; the lab's expectations are lower bounds that still hold: check them against your table.)
+- Predict, then try: `./hoplab run 290-lamport-clocks mode=vector`. Write the vector of each of the twelve events before looking. Which pairs of events are concurrent? Compare the two events at 6 s yourself, then look at the log: after each event hoplab compares its vector with the latest event of every other process and marks the concurrent ones with ∥ (an outside observer's view, which no process has).
+- Predict, then try: `./hoplab run 290-lamport-clocks slow=500ms`. Message b now reaches n3 *after* n3 has sent c. Recompute the whole table: what is the clock of the send of c, of n1's event at 6 s, and of n1's reception of c? Is causality still respected? (The final clock values change with this setting; the lab's expectations are lower bounds that still hold: check them against your table.)
 - From the command line add your own events, for example `:n3 clock send n2 text=d` and `:n2 clock event`, predicting each value first.
 
 ## Check yourself

@@ -13,7 +13,7 @@ python3 tools/media/record.py          # needs tmux, ffmpeg, rsvg-convert, Pillo
 | `media/thumbnail.png` | 1280×720 thumbnail for the video |
 | `media/social-card.png` | 1280×720 card for link previews (repository "social preview") |
 | `media/preview.gif` | silent 15-second preview used at the top of the README |
-| `media/netlab-demo.mp4` | the one-minute demo, 1920×1080, with the soundtrack |
+| `media/hoplab-demo.mp4` | the one-minute demo, 1920×1080, with the soundtrack |
 | `media/round-trip.ogg` | the soundtrack alone |
 | `media/screenshot-*.png` | stills used in the README |
 
@@ -47,7 +47,7 @@ the two pings. `python3 tools/media/music.py out.wav 75` renders any length.
 ## Publishing the video
 
 The video is in the repository but is not on YouTube: uploading needs your
-account. After uploading `media/netlab-demo.mp4` with `media/thumbnail.png`,
+account. After uploading `media/hoplab-demo.mp4` with `media/thumbnail.png`,
 replace the link marked `VIDEO` near the top of `README.md` (and the same link
 in `README.it.md`) with the YouTube URL.
 
@@ -55,26 +55,26 @@ Suggested metadata:
 
 **Title**
 
-> netlab — a network laboratory in your terminal (every packet, every layer, 64 labs)
+> hoplab — a network laboratory in your terminal (every packet, every layer, 71 labs)
 
 **Description**
 
-> netlab emulates a whole network inside one terminal program: hosts, routers
+> hoplab emulates a whole network inside one terminal program: hosts, routers
 > and switches exchange real, byte-exact frames over links with delay, loss and
 > queues. Watch packets cross the map, open any of them down to the bytes, read
 > every node's tables, plot what the protocols measure, break things and see
 > what happens.
 >
 > 30+ protocols and tools — ARP, switching, VLANs, spanning tree, IPv4, ICMP,
-> RIP, OSPF, BGP, NAT, queue management (RED, CoDel, fair queueing), UDP, TCP
+> IPv6, RIP, OSPF, BGP, NAT, queue management (RED, CoDel, fair queueing), UDP, TCP
 > congestion control (Reno, CUBIC, BBR), load balancing, DNS, DHCP, HTTP, error
 > correcting codes, medium access, Raft, gossip/SWIM, vector clocks, two-phase
-> commit, Chord, CRDTs — 64 ready-made labs in four levels, and a study guide
+> commit, Chord, CRDTs — 71 ready-made labs in four levels, and a study guide
 > from the first ping to consensus algorithms. One window, tiled windows as
 > separate processes, or several machines. C11, no dependencies, English and
 > Italian.
 >
-> 0:00 netlab
+> 0:00 hoplab
 > 0:03 ARP and ping across a router, as a map, a sequence diagram, and byte by byte
 > 0:18 TCP congestion control: the sawtooth
 > 0:28 OSPF

@@ -27,13 +27,13 @@ RIP versione 2 (RFC 2453) funziona su UDP, porta 520, e invia le risposte all'in
 - indirizzo IP (4), maschera di sottorete (4), next hop (4)
 - metrica (4): da 1 a 15, e 16 = irraggiungibile
 
-Ogni collegamento costa 1, quindi la metrica è un conteggio dei salti e nessun cammino può superare i 15 salti. Tre timer secondo l'RFC: **update** ogni 30 s (con un piccolo scarto casuale), **timeout** 180 s (una rotta non rinfrescata viene marcata irraggiungibile), **garbage collection** 120 s (viene poi annunciata con metrica 16 prima di essere cancellata). In netlab il periodo di aggiornamento è un parametro, il timeout vale 6 aggiornamenti e la garbage collection 4.
+Ogni collegamento costa 1, quindi la metrica è un conteggio dei salti e nessun cammino può superare i 15 salti. Tre timer secondo l'RFC: **update** ogni 30 s (con un piccolo scarto casuale), **timeout** 180 s (una rotta non rinfrescata viene marcata irraggiungibile), **garbage collection** 120 s (viene poi annunciata con metrica 16 prima di essere cancellata). In hoplab il periodo di aggiornamento è un parametro, il timeout vale 6 aggiornamenti e la garbage collection 4.
 
 Ricevendo una voce con metrica m dal vicino N, il router calcola m' = min(m + 1, 16) e: installa la rotta se la destinazione è nuova e m' < 16; sostituisce la propria rotta se m' è minore; e, punto cruciale, **accetta m' anche se maggiore quando N è il next hop attuale**, perché il vicino su cui fa affidamento ne sa di più.
 
 ## Il conteggio all'infinito, con i numeri
 
-Il laboratorio 231 è una linea `h1 - r1 - r2 - r3 - h3`, con aggiornamenti ogni 2 s e senza protezioni. (netlab mostra la metrica memorizzata, con 0 per le reti direttamente connesse; sul cavo il valore annunciato è maggiore di uno, come nell'RFC.) Prima del guasto r2 raggiunge la rete di h3 a 1 e r1 a 2.
+Il laboratorio 231 è una linea `h1 - r1 - r2 - r3 - h3`, con aggiornamenti ogni 2 s e senza protezioni. (hoplab mostra la metrica memorizzata, con 0 per le reti direttamente connesse; sul cavo il valore annunciato è maggiore di uno, come nell'RFC.) Prima del guasto r2 raggiunge la rete di h3 a 1 e r1 a 2.
 
 - 12,0 s: il collegamento r2-r3 si guasta. r2 elimina la sua rotta.
 - 12,5 s: l'aggiornamento periodico di r1 dice ancora «la raggiungo» (metrica memorizzata 2): r2 la installa via r1 con metrica 3. r1 punta a r2 e r2 punta a r1: un ciclo.
@@ -64,24 +64,24 @@ Per tredici secondi i pacchetti per h3 rimbalzano fra r1 e r2 finché il loro TT
 
 **Origini.** Bellman (1958) e Ford e Fulkerson (1962) diedero l'algoritmo; l'instradamento originale di ARPANET del 1969 era a vettore delle distanze con il ritardo come metrica, e la sua lenta reazione alle cattive notizie fu il motivo del passaggio allo stato dei collegamenti nel 1979.
 
-**Che cosa semplifica netlab.** Formato reale dei messaggi; niente autenticazione e niente route tag.
+**Che cosa semplifica hoplab.** Formato reale dei messaggi; niente autenticazione e niente route tag.
 
 <!-- detail: 1 -->
 ## In laboratorio
 
-**Laboratorio 230: `./netlab run 230-rip-convergence`**
+**Laboratorio 230: `./hoplab run 230-rip-convergence`**
 
 - Seleziona r1 (`n`) e apri la scheda Rotte e la scheda `rip`: entro il primo decimo di secondo arrivano le reti dei vicini con metrica 1, poi la rete di h3 (10.0.6.0/24) con metrica 2 via r2.
 - Nella vista Pacchetti (`p`) premi Invio su una risposta RIP: leggi l'intestazione e le voci di 20 byte. Confronta un aggiornamento periodico con uno immediato («solo le rotte cambiate»).
 - A 16 s traceroute mostra r1, r2, r3. A 20 s il collegamento r1-r2 si guasta: metrica 16 nel registro, triggered update, e a 45 s traceroute passa da r4.
-- Prevedi, poi prova: `./netlab run 230-rip-convergence triggered=0`. Quando r3 viene a sapere che la rete di r1 non è più raggiungibile via r2, e quando r1 ottiene una nuova rotta verso la rete di h3? Confronta gli istanti con l'esecuzione di default.
-- Prevedi, poi prova: `./netlab run 230-rip-convergence update=10s`. Quali eventi vengono ritardati e quali no? Poi digita `:link r1 r2 up` dopo i 45 s e osserva il ritorno del cammino più breve.
+- Prevedi, poi prova: `./hoplab run 230-rip-convergence triggered=0`. Quando r3 viene a sapere che la rete di r1 non è più raggiungibile via r2, e quando r1 ottiene una nuova rotta verso la rete di h3? Confronta gli istanti con l'esecuzione di default.
+- Prevedi, poi prova: `./hoplab run 230-rip-convergence update=10s`. Quali eventi vengono ritardati e quali no? Poi digita `:link r1 r2 up` dopo i 45 s e osserva il ritorno del cammino più breve.
 
-**Laboratorio 231: `./netlab run 231-rip-count-to-infinity`**
+**Laboratorio 231: `./hoplab run 231-rip-count-to-infinity`**
 
 - Imposta il dettaglio 2 e segui il registro dai 12 s: la metrica di 10.0.4.0/24 sale alternatamente su r1 e r2. Tieni aperta la scheda Rotte di r1 per vedere cambiare next hop e metrica.
 - A 17 s il ping di h1 segnala `tempo di vita (TTL) esaurito` da 10.0.2.2: apri la vista Pacchetti per vedere la echo request che rimbalza.
-- Prevedi, poi prova: `./netlab run 231-rip-count-to-infinity split=1`. Che cosa annuncia r1 a r2 a 12,5 s? Che cosa segnala il ping, e chi invia l'errore? (Le verifiche del laboratorio conoscono l'impostazione: con una protezione attiva controllano che nessuno conti e che nessun pacchetto giri in tondo.) Poi prova `triggered=1` da solo: perché in questa piccola rete basta già, e perché non ci faresti affidamento?
+- Prevedi, poi prova: `./hoplab run 231-rip-count-to-infinity split=1`. Che cosa annuncia r1 a r2 a 12,5 s? Che cosa segnala il ping, e chi invia l'errore? (Le verifiche del laboratorio conoscono l'impostazione: con una protezione attiva controllano che nessuno conti e che nessun pacchetto giri in tondo.) Poi prova `triggered=1` da solo: perché in questa piccola rete basta già, e perché non ci faresti affidamento?
 - Prevedi, poi prova: `split=1 poison=1` e apri una risposta RIP da r1 a r2: quali voci hanno metrica 16? Poi `split=0 triggered=1`: il ciclo si forma ancora? Perché è una gara e non una garanzia?
 
 ## Verifica

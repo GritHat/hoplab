@@ -57,19 +57,19 @@ For TCP the path MTU sets the segment size: MSS = path MTU − 40 without option
 
 **Tunnels** make the issue permanent: every encapsulation (VPN, VXLAN, GRE) subtracts its header from the MTU, so paths with an effective MTU of 1400 to 1480 are common.
 
-**What netlab simplifies.** The lab shows the mechanism but not the automation: the third ping is simply scripted with a smaller size. The MTU of a link is a parameter (`mtu=`) and applies to both directions.
+**What hoplab simplifies.** The lab shows the mechanism but not the automation: the third ping is simply scripted with a smaller size. The MTU of a link is a parameter (`mtu=`) and applies to both directions.
 
 <!-- detail: 1 -->
 ## In the lab
 
-**Lab 201: `./netlab run 201-mtu-fragmentation`**
+**Lab 201: `./hoplab run 201-mtu-fragmentation`**
 
 - Phase one (0 s): in the log, r1 reports `IP fragmentation: 1428 B > MTU 600 → 3 fragments`, h2 reassembles, and the reply is fragmented by r2 in the other direction.
 - Open the packets view (`p`), choose one of the three fragments on the r1-r2 link and press Enter. Read identification, flags and fragment offset, and compare the three fragments with the table above. Then open the same packet on the h1-r1 link: one piece, MF = 0.
 - Phase two (4 s): the same ping with DF set. r1 drops it and sends `fragmentation needed`; open the ICMP message and find the next-hop MTU and the quoted header of the dropped packet.
 - Phase three (8 s): 500 data bytes with DF pass without being touched.
-- Predict, then try: `./netlab run 201-mtu-fragmentation mtu=1000`. How many fragments, with which offsets and lengths? Then `mtu=500`: what happens to the third phase, and why?
-- Predict, then try: `./netlab run 201-mtu-fragmentation loss=0.2` several times (a different seed each run). Which of the three phases loses more pings? Compare with 0.8⁶ and 0.8².
+- Predict, then try: `./hoplab run 201-mtu-fragmentation mtu=1000`. How many fragments, with which offsets and lengths? Then `mtu=500`: what happens to the third phase, and why?
+- Predict, then try: `./hoplab run 201-mtu-fragmentation loss=0.2` several times (a different seed each run). Which of the three phases loses more pings? Compare with 0.8⁶ and 0.8².
 - Find the limit by hand from the command line of the lab: `:h1 ping h2 count=1 size=572 df=1` and then `size=573`. Explain the boundary.
 
 ## Check yourself

@@ -56,12 +56,12 @@ Nel laboratorio 202, r1 dice «10.9.0.0/16 via r2» e r2 dice «10.9.0.0/16 via 
 
 **Asimmetria e filtri.** Su Internet il percorso di andata e quello di ritorno sono spesso diversi. Questo mette in crisi il reverse-path filtering stretto (RFC 3704), che scarta i pacchetti in arrivo da un'interfaccia che non verrebbe usata per raggiungerne la sorgente.
 
-**Che cosa semplifica netlab.** Le rotte hanno un solo next hop (niente multipath a costo uguale) e la tabella viene scandita linearmente. L'opzione `auto routes` usata da altri laboratori calcola i cammini minimi al posto tuo; i laboratori 200 e 202 la disattivano di proposito.
+**Che cosa semplifica hoplab.** Le rotte hanno un solo next hop (niente multipath a costo uguale) e la tabella viene scandita linearmente. L'opzione `auto routes` usata da altri laboratori calcola i cammini minimi al posto tuo; i laboratori 200 e 202 la disattivano di proposito.
 
 <!-- detail: 1 -->
 ## In laboratorio
 
-**Laboratorio 200: `./netlab run 200-static-routing`**
+**Laboratorio 200: `./hoplab run 200-static-routing`**
 
 - Premi `n` per selezionare a turno r1, r2 e r3 e leggi la scheda **Rotte**. Prima dei 6 s, r2 ha righe solo per 10.0.12.0/24, 10.0.23.0/24 e 10.0.1.0/24.
 - Nel registro (`l`) il primo ping fallisce con `da 10.0.12.2: rete irraggiungibile`: l'indirizzo dice quale router si è arreso.
@@ -70,11 +70,11 @@ Nel laboratorio 202, r1 dice «10.9.0.0/16 via r2» e r2 dice «10.9.0.0/16 via 
 - Prevedi, poi prova: `:route r3 del 10.0.1.0/24` e poi `:h1 ping h2 count=2`. h2 riceve la richiesta? Chi riceve l'errore ICMP, e che cosa stampa h1?
 - Prevedi, poi prova: `:route r2 add 10.0.4.10/32 via 10.0.12.1` e ripeti il ping. La /24 è ancora presente e corretta. Perché ora il ping termina con «tempo di vita (TTL) esaurito»? Annulla con `:route r2 del 10.0.4.10/32`.
 
-**Laboratorio 202: `./netlab run 202-routing-loop`**
+**Laboratorio 202: `./hoplab run 202-routing-loop`**
 
 - Osserva la mappa: una sola echo request rimbalza sul collegamento r1-r2. Nella vista Pacchetti lo stesso pacchetto ricompare più volte, ogni volta con il TTL diminuito di uno.
 - L'errore arriva da 10.0.12.2 (r2) dopo circa 0,14 s; il traceroute a 4 s alterna r1, r2, r1, r2.
-- Prevedi, poi prova: `./netlab run 202-routing-loop ttl=7`. Quante volte viene attraversato il collegamento, e quale router invia ora l'errore?
+- Prevedi, poi prova: `./hoplab run 202-routing-loop ttl=7`. Quante volte viene attraversato il collegamento, e quale router invia ora l'errore?
 - Prevedi, poi prova: `:route r2 del 10.9.0.0/16`, poi `:h1 ping 10.9.1.1 count=1`. Quale messaggio sostituisce «time exceeded», e chi lo invia?
 
 ## Verifica

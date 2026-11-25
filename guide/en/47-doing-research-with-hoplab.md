@@ -1,24 +1,24 @@
 <!-- level: 4 -->
 <!-- labs: 420-tcp-fairness, 481-raft-split-votes -->
-# Doing research with netlab
+# Doing research with hoplab
 
 The labs of this track are demonstrations: one topology, one run, an effect you can see. An experiment is something else. It starts from a **hypothesis** that could turn out false, varies **one factor** while holding the rest fixed, reports a **metric** with its variability, and says under which conditions the conclusion would not hold. This topic is about turning the emulator from the first kind of tool into the second, and about knowing where it stops being trustworthy.
 
-netlab has three properties that make it a reasonable small experimental platform. A run is a deterministic function of the scenario file, the parameters and the seed, so results can be reproduced exactly and shared as three lines of text. It runs headless, far faster than real time, so a parameter sweep is a shell loop. And every protocol is one readable C file that registers itself, so a new mechanism can be added and compared with the existing ones on equal terms.
+hoplab has three properties that make it a reasonable small experimental platform. A run is a deterministic function of the scenario file, the parameters and the seed, so results can be reproduced exactly and shared as three lines of text. It runs headless, far faster than real time, so a parameter sweep is a shell loop. And every protocol is one readable C file that registers itself, so a new mechanism can be added and compared with the existing ones on equal terms.
 
 It also has properties that limit what you may conclude: at most 64 nodes, simplified protocols, perfect clocks, zero processing time. **A result obtained here is a statement about a model.** It becomes a statement about networks only through an argument that the simplifications do not matter for the question asked, and making that argument is part of the work.
 
 <!-- detail: 2 -->
 ## Parameters, seeds and reproducibility
 
-A scenario declares parameters with `param NAME DEFAULT description` and uses them as `$NAME`; the command line overrides them with `NAME=value`. Random numbers come from one generator seeded by `--seed N`, or by a `seed N` line in the file, or else by the clock; the seed in use is printed on the first line of headless output. Record, for every number you report, the scenario file (or its hash), the parameter values, the seed and the program version. `netlab check` runs scenarios with seed 1.
+A scenario declares parameters with `param NAME DEFAULT description` and uses them as `$NAME`; the command line overrides them with `NAME=value`. Random numbers come from one generator seeded by `--seed N`, or by a `seed N` line in the file, or else by the clock; the seed in use is printed on the first line of headless output. Record, for every number you report, the scenario file (or its hash), the parameter values, the seed and the program version. `hoplab check` runs scenarios with seed 1.
 
 The seed matters only where something draws random numbers: loss, jitter, randomised timeouts, backoff, gossip peer choice. A scenario with no such element produces the same result for every seed, and repeating it tells you nothing about variability. In that case introduce the variation the real system would have: start times, a little delay on one link, a different flow population.
 
 ## Headless runs and metrics
 
 ```
-./netlab run NAME k=v ... --headless --detail 1 --seed 7 --lang en
+./hoplab run NAME k=v ... --headless --detail 1 --seed 7 --lang en
 ```
 
 prints the event log and then one line per `expect`, with the value found: `ok    h1 tcp.goodput_kbps >= 0   (got 1862.27)`. The exit status is 1 if any expectation fails, and `--quiet` prints only the verdict. `--until TIME` overrides the scenario's duration. Log messages are translated, so fix the language when a script parses them.
@@ -29,7 +29,7 @@ A scenario is found by path before the catalog is searched, so copies live where
 
 ```
 cp scenarios/420-tcp-fairness.nl fair.nl
-./netlab run ./fair.nl cc1=bbr queue=10 --headless
+./hoplab run ./fair.nl cc1=bbr queue=10 --headless
 ```
 
 The full language (topology, link parameters, `at`, `run`, `expect`, queue disciplines) is in `docs/scenario-format.md`.
@@ -40,7 +40,7 @@ A module is one C file in `src/` that fills an `nl_module` structure (name, usag
 
 ## Distributed runs
 
-`netlab plan SCENARIO` prints the commands to run a lab as several processes, `netlab node SCENARIO a,b` runs some nodes, `netlab monitor` collects their reports; `place` and `monitor` lines in the scenario say where things run. Links between processes become UDP tunnels. This exercises the same protocol code across real machines, which is valuable as a demonstration and as a robustness test. It is not a measurement mode: each process follows its own real clock, the real network adds latency, `--seed` no longer makes runs identical, and no process gives a global verdict (see `docs/distributed.md`).
+`hoplab plan SCENARIO` prints the commands to run a lab as several processes, `hoplab node SCENARIO a,b` runs some nodes, `hoplab monitor` collects their reports; `place` and `monitor` lines in the scenario say where things run. Links between processes become UDP tunnels. This exercises the same protocol code across real machines, which is valuable as a demonstration and as a robustness test. It is not a measurement mode: each process follows its own real clock, the real network adds latency, `--seed` no longer makes runs identical, and no process gives a global verdict (see `docs/distributed.md`).
 
 <!-- detail: 3 -->
 ## Limits of the emulator
@@ -79,20 +79,20 @@ Good practice follows: write the hypothesis and the analysis before running; kee
 
 The three exercises below are about method; they use labs you already know.
 
-**Experiment 1 — what the seed does.** Hypothesis: equal seeds give identical runs, and different seeds change the result only where the scenario draws random numbers. Manipulation: run `./netlab run 481-raft-split-votes --seed 7 --headless --detail 2` twice and compare the outputs with `diff`; then run it with seeds 1 to 10; then do the same with `420-tcp-fairness cc1=reno cc2=reno`. Metric: differing lines; spread of the leaderless time and of the goodput. Expected: identical outputs for equal seeds; a real distribution for Raft; no variation at all for the two Reno flows. Decide what you would vary in the second case to obtain an honest error bar.
+**Experiment 1 — what the seed does.** Hypothesis: equal seeds give identical runs, and different seeds change the result only where the scenario draws random numbers. Manipulation: run `./hoplab run 481-raft-split-votes --seed 7 --headless --detail 2` twice and compare the outputs with `diff`; then run it with seeds 1 to 10; then do the same with `420-tcp-fairness cc1=reno cc2=reno`. Metric: differing lines; spread of the leaderless time and of the goodput. Expected: identical outputs for equal seeds; a real distribution for Raft; no variation at all for the two Reno flows. Decide what you would vary in the second case to obtain an honest error bar.
 
 **Experiment 2 — from a lab to a measurement.** Hypothesis: who wins between BBR and CUBIC depends on the buffer, and one run per point is not enough to say how. Manipulation: the fairness lab already starts both flows together, with a random offset, and reports steady-state rates and Jain's index; sweep the queue and the seed and keep the numbers:
 
 ```
 for q in 10 20 40 80 160; do for s in 1 2 3 4 5; do
-  ./netlab run 420-tcp-fairness cc1=bbr cc2=cubic queue=$q --seed $s --headless --detail 1 --lang en \
+  ./hoplab run 420-tcp-fairness cc1=bbr cc2=cubic queue=$q --seed $s --headless --detail 1 --lang en \
     | grep Jain | awk -v q=$q -v s=$s '{print q, s, $(NF-4)}'
 done; done > fair.dat
 ```
 
 Metric: Jain's index per queue size, with its spread over seeds; add the two `steady` figures of the `done` lines to see who is ahead. Expected: BBR ahead with a heavy cost in timeouts for CUBIC at `queue=10`, the two close around 40 packets, CUBIC ahead at 160: a crossover near a few BDPs of buffer. Check how much the index moves between seeds at each point before drawing the curve: where the spread is as large as the difference between neighbouring points, you have not located the crossover.
 
-**Experiment 3 — a sensitivity check.** Hypothesis: a conclusion drawn from one configuration can be a phase artefact. Manipulation: `./netlab run 420-tcp-fairness cc1=reno cc2=reno` with `delay2` from 2 ms to 12 ms in steps of 1 ms, five seeds each. Metric: ratio of the steady rates against `delay2`. Expected: the ratio jumps between neighbouring values, and even changes sign, rather than varying smoothly, and the seeds of one value agree with each other more than neighbouring values do: you are looking at phase effects, not at RTT, and must average over perturbations (delays, or a discipline such as `qdisc=red` that randomises drops) before claiming anything about RTT.
+**Experiment 3 — a sensitivity check.** Hypothesis: a conclusion drawn from one configuration can be a phase artefact. Manipulation: `./hoplab run 420-tcp-fairness cc1=reno cc2=reno` with `delay2` from 2 ms to 12 ms in steps of 1 ms, five seeds each. Metric: ratio of the steady rates against `delay2`. Expected: the ratio jumps between neighbouring values, and even changes sign, rather than varying smoothly, and the seeds of one value agree with each other more than neighbouring values do: you are looking at phase effects, not at RTT, and must average over perturbations (delays, or a discipline such as `qdisc=red` that randomises drops) before claiming anything about RTT.
 
 ## Ten project ideas
 

@@ -1,4 +1,4 @@
-# Parameter variants verified by tests/run-variants.sh: each line is run with
+# Parameter variants verified by tests/regress.sh: each line is run with
 # seeds 1..5 and must give this result every time.
 #   PASS  scenario  key=value ...
 PASS  290-lamport-clocks

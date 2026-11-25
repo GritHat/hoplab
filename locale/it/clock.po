@@ -1,4 +1,4 @@
-# Italian translation of the netlab "clock" module.
+# Italian translation of the hoplab "clock" module.
 msgid ""
 msgstr ""
 "Language: it\n"

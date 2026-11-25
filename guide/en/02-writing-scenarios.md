@@ -2,9 +2,9 @@
 <!-- labs: 101-ping, 200-static-routing, 102-link-properties -->
 # Writing your own labs
 
-A lab is a plain text file with the extension `.nl`. Each line is one directive: a word followed by its arguments. You describe the nodes, connect them with links, give them addresses, say what runs and when, and netlab does the rest. This topic builds a complete lab step by step; the full reference of the language is in `docs/scenario-format.md`.
+A lab is a plain text file with the extension `.nl`. Each line is one directive: a word followed by its arguments. You describe the nodes, connect them with links, give them addresses, say what runs and when, and hoplab does the rest. This topic builds a complete lab step by step; the full reference of the language is in `docs/scenario-format.md`.
 
-The quickest start is not an empty file. Choose **Build your own network** in the menu: the wizard writes a scenario for the topology you ask for and saves it in `~/.local/share/netlab/scenarios/`. Open that file in your editor and change it. Or copy a lab of the catalog from `scenarios/` and modify the copy.
+The quickest start is not an empty file. Choose **Build your own network** in the menu: the wizard writes a scenario for the topology you ask for and saves it in `~/.local/share/hoplab/scenarios/`. Open that file in your editor and change it. Or copy a lab of the catalog from `scenarios/` and modify the copy.
 
 ## Step 1: nodes and links
 
@@ -84,7 +84,7 @@ duration 14s
 After `at` you can write anything you could type on the command line of a running lab: `run ...`, `link A B down`, `link A B loss=0.2`, `node N down`, `route ...`, `stop NODE MODULE`.
 
 <!-- detail: 2 -->
-The modules and their arguments are listed in the **Modules** entry of the menu and by `./netlab modules` and `./netlab help MODULE`. A destination can be a node name (`srv`), an interface (`gw1:eth1`) or an address.
+The modules and their arguments are listed in the **Modules** entry of the menu and by `./hoplab modules` and `./hoplab help MODULE`. A destination can be a node name (`srv`), an interface (`gw1:eth1`) or an address.
 
 Events that involve chance (losses, random timers) depend on a seed. A run started with `--seed N` always goes the same way; without it every run is different. Writing `seed 7` in the file fixes the seed for everybody who does not pass `--seed`.
 
@@ -123,7 +123,7 @@ param+ delay 20ms One-way delay of the slow line
 link gw1 gw2 bw=1M delay=$delay loss=$loss queue=20
 ```
 
-The launch form of the catalog shows one field per parameter. `param+` declares an **advanced** parameter, shown only when the form is switched to advanced settings. From the command line: `./netlab run two-offices.nl loss=0.1`.
+The launch form of the catalog shows one field per parameter. `param+` declares an **advanced** parameter, shown only when the form is switched to advanced settings. From the command line: `./hoplab run two-offices.nl loss=0.1`.
 
 <!-- detail: 2 -->
 A `param` line must come before the lines that use the parameter. `${name}` works too, for when a letter follows directly. A value given on the command line wins over the default.
@@ -147,9 +147,9 @@ Expectations are checked when a run without the interface reaches `duration`, an
 ## Step 7: run and check
 
 ```
-./netlab run two-offices.nl
-./netlab run two-offices.nl --headless --detail 1
-./netlab check two-offices.nl
+./hoplab run two-offices.nl
+./hoplab run two-offices.nl --headless --detail 1
+./hoplab check two-offices.nl
 ```
 
 The first command opens the interface. The second prints the log, then the expectations with their values and `PASS` or `FAIL`. The third does the same quietly with a fixed seed, for one file or for many. A mistake in the file is reported with its line number:
@@ -158,7 +158,7 @@ The first command opens the interface. The second prints the log, then the expec
 two-offices.nl:7: unknown node or interface in 'link gw1 gw3'
 ```
 
-To see your lab in the catalog, put the file in `~/.local/share/netlab/scenarios/`: it appears under **My scenarios**.
+To see your lab in the catalog, put the file in `~/.local/share/hoplab/scenarios/`: it appears under **My scenarios**.
 
 <!-- detail: 2 -->
 ## Translations
@@ -175,7 +175,7 @@ param      loss 0 Loss on the slow line (0..1)
 param[it]  loss Perdita sulla linea lenta (0..1)
 ```
 
-When netlab runs in Italian the `[it]` lines replace the plain ones; in any other language they are ignored. A translated note replaces the note with the same time, and `param[it]` gives only the name and the translated label: the default value stays with the plain `param` line, which must come first.
+When hoplab runs in Italian the `[it]` lines replace the plain ones; in any other language they are ignored. A translated note replaces the note with the same time, and `param[it]` gives only the name and the translated label: the default value stays with the plain `param` line, which must come first.
 
 <!-- detail: 3 -->
 ## The whole file

@@ -44,7 +44,7 @@ Uno switch non modifica il frame e in questo scambio non ha un indirizzo proprio
 
 **Nessuna sicurezza.** ARP crede a qualunque risposta, e uno switch crede a qualunque indirizzo sorgente. Una macchina può rispondere alle richieste ARP al posto di un'altra (ARP spoofing) e riceverne il traffico. Le reti reali aggiungono protezioni negli switch.
 
-**Storia e vocabolario.** Prima degli switch c'erano gli **hub**, che ripetevano ogni bit su ogni porta: tutte le stazioni condividevano un unico canale e i frame potevano collidere (argomento 18). Uno switch dà a ogni stazione un collegamento tutto suo e conserva i frame in code, così le collisioni sono sparite. Il primo byte `02` degli indirizzi di netlab indica un indirizzo assegnato localmente; le schede reali portano un prefisso del costruttore. IPv6 sostituisce ARP con il Neighbor Discovery, basato su ICMPv6.
+**Storia e vocabolario.** Prima degli switch c'erano gli **hub**, che ripetevano ogni bit su ogni porta: tutte le stazioni condividevano un unico canale e i frame potevano collidere (argomento 18). Uno switch dà a ogni stazione un collegamento tutto suo e conserva i frame in code, così le collisioni sono sparite. Il primo byte `02` degli indirizzi di hoplab indica un indirizzo assegnato localmente; le schede reali portano un prefisso del costruttore. IPv6 sostituisce ARP con il Neighbor Discovery, basato su ICMPv6.
 
 Per saperne di più: Kurose e Ross, capitolo 6, paragrafo "Reti locali commutate"; Tanenbaum, capitolo 4, sulla commutazione a livello di collegamento; RFC 826 (ARP); IEEE 802.1D per i bridge.
 
@@ -54,7 +54,7 @@ Per saperne di più: Kurose e Ross, capitolo 6, paragrafo "Reti locali commutate
 
 **Laboratorio 100-two-hosts**: ARP fra due host.
 
-- Avvialo con `./netlab run 100-two-hosts` e apri la vista Pacchetti (`p`).
+- Avvialo con `./hoplab run 100-two-hosts` e apri la vista Pacchetti (`p`).
 - Il primo frame è la richiesta ARP. Premi Invio: controlla il MAC di destinazione `ff:ff:ff:ff:ff:ff` e la domanda al suo interno. Apri la risposta: a chi è indirizzata?
 - Seleziona h1 (`n`) e apri la scheda ARP: dopo 40 ms compare una riga.
 - A 3 s h2 fa ping verso h1 e non invia alcuna richiesta ARP. Perché? (Imposta il dettaglio 3 e cerca `ARP cache` nel registro.)
@@ -62,7 +62,7 @@ Per saperne di più: Kurose e Ross, capitolo 6, paragrafo "Reti locali commutate
 
 **Laboratorio 170-switch-learning**: tre host e due switch.
 
-- Avvialo con `./netlab run 170-switch-learning` e premi `3` per il dettaglio 3, così viene mostrata ogni riga `bridge appreso`.
+- Avvialo con `./hoplab run 170-switch-learning` e premi `3` per il dettaglio 3, così viene mostrata ogni riga `bridge appreso`.
 - Segui sulla mappa la prima richiesta ARP: raggiunge h2 e h3. Poi la risposta: va solo verso h1.
 - Seleziona s1 e apri la scheda Tabella MAC. Dopo il primo ping ha due righe; nota su quale porta sta ciascun indirizzo. Dopo 5 s, quando h2 fa ping verso h1, compare una terza riga.
 - Seleziona h2 e cerca il contatore `eth.not_for_me` nella scheda Nodo: vale 0 o è assente, perché nessun frame indirizzato a qualcun altro gli viene mai consegnato.
@@ -70,7 +70,7 @@ Per saperne di più: Kurose e Ross, capitolo 6, paragrafo "Reti locali commutate
 **Cambia e prevedi.**
 
 - Dopo 7 s scrivi `h3 ping h2`. Quali frame verranno inondati e quali seguiranno un solo percorso? Controlla nel registro.
-- Esegui `./netlab run 170-switch-learning delay=20ms`. Un frame da h1 a h3 attraversa tre collegamenti. Che tempo di ping ti aspetti una volta concluso ARP?
+- Esegui `./hoplab run 170-switch-learning delay=20ms`. Un frame da h1 a h3 attraversa tre collegamenti. Che tempo di ping ti aspetti una volta concluso ARP?
 
 ## Verifica
 

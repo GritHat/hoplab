@@ -1,6 +1,6 @@
 # Localisation
 
-netlab is written in English and translated at run time. Nothing needs to be
+hoplab is written in English and translated at run time. Nothing needs to be
 compiled: catalogs are plain text files read when the program starts.
 
 ## How it works
@@ -18,7 +18,7 @@ compiled: catalogs are plain text files read when the program starts.
   then any other catalog, so the same short word (`sent`, `lost`, `from`)
   can be translated differently where the context differs.
 - **The language** is taken from `--lang xx`, or else from the first of
-  `NETLAB_LANG`, `LC_ALL`, `LC_MESSAGES`, `LANG` that is set. Only the first
+  `HOPLAB_LANG`, `LC_ALL`, `LC_MESSAGES`, `LANG` that is set. Only the first
   two letters matter (`it_IT.UTF-8` → `it`).
 - **Scenario files translate themselves**: next to `title`, `about`, `note`
   and `param` a scenario may carry `title[it]`, `about[it]`, `note[it] TIME
@@ -32,7 +32,7 @@ translated, as in any packet analyser.
 
 ## Tools
 
-    tools/extract-strings.py                    # rebuild locale/netlab.pot from the sources
+    tools/extract-strings.py                    # rebuild locale/hoplab.pot from the sources
     tools/extract-strings.py --check locale/it  # what is untranslated, what is stale
     msgfmt -c -o /dev/null locale/it/core.po    # optional: validate a catalog (gettext)
 
@@ -43,13 +43,13 @@ options to restrict the check to them.
 ## Adding a language
 
 1. `mkdir locale/xx` (the two-letter ISO 639-1 code).
-2. Run `tools/extract-strings.py`, copy `locale/netlab.pot` to
-   `locale/xx/netlab.po` (one file is fine; splitting per module is optional)
+2. Run `tools/extract-strings.py`, copy `locale/hoplab.pot` to
+   `locale/xx/hoplab.po` (one file is fine; splitting per module is optional)
    and fill in every `msgstr`. Keep the `%s`, `%d`, ... specifiers in the same
    order, and keep leading and trailing spaces and newlines.
 3. Run `tools/extract-strings.py --check locale/xx` until nothing is
    reported as untranslated.
-4. Try it: `netlab --lang xx`.
+4. Try it: `hoplab --lang xx`.
 5. Optionally add `[xx]` lines to the scenarios and translate the guide into
    `guide/xx/` (same file names as `guide/en/`).
 

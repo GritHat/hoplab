@@ -1111,12 +1111,12 @@ static void render(void)
     tui_fill(0, 0, Wd, 1, TS(C_TEXT, C_PANEL, 0));
     if (compact) {
         const nl_node *n = nl_node_at(U.sel);
-        tui_print(1, 0, Wd - 30, TS(C_BRIGHT, C_PANEL, TA_BOLD), T_INFO "netlab" T_RESET " ▸ %s",
+        tui_print(1, 0, Wd - 30, TS(C_BRIGHT, C_PANEL, TA_BOLD), T_INFO "hoplab" T_RESET " ▸ %s",
                   W.mode == NL_MODE_NODE && n ? n->name : W.m.title);
         tui_print(Wd - 28, 0, 28, TS(C_TEXT, C_PANEL, 0), "%10.3f ms %s %s " T_CHIP_DATA " %d ", W.now / 1000.0,
                   W.paused ? T_WARN "‖" T_RESET : T_OK "▶" T_RESET, sp, W.detail);
     } else {
-        tui_print(1, 0, Wd - 60, TS(C_BRIGHT, C_PANEL, TA_BOLD), T_INFO "netlab" T_RESET " ▸ %s%s", W.m.title,
+        tui_print(1, 0, Wd - 60, TS(C_BRIGHT, C_PANEL, TA_BOLD), T_INFO "hoplab" T_RESET " ▸ %s%s", W.m.title,
                   W.mode == NL_MODE_NODE ? _("  [node]") : W.mode == NL_MODE_MONITOR ? _("  [monitor]") : "");
         tui_print(Wd - 58, 0, 58, TS(C_TEXT, C_PANEL, 0),
                   T_DIM "t" T_RESET " %10.3f ms  %s  " T_DIM "%s" T_RESET " %s%s  " T_DIM "%s" T_RESET " %s%s%s",

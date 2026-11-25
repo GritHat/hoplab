@@ -16,7 +16,7 @@ Each layer has its own kind of **address**: a port names a program, an IP addres
 
 The Internet uses five layers. From the top:
 
-- **Application** (layer 7 in the netlab log, `L7`): the program and its messages, for example a web request. Lower layers treat it as plain bytes.
+- **Application** (layer 7 in the hoplab log, `L7`): the program and its messages, for example a web request. Lower layers treat it as plain bytes.
 - **Transport** (`L4`): delivers data to the right program on a machine, using 16-bit **port** numbers. Its unit is the **segment** (TCP) or **datagram** (UDP).
 - **Network** (`L3`): carries a **packet** from the source machine to the destination machine across many networks, using 32-bit **IP addresses** such as `10.0.0.2`.
 - **Link** (`L2`): carries a **frame** over one cable or one radio hop, using 48-bit **MAC addresses** such as `02:00:4e:4c:01:00`.
@@ -41,7 +41,7 @@ The key rule is that addresses of different layers have different lifetimes. Whe
 
 Why layers at all? Because each one can change without touching the others. Wi-Fi replaced cables under IP and no web browser had to be rewritten; HTTP got new versions and no router noticed. The cost is some inefficiency (repeated headers, repeated checks) and the fact that a layer sometimes needs information that the layering hides from it.
 
-Two models are used to talk about layers. The **OSI model** has seven; the Internet in practice has the five listed above, and the OSI numbers survived as names: people say "layer 2 switch" and "layer 7 load balancer", and netlab labels its log lines the same way. Do not expect every protocol to fit cleanly: ARP sits between layers 2 and 3, ICMP is carried inside IP but is part of the network layer, and tunnels put a whole packet inside another packet.
+Two models are used to talk about layers. The **OSI model** has seven; the Internet in practice has the five listed above, and the OSI numbers survived as names: people say "layer 2 switch" and "layer 7 load balancer", and hoplab labels its log lines the same way. Do not expect every protocol to fit cleanly: ARP sits between layers 2 and 3, ICMP is carried inside IP but is part of the network layer, and tunnels put a whole packet inside another packet.
 
 The IP layer is deliberately minimal: it promises only **best effort**, meaning packets may be lost, duplicated, delayed or reordered. Everything else (reliability, order, security) is built at the edges, in the hosts. This is the **end-to-end argument**, and it is the reason the network core could stay simple and grow so much. It is also called the "hourglass": many applications above, many link technologies below, one narrow protocol, IP, in the middle.
 
@@ -55,14 +55,14 @@ To read more: Kurose and Ross, "Computer Networking: A Top-Down Approach", chapt
 
 **Lab 100-two-hosts** is the smallest network: two hosts and a cable.
 
-- Start it with `./netlab run 100-two-hosts`. Press space to pause when you want to read.
+- Start it with `./hoplab run 100-two-hosts`. Press space to pause when you want to read.
 - Press `p` for the Packets view. Each line is one frame. Move to the first ICMP frame and press Enter: the dissection shows the headers one inside the other, Ethernet, then IP, then ICMP, with every field and the bytes that carry it. Use `[` and `]` to walk through the fields.
 - Find the three kinds of address: the MAC addresses in the Ethernet header, the IP addresses in the IP header. Ping has no ports: those appear in lab 101, in the UDP datagram at 8 s.
 - Add up the header sizes and compare with the 102 bytes computed above.
 
 **Lab 101-ping** adds a router between two networks.
 
-- Start it with `./netlab run 101-ping` and open the Packets view.
+- Start it with `./hoplab run 101-ping` and open the Packets view.
 - Compare the same echo request on the two links, `h1 → r1` and `r1 → h2`. Predict first: which addresses are the same, which are different? Then check in the dissection. Look also at the TTL field of the IP header: 64 on the first link, 63 on the second.
 - At 8 s a UDP datagram is sent: open it and find the fourth header, UDP, with its two ports.
 

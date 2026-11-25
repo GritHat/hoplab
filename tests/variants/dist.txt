@@ -1,5 +1,5 @@
 # Parameter variants of the distributed-systems labs (raft, gossip, twopc, chord, crdt),
-# each verified with seeds 1..5: `./netlab run NAME key=value ... --quiet --seed N` prints PASS.
+# each verified with seeds 1..5: `./hoplab run NAME key=value ... --quiet --seed N` prints PASS.
 # One line per verified run: PASS  scenario-name  key=value ...
 PASS  380-raft-election
 PASS  380-raft-election  election=1000-1050ms

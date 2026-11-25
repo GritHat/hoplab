@@ -70,7 +70,7 @@ To read more: Kurose and Ross, chapter 6, section "Multiple Access Links and Pro
 
 **Lab 162-aloha**: two independent channels with ten stations each and the same traffic. The node `pure` runs pure ALOHA, the node `slotted` runs slotted ALOHA. No packets travel on the map here: everything happens in the panel of each node.
 
-- Start it with `./netlab run 162-aloha`.
+- Start it with `./hoplab run 162-aloha`.
 - Select `pure` with `n` and move to its `mac` tab with the arrow keys (press Tab until the node panel has the focus; `z` enlarges it). There is one row per station: green is a delivered frame, red a collision, yellow dots a station waiting to retry.
 - Pause with space and look for a red pair that overlaps only by a small piece: both frames are lost entirely.
 - Select `slotted` and open the same tab: all frames start aligned. Can you find a partial overlap?
@@ -78,11 +78,11 @@ To read more: Kurose and Ross, chapter 6, section "Multiple Access Links and Pro
 
 **Change this and predict.** For each run compute S from the two formulas first.
 
-- `./netlab run 162-aloha load=0.1`: will the two protocols differ much?
-- `./netlab run 162-aloha load=0.2`: this is close to the limit of pure ALOHA. Does it still carry everything? Then `load=0.25`.
-- `./netlab run 162-aloha load=1`: what fraction of slots carries a good frame in slotted ALOHA? What happens to the queues of the stations?
-- `./netlab run 162-aloha stations=3`: with few stations, are the formulas still a good guide?
-- `./netlab run 162-aloha frame=500ms` slows the timeline down so that you can follow single frames.
+- `./hoplab run 162-aloha load=0.1`: will the two protocols differ much?
+- `./hoplab run 162-aloha load=0.2`: this is close to the limit of pure ALOHA. Does it still carry everything? Then `load=0.25`.
+- `./hoplab run 162-aloha load=1`: what fraction of slots carries a good frame in slotted ALOHA? What happens to the queues of the stations?
+- `./hoplab run 162-aloha stations=3`: with few stations, are the formulas still a good guide?
+- `./hoplab run 162-aloha frame=500ms` slows the timeline down so that you can follow single frames.
 
 ## Check yourself
 

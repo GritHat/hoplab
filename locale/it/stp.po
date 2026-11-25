@@ -1,4 +1,4 @@
-# Italian translation of netlab: stp
+# Italian translation of hoplab: stp
 msgid ""
 msgstr ""
 "Language: it\n"

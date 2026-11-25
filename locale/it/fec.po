@@ -1,4 +1,4 @@
-# Italian translation of netlab: link codes and coding bench
+# Italian translation of hoplab: link codes and coding bench
 msgid ""
 msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"

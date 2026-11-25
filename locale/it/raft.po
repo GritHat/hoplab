@@ -1,4 +1,4 @@
-# Italian translation of netlab module "raft".
+# Italian translation of hoplab module "raft".
 msgid ""
 msgstr ""
 "Language: it\n"

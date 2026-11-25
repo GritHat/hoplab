@@ -75,19 +75,19 @@ Molti algoritmi hanno bisogno che tutti i processi concordino su un'unica sequen
 
 **Riferimento.** Lamport, «Time, Clocks, and the Ordering of Events in a Distributed System», Communications of the ACM, 1978.
 
-**Che cosa fa netlab.** Gli eventi sono previsti dallo script con `clock event` e `clock send`; i processi non si guastano; l'identificatore del processo è la posizione nella lista `peers`.
+**Che cosa fa hoplab.** Gli eventi sono previsti dallo script con `clock event` e `clock send`; i processi non si guastano; l'identificatore del processo è la posizione nella lista `peers`.
 
 <!-- detail: 1 -->
 ## In laboratorio
 
-**Laboratorio 290: `./netlab run 290-lamport-clocks`**
+**Laboratorio 290: `./hoplab run 290-lamport-clocks`**
 
 - Tieni il registro (`l`) a dettaglio 2: ogni riga marcata ● è un evento con l'orologio che ne risulta. Segui la tabella qui sopra e ricalcola ogni ricezione con max(L, T) + 1.
 - Apri la vista Sequenza (`s`): i tre messaggi a, b, c formano una catena causale, e il collegamento lento di n3 si riconosce dalle frecce inclinate. Seleziona un nodo (`n`) e apri la sua scheda `clock`.
 - Apri uno dei messaggi nella vista Pacchetti (`p`) e trova la marca temporale che trasporta.
 - A 6 s n1 e n3 hanno ciascuno un evento locale. Stabilisci dalla definizione se sono concorrenti, poi confronta i loro valori di Lamport.
-- Prevedi, poi prova: `./netlab run 290-lamport-clocks mode=vector`. Scrivi il vettore di ciascuno dei dodici eventi prima di guardare. Quali coppie di eventi sono concorrenti? Confronta tu i due eventi a 6 s, poi guarda il registro: dopo ogni evento netlab ne confronta il vettore con l'ultimo evento di ogni altro processo e segna con ∥ quelli concorrenti (è il punto di vista di un osservatore esterno, che nessun processo ha).
-- Prevedi, poi prova: `./netlab run 290-lamport-clocks slow=500ms`. Il messaggio b ora raggiunge n3 *dopo* che n3 ha inviato c. Ricalcola l'intera tabella: quanto vale l'orologio dell'invio di c, dell'evento di n1 a 6 s e della ricezione di c da parte di n1? La causalità è ancora rispettata? (Con questa impostazione i valori finali degli orologi cambiano; le verifiche del laboratorio sono limiti inferiori che valgono ancora: controllale sulla tua tabella.)
+- Prevedi, poi prova: `./hoplab run 290-lamport-clocks mode=vector`. Scrivi il vettore di ciascuno dei dodici eventi prima di guardare. Quali coppie di eventi sono concorrenti? Confronta tu i due eventi a 6 s, poi guarda il registro: dopo ogni evento hoplab ne confronta il vettore con l'ultimo evento di ogni altro processo e segna con ∥ quelli concorrenti (è il punto di vista di un osservatore esterno, che nessun processo ha).
+- Prevedi, poi prova: `./hoplab run 290-lamport-clocks slow=500ms`. Il messaggio b ora raggiunge n3 *dopo* che n3 ha inviato c. Ricalcola l'intera tabella: quanto vale l'orologio dell'invio di c, dell'evento di n1 a 6 s e della ricezione di c da parte di n1? La causalità è ancora rispettata? (Con questa impostazione i valori finali degli orologi cambiano; le verifiche del laboratorio sono limiti inferiori che valgono ancora: controllale sulla tua tabella.)
 - Dalla riga di comando aggiungi eventi tuoi, per esempio `:n3 clock send n2 text=d` e `:n2 clock event`, prevedendo ogni volta il valore.
 
 ## Verifica

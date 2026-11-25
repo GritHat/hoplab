@@ -44,7 +44,7 @@ A switch does not change the frame and has no address of its own in this exchang
 
 **No security.** ARP believes any answer, and a switch believes any source address. A machine can answer ARP requests on behalf of another (ARP spoofing) and receive its traffic. Real networks add protections in the switches.
 
-**History and vocabulary.** Before switches there were **hubs**, which repeated every bit to every port: all stations shared one channel and frames could collide (topic 18). A switch gives every station its own link and stores frames in queues, so collisions disappeared. The first byte `02` of the netlab addresses marks a locally assigned address; real cards carry a manufacturer prefix. IPv6 replaces ARP with Neighbor Discovery, based on ICMPv6.
+**History and vocabulary.** Before switches there were **hubs**, which repeated every bit to every port: all stations shared one channel and frames could collide (topic 18). A switch gives every station its own link and stores frames in queues, so collisions disappeared. The first byte `02` of the hoplab addresses marks a locally assigned address; real cards carry a manufacturer prefix. IPv6 replaces ARP with Neighbor Discovery, based on ICMPv6.
 
 To read more: Kurose and Ross, chapter 6, section "Switched Local Area Networks"; Tanenbaum, chapter 4, "Data Link Layer Switching"; RFC 826 (ARP); IEEE 802.1D for bridges.
 
@@ -54,7 +54,7 @@ To read more: Kurose and Ross, chapter 6, section "Switched Local Area Networks"
 
 **Lab 100-two-hosts**: ARP between two hosts.
 
-- Start it with `./netlab run 100-two-hosts` and open the Packets view (`p`).
+- Start it with `./hoplab run 100-two-hosts` and open the Packets view (`p`).
 - The first frame is the ARP request. Press Enter on it: check the destination MAC `ff:ff:ff:ff:ff:ff` and the question inside. Open the reply: to whom is it addressed?
 - Select h1 (`n`) and open its ARP tab: one line appears after 40 ms.
 - At 3 s h2 pings h1 and sends no ARP request. Why? (Set detail 3 and look for `ARP cache` in the log.)
@@ -62,7 +62,7 @@ To read more: Kurose and Ross, chapter 6, section "Switched Local Area Networks"
 
 **Lab 170-switch-learning**: three hosts and two switches.
 
-- Start it with `./netlab run 170-switch-learning` and press `3` for detail 3, so that every `bridge learned` line is shown.
+- Start it with `./hoplab run 170-switch-learning` and press `3` for detail 3, so that every `bridge learned` line is shown.
 - Follow the first ARP request on the map: it reaches h2 and h3. Then the reply: it goes only towards h1.
 - Select s1 and open its MAC table tab. After the first ping it has two lines; note which port each address is on. After 5 s, when h2 pings h1, a third line appears.
 - Select h2 and look for the counter `eth.not_for_me` in its Node tab: it is 0 or absent, because no frame addressed to someone else is ever delivered to it.
@@ -70,7 +70,7 @@ To read more: Kurose and Ross, chapter 6, section "Switched Local Area Networks"
 **Change this and predict.**
 
 - After 7 s type `h3 ping h2`. Which frames will be flooded and which will follow a single path? Check in the log.
-- Run `./netlab run 170-switch-learning delay=20ms`. A frame from h1 to h3 crosses three links. What ping time do you expect once ARP is done?
+- Run `./hoplab run 170-switch-learning delay=20ms`. A frame from h1 to h3 crosses three links. What ping time do you expect once ARP is done?
 
 ## Check yourself
 

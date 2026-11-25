@@ -1,4 +1,4 @@
-# Italian translation of netlab module "gossip".
+# Italian translation of hoplab module "gossip".
 msgid ""
 msgstr ""
 "Language: it\n"

@@ -36,7 +36,7 @@ Esempio con il primo campione del laboratorio 220, R = 88 ms: SRTT = 88, RTTVAR 
 
 Altre due regole. **Algoritmo di Karn**: non prendere mai un campione da un segmento ritrasmesso, perché l'ACK è ambiguo. **Backoff esponenziale**: a ogni scadenza l'RTO raddoppia (1, 2, 4 s, ... fino a 60 s) e torna al valore calcolato quando vengono riscontrati nuovi dati.
 
-netlab usa un RTO minimo di 200 ms (parametro `rto_min`), come Linux, invece di 1 s come nell'RFC.
+hoplab usa un RTO minimo di 200 ms (parametro `rto_min`), come Linux, invece di 1 s come nell'RFC.
 
 ## Ritrasmissione rapida
 
@@ -53,13 +53,13 @@ Nel laboratorio 221 il buffer è di 8000 byte e l'applicazione legge 16 kbit/s =
 <!-- detail: 3 -->
 ## In profondità
 
-**I riscontri cumulativi sono robusti ma poveri di informazione.** Un ACK perso è innocuo, perché il successivo lo copre. Ma un mittente che ha perso più segmenti di una finestra viene a sapere di un solo buco per ogni giro. I **riscontri selettivi** (SACK, RFC 2018) elencano i blocchi ricevuti oltre il buco; il mittente ne tiene un tabellone e ripara tutti i buchi di una finestra in circa un giro (RFC 6675). NewReno (RFC 6582) è il meglio che si possa fare senza. netlab negozia SACK in modo predefinito; `sack=0` su un `tcp send` ripiega su NewReno, e il laboratorio `321-tcp-sack` confronta i due.
+**I riscontri cumulativi sono robusti ma poveri di informazione.** Un ACK perso è innocuo, perché il successivo lo copre. Ma un mittente che ha perso più segmenti di una finestra viene a sapere di un solo buco per ogni giro. I **riscontri selettivi** (SACK, RFC 2018) elencano i blocchi ricevuti oltre il buco; il mittente ne tiene un tabellone e ripara tutti i buchi di una finestra in circa un giro (RFC 6675). NewReno (RFC 6582) è il meglio che si possa fare senza. hoplab negozia SACK in modo predefinito; `sack=0` su un `tcp send` ripiega su NewReno, e il laboratorio `321-tcp-sack` confronta i due.
 
-**ACK ritardati.** I riceventi reali riscontrano un segmento pieno ogni due, o dopo al massimo 500 ms (RFC 1122; tipicamente fra 40 e 200 ms), per risparmiare pacchetti. Questo interagisce male con l'algoritmo di Nagle (RFC 896), che trattiene i segmenti piccoli finché ci sono dati non riscontrati: sono i classici stalli di 40 ms dei protocolli richiesta/risposta, e la ragione dell'opzione TCP_NODELAY. netlab fa entrambe le cose: gli ACK aspettano un secondo segmento o 40 ms (`delack=`, 0 per riscontrare tutto subito) e Nagle è attivo (`nagle=0` per disattivarlo).
+**ACK ritardati.** I riceventi reali riscontrano un segmento pieno ogni due, o dopo al massimo 500 ms (RFC 1122; tipicamente fra 40 e 200 ms), per risparmiare pacchetti. Questo interagisce male con l'algoritmo di Nagle (RFC 896), che trattiene i segmenti piccoli finché ci sono dati non riscontrati: sono i classici stalli di 40 ms dei protocolli richiesta/risposta, e la ragione dell'opzione TCP_NODELAY. hoplab fa entrambe le cose: gli ACK aspettano un secondo segmento o 40 ms (`delack=`, 0 per riscontrare tutto subito) e Nagle è attivo (`nagle=0` per disattivarlo).
 
 **I timer negli stack reali.** Il minimo di 1 s dell'RFC fu scelto contro i timeout spuri; Linux usa 200 ms, e nei data center si scende ancora. L'opzione timestamp (RFC 7323) fornisce un campione per ogni ACK, ritrasmissioni comprese, rendendo superflua la restrizione di Karn, e protegge dal riavvolgimento dei numeri di sequenza (PAWS) sui collegamenti veloci. Lo stesso RFC definisce il window scaling: il campo finestra a 16 bit limita la finestra a 64 kB, troppo poco per un percorso lungo e veloce, perciò i due lati concordano nel SYN un fattore di scala. Un timeout spurio può essere riconosciuto e annullato (F-RTO, RFC 5682; Eifel). Il Linux moderno usa un rilevamento delle perdite basato sul tempo (RACK-TLP, RFC 8985), che invia anche una sonda per trasformare le perdite in coda in recuperi rapidi.
 
-**Sindrome della finestra sciocca.** Un ricevente che annuncia ogni minimo spazio liberato, o un mittente che lo sfrutta, riempie la rete di segmenti minuscoli. La regola di Clark: non annunciare un aumento finché non vale almeno un MSS o metà del buffer. Negli stack reali il persist timer cresce esponenzialmente (da circa 5 s fino a 60 s); netlab sonda a intervallo fisso di 500 ms.
+**Sindrome della finestra sciocca.** Un ricevente che annuncia ogni minimo spazio liberato, o un mittente che lo sfrutta, riempie la rete di segmenti minuscoli. La regola di Clark: non annunciare un aumento finché non vale almeno un MSS o metà del buffer. Negli stack reali il persist timer cresce esponenzialmente (da circa 5 s fino a 60 s); hoplab sonda a intervallo fisso di 500 ms.
 
 **Casi limite della chiusura.** I due lati possono chiudere contemporaneamente; un lato può chiudere la propria direzione di invio e continuare a ricevere (half-close); un'applicazione che chiude con dati non letti provoca un RST. TIME_WAIT tiene occupata una coppia di porte per 2 MSL, un fastidio per i server molto carichi. I numeri di sequenza iniziali devono essere imprevedibili (RFC 6528), altrimenti un attaccante fuori dal percorso potrebbe iniettare dati.
 
@@ -68,26 +68,26 @@ Nel laboratorio 221 il buffer è di 8000 byte e l'applicazione legge 16 kbit/s =
 <!-- detail: 1 -->
 ## In laboratorio
 
-**Laboratorio 120: `./netlab run 120-tcp-handshake`**
+**Laboratorio 120: `./hoplab run 120-tcp-handshake`**
 
 - Apri la vista Sequenza (`s`) a dettaglio 2: SYN, SYN+ACK, ACK, tre segmenti di dati, i loro ACK, FIN nelle due direzioni. Nella vista Pacchetti (`p`) premi Invio su ciascuno e leggi Seq, Ack, flag e Win.
 - A 6 s un SYN verso la porta 81 riceve RST: `connessione rifiutata`.
-- Prevedi, poi prova: `./netlab run 120-tcp-handshake bytes=20000 iw=2`. Quanti segmenti sono in volo nel primo giro, e nel secondo? Poi `loss=0.1`: trova una ritrasmissione e stabilisci se è stata rapida o per timeout.
+- Prevedi, poi prova: `./hoplab run 120-tcp-handshake bytes=20000 iw=2`. Quanti segmenti sono in volo nel primo giro, e nel secondo? Poi `loss=0.1`: trova una ritrasmissione e stabilisci se è stata rapida o per timeout.
 
-**Laboratorio 220: `./netlab run 220-tcp-loss`**
+**Laboratorio 220: `./hoplab run 220-tcp-loss`**
 
 - Seleziona h1 e apri la sua scheda `tcp`: srtt, rto, cwnd, ssthresh e i contatori di fast retransmit e timeout.
 - Nel registro a dettaglio 2 cerca `3 ACK duplicati: fast retransmit` e `timeout di ritrasmissione (RTO ...)`. Apri i Grafici (`g`) per l'RTT e la finestra.
 - Nella vista Pacchetti trova un gruppo di ACK con lo stesso numero di Ack seguito dal segmento ritrasmesso.
-- Prevedi, poi prova: `./netlab run 220-tcp-loss loss=0.2`. Quale tipo di riparazione domina ora, e perché? Cerca valori di RTO di 1 s, 2 s, 4 s: da dove vengono?
-- Prevedi, poi prova: `./netlab run 220-tcp-loss delay=100ms`. Stima l'RTT e l'RTO dopo il primo campione prima di guardare.
+- Prevedi, poi prova: `./hoplab run 220-tcp-loss loss=0.2`. Quale tipo di riparazione domina ora, e perché? Cerca valori di RTO di 1 s, 2 s, 4 s: da dove vengono?
+- Prevedi, poi prova: `./hoplab run 220-tcp-loss delay=100ms`. Stima l'RTT e l'RTO dopo il primo campione prima di guardare.
 
-**Laboratorio 221: `./netlab run 221-tcp-flow-control`**
+**Laboratorio 221: `./hoplab run 221-tcp-flow-control`**
 
 - Nella vista Pacchetti osserva il campo Win degli ACK di h2 scendere a 0 in circa 50 ms. Nel registro: `il ricevitore annuncia finestra 0`, poi ogni 500 ms `sonda a finestra zero`.
 - Alla fine confronta il goodput con `readrate`, e nota le 0 ritrasmissioni: non si è perso nulla.
-- Prevedi, poi prova: `./netlab run 221-tcp-flow-control rwnd=32000`. Il trasferimento finisce prima? Come cambia il numero di sonde?
-- Prevedi, poi prova: `./netlab run 221-tcp-flow-control readrate=64k`. Calcola prima la durata.
+- Prevedi, poi prova: `./hoplab run 221-tcp-flow-control rwnd=32000`. Il trasferimento finisce prima? Come cambia il numero di sonde?
+- Prevedi, poi prova: `./hoplab run 221-tcp-flow-control readrate=64k`. Calcola prima la durata.
 
 ## Verifica
 

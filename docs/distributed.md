@@ -4,9 +4,9 @@ The same scenario file can run in three ways:
 
 | Command | What this process simulates | Links |
 |---|---|---|
-| `netlab run FILE` | every node | in memory |
-| `netlab node FILE a,b` | only the nodes listed | links to nodes hosted elsewhere become UDP tunnels |
-| `netlab monitor FILE` | no node | none: it displays what the node processes report |
+| `hoplab run FILE` | every node | in memory |
+| `hoplab node FILE a,b` | only the nodes listed | links to nodes hosted elsewhere become UDP tunnels |
+| `hoplab monitor FILE` | no node | none: it displays what the node processes report |
 
 In the distributed forms each node (or group of nodes) has its own window,
 its own interface and its own clock, like a real computer; the emulated
@@ -29,13 +29,13 @@ neighbour is in the same process.
 ## Tiled windows on one machine
 
 ```
-netlab windows 101-ping
-netlab windows 230-rip-convergence --nodes r1,r3
-netlab windows 320-tcp-congestion cc=cubic --speed 0.05
-netlab windows 101-ping --mode print
+hoplab windows 101-ping
+hoplab windows 230-rip-convergence --nodes r1,r3
+hoplab windows 320-tcp-congestion cc=cubic --speed 0.05
+hoplab windows 101-ping --mode print
 ```
 
-`netlab windows` starts one lab as several processes on this machine and
+`hoplab windows` starts one lab as several processes on this machine and
 arranges them in tiled panes. From the menu: launch form → *Run in* → *tiled
 windows*.
 
@@ -43,10 +43,10 @@ windows*.
   of the file, up to five. `--nodes a,b,c` chooses them explicitly.
 - **The first pane** shows the whole network. If some nodes have no pane of
   their own (switches, nodes beyond the fifth, nodes not named in
-  `--nodes`), the first pane is a *hub*: `netlab node FILE rest... --hub`,
+  `--nodes`), the first pane is a *hub*: `hoplab node FILE rest... --hub`,
   which simulates those nodes and also collects the reports of the others.
-  If every node has a pane, the first pane is a plain `netlab monitor`.
-- **The other panes** each run `netlab node FILE NAME --monitor
+  If every node has a pane, the first pane is a plain `hoplab monitor`.
+- **The other panes** each run `hoplab node FILE NAME --monitor
   127.0.0.1:PORT` for one node.
 - **Ports.** A base port is derived from the process id
   (`20000 + (pid mod 1000) × 40`) so that several tiled labs can run at the
@@ -60,7 +60,7 @@ windows*.
 |---|---|
 | `auto` (default) | `tmux` when already inside tmux; otherwise `kitty` if a graphical session and kitty are available; otherwise `tmux` if installed; otherwise `print`. |
 | `kitty` | A new maximised kitty window: the network on the left, the node panes on the right. |
-| `tmux` | A new window in the current tmux session, or a new session `netlab-PID` that is attached at once (with the mouse enabled). |
+| `tmux` | A new window in the current tmux session, or a new session `hoplab-PID` that is attached at once (with the mouse enabled). |
 | `print` | Only prints the commands, one per pane, for you to run in your own terminals (the first one first). |
 
 Each pane is an ordinary lab interface: quit each with `q`, or close the
@@ -70,13 +70,13 @@ window.
 
 The quick way is the menu. Choose a lab in the catalog, set *Run in* to
 *several machines*, and fill in the form: one address per node (the same
-address for nodes that share a machine) and the address of the monitor. netlab
+address for nodes that share a machine) and the address of the monitor. hoplab
 then
 
 1. writes a copy of the scenario, `dist-NAME.nl`, in
-   `~/.local/share/netlab/scenarios/`, with one `place` line per node
+   `~/.local/share/hoplab/scenarios/`, with one `place` line per node
    (ports 47000, 47001, ...) and a `monitor` line (port 46999);
-2. prints the command to type on each machine (the output of `netlab plan`).
+2. prints the command to type on each machine (the output of `hoplab plan`).
 
 By hand it is the same three steps:
 
@@ -89,37 +89,37 @@ place h2 192.168.1.22
 monitor 192.168.1.20
 ```
 
-**2. Copy netlab and the scenario file to every machine.** The file must be
+**2. Copy hoplab and the scenario file to every machine.** The file must be
 identical everywhere, and so must any `name=value` parameters given on the
 command line: nodes, interfaces and links are identified by their position
 in the file, and addresses assigned by `auto` are computed independently by
 each process.
 
-**3. Start the processes.** `netlab plan FILE` prints what to run:
+**3. Start the processes.** `hoplab plan FILE` prints what to run:
 
 ```
-$ netlab plan my-lab.nl
-# Copy netlab and the scenario file to every machine, then run:
+$ hoplab plan my-lab.nl
+# Copy hoplab and the scenario file to every machine, then run:
 
-  [192.168.1.20]  netlab node my-lab.nl h1
-  [192.168.1.21]  netlab node my-lab.nl r1
-  [192.168.1.22]  netlab node my-lab.nl h2
+  [192.168.1.20]  hoplab node my-lab.nl h1
+  [192.168.1.21]  hoplab node my-lab.nl r1
+  [192.168.1.22]  hoplab node my-lab.nl h2
 
 # and, on the machine named in the `monitor` line:
-  netlab monitor my-lab.nl
+  hoplab monitor my-lab.nl
 ```
 
 Nodes placed on the same machine can share one process:
-`netlab node my-lab.nl r1,r2,s1`. The processes can be started in any order: they wait for one another
+`hoplab node my-lab.nl r1,r2,s1`. The processes can be started in any order: they wait for one another
 (see [The start-up rendezvous](#the-start-up-rendezvous)). Give every
 process the same `--speed`.
 
 ## The commands
 
 ```
-netlab node SCENARIO NODE[,NODE...] [name=value ...] [options]
-netlab monitor SCENARIO [name=value ...] [options]
-netlab plan SCENARIO
+hoplab node SCENARIO NODE[,NODE...] [name=value ...] [options]
+hoplab monitor SCENARIO [name=value ...] [options]
+hoplab plan SCENARIO
 ```
 
 | Option | Applies to | Meaning |
@@ -164,7 +164,7 @@ monitor HOST[:PORT]
 The *index* of a node is the position of its `node` line in the file,
 counting from 0. `set baseport N` in the file changes the base port for
 everybody (unless `--baseport` is given). Both directives are ignored by
-`netlab run`, so a file with `place` lines still works as an ordinary lab.
+`hoplab run`, so a file with `place` lines still works as an ordinary lab.
 
 A process sends frames for a remote node to the `HOST:PORT` of its `place`
 line. A node with no `place` line is assumed to be on `127.0.0.1`, which is
@@ -203,7 +203,7 @@ and the monitor 46999.
 
 ## Time scale
 
-In `netlab run` virtual time is driven only by events, can skip idle
+In `hoplab run` virtual time is driven only by events, can skip idle
 periods and can be paused. In a distributed lab that is impossible: each
 process advances its own virtual clock from its own real clock,
 
@@ -213,11 +213,11 @@ and the processes stay aligned only because they start together and use the
 **same speed**. Therefore:
 
 - Pass the same `--speed X` to every process (or put `set speed X` in the
-  scenario). `netlab windows` does it for you, choosing a slow-motion speed
+  scenario). `hoplab windows` does it for you, choosing a slow-motion speed
   from the link delays and bandwidths (never below 0.02) unless you give
   `--speed`.
-- `netlab node` and `netlab monitor` do **not** choose a slow-motion speed
-  automatically as `netlab run` does: without `--speed` they run at 1×, real
+- `hoplab node` and `hoplab monitor` do **not** choose a slow-motion speed
+  automatically as `hoplab run` does: without `--speed` they run at 1×, real
   time.
 - There is no automatic skipping of idle time.
 - The real network adds its own latency to every emulated link, multiplied
@@ -242,8 +242,8 @@ when the monitor answers with a *start* message.
 
 Who answers, and when:
 
-- The collector — a **monitor** (`netlab monitor`) or a **hub**
-  (`netlab node ... --hub`, the first pane of `netlab windows` when it also
+- The collector — a **monitor** (`hoplab monitor`) or a **hub**
+  (`hoplab node ... --hub`, the first pane of `hoplab windows` when it also
   hosts nodes) — holds its own clock too, shows `◷ waiting for: h1 r2 ...`
   with the names of the nodes it has not heard yet, and sends *start* to
   everybody at the moment the last one says hello. This is a true
@@ -335,17 +335,17 @@ when the file and the parameters are the same.
   links whose two ends are in the same process.
 - **Underlying loss is invisible.** A tunnel datagram dropped by the real
   network is a lost frame that no log reports. On a LAN this is rare.
-- **Same build everywhere.** Processes must run the same version of netlab
+- **Same build everywhere.** Processes must run the same version of hoplab
   and the same scenario file with the same parameters.
 - **Expectations are partial.** Each process checks only the `expect` lines
-  about its own nodes; nothing gives a global verdict. `netlab check` always
-  uses `netlab run`.
+  about its own nodes; nothing gives a global verdict. `hoplab check` always
+  uses `hoplab run`.
 
 ## Troubleshooting
 
 | Symptom | Likely cause |
 |---|---|
-| `cannot listen on UDP port N` | Another netlab (or an earlier one still running) uses the port. Choose another `--baseport` for all processes. |
+| `cannot listen on UDP port N` | Another hoplab (or an earlier one still running) uses the port. Choose another `--baseport` for all processes. |
 | A node window stays on *waiting for the monitor* | No monitor is running at the address of the `monitor` line or `--monitor`, the monitor's port (baseport − 1) is filtered, or the base ports differ. Press Enter to start anyway. |
 | The hub stays on *waiting for: ...* | The processes of those nodes are not running or cannot reach the hub. |
 | Frames leave a node but never arrive | Missing or wrong `place` line (the default is `127.0.0.1`), or a firewall blocks the destination node's UDP port. |

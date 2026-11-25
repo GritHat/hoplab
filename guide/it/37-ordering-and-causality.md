@@ -64,7 +64,7 @@ totale   round aggiuntivi o un leader; equivalente al consenso
 
 **Limiti dell'astrazione.** Cheriton e Skeen hanno sostenuto che la causalità a livello di messaggi non cattura né le dipendenze semantiche che passano fuori dal sistema (una base di dati condivisa, una persona), né vincoli del tipo "questi due aggiornamenti insieme", e che code di attesa e vettori non scalano; spesso l'applicazione può ordinare ciò che conta con numeri di versione propri. La replica (Birman) è che farlo bene una volta in uno strato è più sicuro. Entrambe le posizioni sopravvivono: i toolkit di comunicazione di gruppo (Isis, Horus, Spread) offrivano la virtual synchrony con ordine causale e totale; i sistemi moderni prendono per lo più l'ordine totale da un log replicato (Raft, Zab, le partizioni di Kafka) e la causalità da version vector a livello di dati o dai CRDT.
 
-**In netlab.** I vettori del modulo `clock` contano ogni evento, ricezioni comprese, quindi i vettori a schermo sono più grandi dei vettori dei consegnati `D` usati sopra; il controllo delle dipendenze è lo stesso. `order=total` è la costruzione di Lamport: si fonda su canali FIFO e sul fatto che ogni processo sia attivo, e non gestisce i guasti. `order=none` consegna all'arrivo e conta a posteriori le violazioni di causalità.
+**In hoplab.** I vettori del modulo `clock` contano ogni evento, ricezioni comprese, quindi i vettori a schermo sono più grandi dei vettori dei consegnati `D` usati sopra; il controllo delle dipendenze è lo stesso. `order=total` è la costruzione di Lamport: si fonda su canali FIFO e sul fatto che ogni processo sia attivo, e non gestisce i guasti. `order=none` consegna all'arrivo e conta a posteriori le violazioni di causalità.
 
 **Letteratura primaria.**
 
@@ -81,13 +81,13 @@ totale   round aggiuntivi o un leader; equivalente al consenso
 <!-- detail: 1 -->
 ## In laboratorio
 
-`./netlab run 390-causal-broadcast`. Tre processi a triangolo; il collegamento n1–n3 è lento (150 ms). La stessa scena viene recitata due volte. Selezionare n3 (`n`), aprire la scheda `clock` e premere `s` per il diagramma di sequenza: le frecce che si incrociano raccontano tutto. Usare il log a dettaglio `2` per leggere i vettori.
+`./hoplab run 390-causal-broadcast`. Tre processi a triangolo; il collegamento n1–n3 è lento (150 ms). La stessa scena viene recitata due volte. Selezionare n3 (`n`), aprire la scheda `clock` e premere `s` per il diagramma di sequenza: le frecce che si incrociano raccontano tutto. Usare il log a dettaglio `2` per leggere i vettori.
 
 **Primo round (1 s), nessun ordinamento.** n1 fa il broadcast di "what time is it?", n2 lo consegna e fa il broadcast di "half past nine". In n3 la risposta arriva per prima e viene consegnata subito: il log stampa "causalità violata … dipende da un messaggio non ancora consegnato, di n1", e `clock.violations` diventa 1. Prima di guardare, scrivere il vettore portato da ciascun messaggio e stabilire per confronto che la domanda è accaduta prima della risposta.
 
 **Secondo round (4 s), ordine causale.** Stesso scambio. In n3 il log mostra "trattenuto «ten o'clock» da n2: un messaggio da cui dipende non è ancora arrivato", poi la domanda viene consegnata e segue subito "esce dalla coda di attesa". Misurare il tempo che la risposta trascorre in coda (circa 40 ms: la differenza fra i due percorsi) e notare `clock.heldback` = 1.
 
-**Esperimento 1: FIFO non basta.** `./netlab run 390-causal-broadcast order2=fifo`. Prevedere l'esito prima di eseguire: i due messaggi hanno mittenti diversi, quindi FIFO non impone nulla fra loro e n3 viola di nuovo la causalità (`clock.violations` = 2: la verifica `causality` del laboratorio si aspetta proprio questo per `none` e `fifo`, e 1 per `causal` e `total`).
+**Esperimento 1: FIFO non basta.** `./hoplab run 390-causal-broadcast order2=fifo`. Prevedere l'esito prima di eseguire: i due messaggi hanno mittenti diversi, quindi FIFO non impone nulla fra loro e n3 viola di nuovo la causalità (`clock.violations` = 2: la verifica `causality` del laboratorio si aspetta proprio questo per `none` e `fifo`, e 1 per `causal` e `total`).
 
 **Esperimento 2: il prezzo dell'ordine totale.** `order2=total`. Ora ogni processo accoda ciascun messaggio ("in coda … in attesa del riscontro di tutti i processi") e lo consegna solo quando tutti l'hanno riscontrato. Misurare quando n1 consegna la propria domanda: circa 300 ms dopo l'invio, un'andata e ritorno sul collegamento lento, contro 0 ms di prima. Tutti e tre consegnano nello stesso ordine. Poi aumentare `slow=500ms` e prevedere i nuovi tempi di consegna per l'ordine causale e per quello totale.
 

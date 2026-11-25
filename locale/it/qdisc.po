@@ -1,4 +1,4 @@
-# Italian translation of netlab: qdisc
+# Italian translation of hoplab: qdisc
 msgid ""
 msgstr ""
 "Language: it\n"

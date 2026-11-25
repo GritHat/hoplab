@@ -1,5 +1,5 @@
 /*
- * tui.h - Terminal user interface for the RDT demos (and for netlab).
+ * tui.h - Terminal user interface for the RDT demos (and for hoplab).
  *
  * It draws on a cell buffer and sends only the changed cells to the terminal
  * (no flicker). It uses 256 ANSI colours and one-column Unicode characters

@@ -1,4 +1,4 @@
-# Italian translation of netlab: medium access laboratory
+# Italian translation of hoplab: medium access laboratory
 msgid ""
 msgstr ""
 "Language: it\n"

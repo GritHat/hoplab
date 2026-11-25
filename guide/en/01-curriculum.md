@@ -2,7 +2,7 @@
 <!-- labs: 100-two-hosts, 101-ping, 120-tcp-handshake, 200-static-routing, 220-tcp-loss, 320-tcp-congestion, 380-raft-election, 420-tcp-fairness -->
 # The curriculum
 
-The labs of netlab form a study programme in four tracks of growing difficulty. Each track is a level in the catalog and in this guide, and inside a track the labs go from the bottom of the protocol stack upwards.
+The labs of hoplab form a study programme in four tracks of growing difficulty. Each track is a level in the catalog and in this guide, and inside a track the labs go from the bottom of the protocol stack upwards.
 
 - **Foundations** is the first contact. No prerequisites: if you know what an IP address looks like, you can start. Frames, addresses, ping, a TCP connection, a web page, a name lookup, and the first ideas of the link layer.
 - **Core** is the material of an undergraduate networking course: routing tables and routing protocols, TCP reliability and flow control, DNS and DHCP in depth, NAT, switching, VLANs, spanning tree, medium access.

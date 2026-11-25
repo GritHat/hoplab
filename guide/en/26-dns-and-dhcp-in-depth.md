@@ -45,7 +45,7 @@ DHCP runs over UDP, server port 67 and client port 68. The client has no address
 
 With a lease of L seconds the client sets **T1 = L/2** and **T2 = 7L/8**. At T1 it sends a REQUEST by unicast to its own server (*renewing*); an ACK restarts all timers. If nothing arrives by T2 it broadcasts the REQUEST to any server (*rebinding*). At L it must stop using the address and start again from DISCOVER. RELEASE gives the address back early.
 
-In lab 241 L = 10 s: h1 is bound at 1.01 s and renews at 6.01 s, 11.02 s, and so on, every 5 s. The pool has two addresses: h1 and h2 take them, and h3's DISCOVER is answered by nothing at all (`pool exhausted, no offer`); it retries every 2 s. If the server dies after a renewal at time t, the clients try at t + 5 s (T1), broadcast at t + 8 s (T2, netlab rounds down to whole seconds) and lose the address at t + 10 s.
+In lab 241 L = 10 s: h1 is bound at 1.01 s and renews at 6.01 s, 11.02 s, and so on, every 5 s. The pool has two addresses: h1 and h2 take them, and h3's DISCOVER is answered by nothing at all (`pool exhausted, no offer`); it retries every 2 s. If the server dies after a renewal at time t, the clients try at t + 5 s (T1), broadcast at t + 8 s (T2, hoplab rounds down to whole seconds) and lose the address at t + 10 s.
 
 <!-- detail: 3 -->
 ## In depth: DNS
@@ -56,13 +56,13 @@ In lab 241 L = 10 s: h1 is bound at 1.01 s and renews at 6.01 s, 11.02 s, and so
 
 **The real system.** There are 13 root server names, each an anycast group of hundreds of machines. Resolvers measure servers and prefer the fast ones, and query minimisation (RFC 9156) reveals to each server only the labels it needs. DNS over TLS (RFC 7858) and over HTTPS (RFC 8484) hide the queries between stub and resolver. Reference: RFC 1034 and RFC 1035 (Mockapetris, 1987).
 
-**netlab simplifies:** class IN only; no TCP, EDNS or DNSSEC; delegations must have glue.
+**hoplab simplifies:** class IN only; no TCP, EDNS or DNSSEC; delegations must have glue.
 
 ## In depth: DHCP
 
-**Relays.** Broadcasts do not cross routers. A relay agent on each subnet forwards DISCOVERs by unicast to a central server and writes its own address in the *giaddr* field, which tells the server which pool to use. netlab's server serves only its own subnet.
+**Relays.** Broadcasts do not cross routers. A relay agent on each subnet forwards DISCOVERs by unicast to a central server and writes its own address in the *giaddr* field, which tells the server which pool to use. hoplab's server serves only its own subnet.
 
-**State.** A real server stores leases on disk so that a restart does not hand out addresses still in use, and many probe an address (ICMP echo) before offering it; clients check with ARP (RFC 5227) and answer DECLINE on a conflict. A client that reboots asks for its previous address directly (INIT-REBOOT). The netlab server keeps leases in memory only.
+**State.** A real server stores leases on disk so that a restart does not hand out addresses still in use, and many probe an address (ICMP echo) before offering it; clients check with ARP (RFC 5227) and answer DECLINE on a conflict. A client that reboots asks for its previous address directly (INIT-REBOOT). The hoplab server keeps leases in memory only.
 
 **Security.** DHCP has no authentication. A rogue server can answer faster than the real one and make itself gateway and DNS for the victims; a client forging many hardware addresses can exhaust the pool (starvation). Switches defend with DHCP snooping: server messages are accepted only from trusted ports.
 
@@ -71,7 +71,7 @@ In lab 241 L = 10 s: h1 is bound at 1.01 s and renews at 6.01 s, 11.02 s, and so
 <!-- detail: 1 -->
 ## In the lab
 
-**Lab 240: `./netlab run 240-dns-hierarchy`**
+**Lab 240: `./hoplab run 240-dns-hierarchy`**
 
 - At 1 s follow the log at detail 2: the resolver r asks root, com, auth in turn. On the map the queries leave r on three different links.
 - In the packets view (`p`) press Enter on the root's response: answer count 0, NS in the authority section, glue in the additional section. Compare with the final answer from auth (AA flag, one answer).
@@ -80,14 +80,14 @@ In lab 241 L = 10 s: h1 is bound at 1.01 s and renews at 6.01 s, 11.02 s, and so
 - Predict, then try: `:h1 dig example.com server=r`. How many upstream queries, and to whom? Then `:h1 dig mail.example.com server=r` twice: what is the answer, and what changes the second time?
 - Predict, then try: `:r dns flush` and then `:h1 dig www.example.com server=r`. How many upstream queries now? Then `:h1 dig example.com type=NS server=r` and read the TTL.
 
-**Lab 241: `./netlab run 241-dhcp-leases`**
+**Lab 241: `./hoplab run 241-dhcp-leases`**
 
 - Follow DISCOVER, OFFER, REQUEST, ACK for h1 at 1 s; open each in the packets view and find xid, yiaddr and options 53, 51 and 54. Note the source and destination addresses of the DISCOVER.
 - At 3 s h3 finds the pool exhausted. At 6 s h1 reaches T1 and renews with a unicast REQUEST. Open the `dhcp` tab of s to see the lease table.
 - Predict, then try: `:h1 dhcp release`. What happens to h3, and within how many seconds?
 - At 14 s the lab crashes the server for 26 seconds. Before it happens, write down when h1 will log T1, T2 and `lease expired`, then check. At 40 s the server returns with its lease table (it is kept on stable storage, like the lease file of a real server) and the clients, which have been sending DISCOVER all along, are served again: see who gets the two addresses this time, and explain why it need not be the same two hosts.
-- Predict, then try: `./netlab run 241-dhcp-leases lease=60`. Does any client notice the outage?
-- Try also `./netlab run 241-dhcp-leases lease=4`: at what times does h1 renew?
+- Predict, then try: `./hoplab run 241-dhcp-leases lease=60`. Does any client notice the outage?
+- Try also `./hoplab run 241-dhcp-leases lease=4`: at what times does h1 renew?
 
 ## Check yourself
 

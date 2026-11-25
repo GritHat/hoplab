@@ -52,7 +52,7 @@ Health checks in lab 252 are ICMP echoes every second; a server is removed after
 <!-- detail: 3 -->
 ## In depth: NAT
 
-**Behaviours** (RFC 4787 for UDP, RFC 5382 for TCP, RFC 5508 for ICMP). *Mapping*: an endpoint-independent NAT uses the same public port for everything an inside socket sends; a symmetric one allocates a new port per destination. *Filtering*: who may send to a mapped port: anyone (full cone), only addresses already contacted, only address and port pairs already contacted (port-restricted, netlab's default), or only the mapping's destination. These properties decide whether two hosts behind NATs can connect directly by **hole punching**: both learn their public endpoints from a server (STUN, RFC 8489), send to each other at the same time, and each NAT takes the peer's packet for an answer. When this fails a relay is needed (TURN, RFC 8656); ICE (RFC 8445) tries all options.
+**Behaviours** (RFC 4787 for UDP, RFC 5382 for TCP, RFC 5508 for ICMP). *Mapping*: an endpoint-independent NAT uses the same public port for everything an inside socket sends; a symmetric one allocates a new port per destination. *Filtering*: who may send to a mapped port: anyone (full cone), only addresses already contacted, only address and port pairs already contacted (port-restricted, hoplab's default), or only the mapping's destination. These properties decide whether two hosts behind NATs can connect directly by **hole punching**: both learn their public endpoints from a server (STUN, RFC 8489), send to each other at the same time, and each NAT takes the peer's packet for an answer. When this fails a relay is needed (TURN, RFC 8656); ICE (RFC 8445) tries all options.
 
 **Limits.** One public address offers about 64000 ports per protocol, a ceiling on concurrent flows. Carrier-grade NAT shares one address among many customers (shared range 100.64.0.0/10, RFC 6598), adds a second translation, and makes it hard to attribute traffic to a subscriber. Typical timeouts: 30 s to a few minutes for UDP, hours for established TCP.
 
@@ -68,31 +68,31 @@ Health checks in lab 252 are ICMP echoes every second; a server is removed after
 
 **Layer 7.** A proxy that terminates TCP and TLS can route by URL or cookie, at a higher cost per connection.
 
-**netlab simplifies:** the labs use UDP request/response flows, and a flow ends after `life` requests rather than with a FIN.
+**hoplab simplifies:** the labs use UDP request/response flows, and a flow ends after `life` requests rather than with a FIN.
 
 <!-- detail: 1 -->
 ## In the lab
 
-**Lab 250: `./netlab run 250-nat-basics`**
+**Lab 250: `./hoplab run 250-nat-basics`**
 
 - Before 4 s there is no NAT: the server answers, and isp logs `no route to 192.168.1.10`. Notice who receives the ICMP error.
 - At 5 s open the packets view (`p`) and compare the same echo request on the link sw-r1 and on r1-isp: source address, identifier, checksums. Select r1 and open its `nat` tab.
 - At 9 s read the two UDP mappings; at 12 s open the ICMP time exceeded from isp before and after r1.
-- Predict, then try: `./netlab run 250-nat-basics preserve=1`. Which public ports do h1 and h2 get at 9 s?
-- Predict, then try: `./netlab run 250-nat-basics timeout=500ms`. How many mappings does the three-packet ping at 5 s create, and why? Then `type=symmetric` and compare the port numbers.
+- Predict, then try: `./hoplab run 250-nat-basics preserve=1`. Which public ports do h1 and h2 get at 9 s?
+- Predict, then try: `./hoplab run 250-nat-basics timeout=500ms`. How many mappings does the three-packet ping at 5 s create, and why? Then `type=symmetric` and compare the port numbers.
 
-**Lab 251: `./netlab run 251-port-forwarding`**
+**Lab 251: `./hoplab run 251-port-forwarding`**
 
 - At 1 s r1 logs `no mapping, nothing inside to deliver it to`; at 4 s the rule is added; at 5 s the datagram reaches web. In the packets view compare its destination before and after r1, and the source of the reply before and after r1.
 - At 7 s h1 tries the public address from inside and fails.
-- Predict, then try: `./netlab run 251-port-forwarding hairpin=1`. Open the packet web receives at 7 s: what is its source address, and why must the NAT rewrite it?
+- Predict, then try: `./hoplab run 251-port-forwarding hairpin=1`. Open the packet web receives at 7 s: what is its source address, and why must the NAT rewrite it?
 
-**Lab 252: `./netlab run 252-load-balancer`**
+**Lab 252: `./hoplab run 252-load-balancer`**
 
 - Select lb and open its `lb` tab: pool, flow table, hits. In the log `new flow ... → s2 (rr)` cycles s2, s3, s1. Select c1 for the tally of who answered.
 - At 2 s s2 crashes; at 4 s `health check failed, taken out of the pool` and `10/30 flows lost their server`; at 9 s s2 returns.
-- Predict, then try: `./netlab run 252-load-balancer check=250ms`. When is s2 removed and how many requests are lost? Then `fall=1` with the default interval.
-- Predict, then try: `./netlab run 252-load-balancer algo=leastconn`. After 9 s, how does s2's share of new flows compare with round robin, and why?
+- Predict, then try: `./hoplab run 252-load-balancer check=250ms`. When is s2 removed and how many requests are lost? Then `fall=1` with the default interval.
+- Predict, then try: `./hoplab run 252-load-balancer algo=leastconn`. After 9 s, how does s2's share of new flows compare with round robin, and why?
 
 ## Check yourself
 
