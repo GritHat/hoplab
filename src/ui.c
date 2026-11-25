@@ -402,8 +402,13 @@ static void draw_map(int x, int y, int w, int h)
         tui_print(cx - len / 2 - 2, cy, len + 4, st, " %s %s ", node_glyph(n), n->name);
         if (n->role[0])
             tui_print(cx + len - len / 2 + 2, cy, 12, TS(231, 60, TA_BOLD), " %s ", n->role);
-        if (W.detail >= 2 && n->kind != NL_SWITCH && nl_node_ip(n))
+        if (W.detail >= 2 && n->kind != NL_SWITCH && nl_node_ip(n)) {
             tui_print(cx - 6, cy + 1, 16, ST(sel ? C_TEXT : C_DIM), "%s", nl_ip_str(nl_node_ip(n)));
+        } else if (W.detail >= 2 && n->kind != NL_SWITCH && nl_ip6_enabled()) {
+            nl_ip6 a6;
+            if (nl_resolve6(n->name, &a6))
+                tui_print(cx - 8, cy + 1, 24, ST(sel ? C_TEXT : C_DIM), "%s", nl_ip6_str(&a6));
+        }
         if (!n->local && W.mode == NL_MODE_NODE)
             tui_print(cx - 4, cy - 1, 12, ST(C_FAINT), "%s", _("(remote)"));
     }
@@ -430,7 +435,7 @@ static int node_tabs(const nl_node *n, const char **names, int max)
 
 static int tab_node(const nl_node *n, int x, int y, int w, int h)
 {
-    int row = 0, i;
+    int row = 0, i, k;
 
     tui_print(x, y + row++, w, ST(C_TEXT), "%s%s " T_BOLD "%s" T_RESET "  " T_DIM "%s%s%s",
               n->kind == NL_ROUTER ? T_ACK : n->kind == NL_SWITCH ? T_WARN : T_DATA, node_glyph(n), n->name,
@@ -456,6 +461,16 @@ static int tab_node(const nl_node *n, int x, int y, int w, int h)
         if (W.detail >= 2 && row < h)
             tui_print(x, y + row++, w, ST(C_DIM), "        %s   rx %llu  tx %llu", nl_mac_str(f->mac),
                       (unsigned long long)f->rx, (unsigned long long)f->tx);
+        for (k = 0; k < f->nip6 && row < h; k++) {
+            if (W.detail < 2 && (nl_ip6_linklocal(&f->ip6[k].a) || nl_node_ip(n)))
+                continue;               /* at detail 1 only what is needed to recognise the node */
+            tui_print(x, y + row++, w, ST(C_TEXT), "        %s%s/%d" T_RESET " %s%s%s",
+                      nl_ip6_linklocal(&f->ip6[k].a) ? T_DIM : T_BOLD, nl_ip6_str(&f->ip6[k].a), f->ip6[k].plen,
+                      f->ip6[k].state == NL_A6_TENTATIVE ? T_WARN : f->ip6[k].state == NL_A6_DUPLICATE ? T_ERR : T_DIM,
+                      f->ip6[k].state == NL_A6_TENTATIVE ? _("tentative (DAD)")
+                      : f->ip6[k].state == NL_A6_DUPLICATE ? _("DUPLICATE") : "",
+                      f->ip6[k].autoconf ? " SLAAC" : "");
+        }
     }
     if (W.detail >= 2 && n->ncnt && row + 1 < h) {
         row++;
@@ -501,6 +516,24 @@ static int tab_routes(const nl_node *n, int x, int y, int w, int h)
                   r->proto == NL_RT_CONNECTED ? T_DIM : r->proto == NL_RT_STATIC ? T_INFO : T_ACK,
                   nl_route_proto_name(r->proto));
     }
+    if (n->nrt6 && row + 1 < h) {
+        row++;
+        tui_print(x, y + row++, w, STB(C_DIM), "IPv6");
+    }
+    for (i = 0; i < n->nrt6 && row < h; i++) {
+        const nl_route6 *r = &n->rt6[i];
+        char dst[56];
+        int usable = nl_if_usable(n, r->ifx) && !(r->expire && r->expire <= W.now);
+
+        if (r->plen == 0)
+            snprintf(dst, sizeof(dst), "default");
+        else
+            snprintf(dst, sizeof(dst), "%s/%d", nl_ip6_str(&r->dst), r->plen);
+        tui_print(x, y + row++, w, ST(usable ? C_TEXT : C_FAINT), "%-20s %-5s %3d %s%-9s" T_RESET " %s", dst,
+                  n->ifc[r->ifx].name, r->metric,
+                  r->proto == NL_RT_CONNECTED ? T_DIM : r->proto == NL_RT_STATIC ? T_INFO : T_ACK,
+                  nl_route_proto_name(r->proto), nl_ip6_zero(&r->gw) ? "" : nl_ip6_str(&r->gw));
+    }
     return row;
 }
 
@@ -523,6 +556,29 @@ static int tab_arp(const nl_node *n, int x, int y, int w, int h)
     }
     if (row == 1)
         tui_print(x, y + row++, w, ST(C_DIM), "%s", _("(empty: no neighbor resolved yet)"));
+    if (nl_ip6_enabled() && row + 2 < h) {
+        static const char *const st[] = { "", N_("incomplete"), N_("reachable"), N_("stale"), N_("probe") };
+        int shown = 0;
+
+        row++;
+        tui_print(x, y + row++, w, STB(C_DIM), "%s", _("IPv6 neighbors (NDP)"));
+        for (i = 0; i < (int)(sizeof(n->nbr) / sizeof(n->nbr[0])) && row < h; i++) {
+            const nl_nbr *e = &n->nbr[i];
+            int state = e->state;
+
+            if (!state)
+                continue;
+            if (state == NL_NBR_REACHABLE && W.now - e->confirmed > NL_SEC(30))
+                state = NL_NBR_STALE;
+            shown++;
+            tui_print(x, y + row++, w, ST(C_TEXT), "%-26s %-18s %s%s%s", nl_ip6_str(&e->ip),
+                      state == NL_NBR_INCOMPLETE ? "?" : nl_mac_str(e->mac),
+                      state == NL_NBR_REACHABLE ? T_OK : state == NL_NBR_INCOMPLETE ? T_WARN : T_DIM, _(st[state]),
+                      e->router ? " R" : "");
+        }
+        if (!shown && row < h)
+            tui_print(x, y + row++, w, ST(C_DIM), "%s", _("(empty: no neighbor resolved yet)"));
+    }
     return row;
 }
 

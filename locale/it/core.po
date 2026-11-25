@@ -261,13 +261,6 @@ msgstr "risposte"
 msgid "ping — is a host reachable, and how far is it?"
 msgstr "ping — un host è raggiungibile, e quanto è lontano?"
 
-#: src/apps.c:200
-msgid ""
-"run NODE ping DEST [count=4] [interval=1s] [size=56] [ttl=64] [df=1]\n"
-"  DEST is an address or a node name; count=0 pings forever."
-msgstr ""
-"run NODO ping DEST [count=4] [interval=1s] [size=56] [ttl=64] [df=1]\n"
-"  DEST è un indirizzo o il nome di un nodo; con count=0 il ping non si ferma."
 
 #: src/apps.c:202
 msgid "ping sends ICMP Echo Request messages and waits for the matching Echo Reply. Each request carries an identifier and a sequence number, so the sender can match replies, measure the round-trip time and notice losses. Routers on the path only forward the packets; if one cannot, it answers with an ICMP error (destination unreachable, time exceeded) that ping reports."
@@ -301,9 +294,6 @@ msgstr "verso"
 msgid "traceroute — which routers does a packet cross?"
 msgstr "traceroute — quali router attraversa un pacchetto?"
 
-#: src/apps.c:358
-msgid "run NODE traceroute DEST [maxhops=16]"
-msgstr "run NODO traceroute DEST [maxhops=16]"
 
 #: src/apps.c:359
 msgid "traceroute sends probes with TTL 1, 2, 3, ... Every router decrements the TTL; the one that brings it to zero discards the packet and reports back with an ICMP Time Exceeded message, revealing its address. The probe that finally reaches the destination is answered directly, and the list of hops is complete."
@@ -345,13 +335,6 @@ msgstr "risposta"
 msgid "UDP client: send datagrams and show the answers"
 msgstr "Client UDP: invia datagrammi e mostra le risposte"
 
-#: src/apps.c:525
-msgid ""
-"run NODE udp DEST [port=7] [msg=hello] [count=1] [interval=1s] [size=N]\n"
-"  size pads the datagram to N bytes (try more than the MTU to see fragmentation)."
-msgstr ""
-"run NODO udp DEST [port=7] [msg=hello] [count=1] [interval=1s] [size=N]\n"
-"  size riempie il datagramma fino a N byte (prova oltre la MTU per vedere la frammentazione)."
 
 #: src/apps.c:564
 msgid "finished"
@@ -365,15 +348,6 @@ msgstr "datagrammi inviati"
 msgid "Constant-bit-rate UDP traffic generator"
 msgstr "Generatore di traffico UDP a bit rate costante"
 
-#: src/apps.c:634
-msgid ""
-"run NODE cbr DEST [rate=1M] [size=500] [port=9000] [duration=10s] [tos=N]\n"
-"run NODE cbr stop\n"
-"  Pair it with `run DEST sink` to measure throughput, loss and delay."
-msgstr ""
-"run NODO cbr DEST [rate=1M] [size=500] [port=9000] [duration=10s] [tos=N]\n"
-"run NODO cbr stop\n"
-"  Abbinalo a `run DEST sink` per misurare throughput, perdita e ritardo."
 
 #: src/apps.c:729
 msgid "datagrams"
@@ -456,9 +430,6 @@ msgstr "interfaccia già collegata in 'link %s %s'"
 msgid "too many links (max %d)"
 msgstr "troppi collegamenti (massimo %d)"
 
-#: src/scenario.c:200
-msgid "usage: ip NODE[:IF] A.B.C.D/LEN"
-msgstr "uso: ip NODO[:IF] A.B.C.D/LUN"
 
 #: src/scenario.c:203
 #, c-format
@@ -544,9 +515,6 @@ msgstr "uso: note TEMPO testo"
 msgid "usage: duration TIME"
 msgstr "uso: duration TEMPO"
 
-#: src/scenario.c:589
-msgid "usage: auto addr|routes|all"
-msgstr "uso: auto addr|routes|all"
 
 #: src/scenario.c:595
 msgid "usage: place NODE HOST[:PORT]"
@@ -1507,3 +1475,62 @@ msgstr "sessione tmux avviata; collegati con:"
 #: src/launch.c:180
 msgid "# Run each command in its own terminal (the first one first):"
 msgstr "# Esegui ogni comando in un terminale separato (il primo per primo):"
+
+# IPv6
+
+msgid "run NODE ping DEST [count=4] [interval=1s] [size=56] [ttl=64] [df=1] [v6=1]\n  DEST is an address or a node name; count=0 pings forever.\n  An IPv6 address, or v6=1 with a node name, pings over IPv6 (ICMPv6)."
+msgstr "run NODO ping DEST [count=4] [interval=1s] [size=56] [ttl=64] [df=1] [v6=1]\n  DEST è un indirizzo o il nome di un nodo; con count=0 il ping non si ferma.\n  Un indirizzo IPv6, oppure v6=1 con il nome di un nodo, fa ping su IPv6 (ICMPv6)."
+
+msgid "run NODE traceroute DEST [maxhops=16] [v6=1]"
+msgstr "run NODO traceroute DEST [maxhops=16] [v6=1]"
+
+msgid "run NODE udp DEST [port=7] [msg=hello] [count=1] [interval=1s] [size=N] [v6=1]\n  size pads the datagram to N bytes (try more than the MTU to see fragmentation)."
+msgstr "run NODO udp DEST [port=7] [msg=hello] [count=1] [interval=1s] [size=N] [v6=1]\n  size riempie il datagramma fino a N byte (prova oltre la MTU per vedere la frammentazione)."
+
+msgid "run NODE cbr DEST [rate=1M] [size=500] [port=9000] [duration=10s] [tos=N] [v6=1]\nrun NODE cbr stop\n  Pair it with `run DEST sink` to measure throughput, loss and delay."
+msgstr "run NODO cbr DEST [rate=1M] [size=500] [port=9000] [duration=10s] [tos=N] [v6=1]\nrun NODO cbr stop\n  Abbinalo a `run DEST sink` per misurare throughput, perdita e ritardo."
+
+msgid "usage: ip NODE[:IF] A.B.C.D/LEN | ip NODE[:IF] IPV6-ADDRESS/LEN"
+msgstr "uso: ip NODO[:IF] A.B.C.D/LUN | ip NODO[:IF] INDIRIZZO-IPV6/LEN"
+
+msgid "usage: auto addr|routes|all|addr6|routes6|all6"
+msgstr "uso: auto addr|routes|all|addr6|routes6|all6"
+
+msgid "packet too big"
+msgstr "pacchetto troppo grande"
+
+msgid "hop limit exceeded"
+msgstr "hop limit esaurito"
+
+msgid "address unreachable"
+msgstr "indirizzo irraggiungibile"
+
+msgid "no route to destination"
+msgstr "nessuna rotta verso la destinazione"
+
+msgid "too many IPv6 addresses on %s:%s (max %d)"
+msgstr "troppi indirizzi IPv6 su %s:%s (max %d)"
+
+msgid "usage: ipv6 on|off"
+msgstr "uso: ipv6 on|off"
+
+msgid "tentative (DAD)"
+msgstr "provvisorio (DAD)"
+
+msgid "DUPLICATE"
+msgstr "DUPLICATO"
+
+msgid "incomplete"
+msgstr "incompleto"
+
+msgid "reachable"
+msgstr "raggiungibile"
+
+msgid "stale"
+msgstr "da verificare"
+
+msgid "probe"
+msgstr "in verifica"
+
+msgid "IPv6 neighbors (NDP)"
+msgstr "Vicini IPv6 (NDP)"

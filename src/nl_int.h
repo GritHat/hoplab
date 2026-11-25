@@ -80,6 +80,7 @@ typedef struct nl_world {
     nl_expect expects[32];
     int      nexpects;
     int      auto_addr, auto_routes;
+    int      ip6, auto_addr6, auto_routes6;      /* the lab uses IPv6 */
     int      baseport;
     int      errors;           /* scenario errors */
     char     errmsg[300];
@@ -133,6 +134,16 @@ void     nl_mon_send_cap(const nl_cap *c);
 void nl_stack_init(nl_node *n);
 void nl_stack_rx(nl_node *n, int ifx, nl_pkt *p);             /* frame arrived; takes ownership */
 void nl_stack_node_down(nl_node *n);
+
+/* ip6.c */
+void nl_ip6_init(nl_node *n);
+void nl_ip6_start(void);                       /* after the scenario is loaded: link-local addresses, DAD, RS */
+void nl_ip6_input(nl_node *n, int ifx, nl_pkt *p);            /* takes ownership */
+void nl_ip6_node_down(nl_node *n);
+void nl_ip6_node_up(nl_node *n);
+/* stack.c: application dissectors shared with the IPv6 dissector */
+void nl_dissect_udp_payload(nl_dissect *o, uint16_t sport, uint16_t dport, const uint8_t *d, int len, int off);
+int  nl_dissect_ipproto(nl_dissect *o, uint8_t proto, const uint8_t *d, int len, int off);
 
 /* scenario.c */
 int  nl_scenario_load(const char *path, int argc, char **argv);   /* argv: key=value overrides; 0 = ok */

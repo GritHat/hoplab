@@ -189,6 +189,101 @@ static int cmd_link(const nl_args *a)
     return 0;
 }
 
+/* ---- IPv6 variants of ip / gw / route ---- */
+
+/* First global (not link-local) address of an interface, or NULL */
+static const nl_ip6 *global6(const nl_node *n, int ifx)
+{
+    int k;
+
+    for (k = 0; k < n->ifc[ifx].nip6; k++)
+        if (!nl_ip6_linklocal(&n->ifc[ifx].ip6[k].a))
+            return &n->ifc[ifx].ip6[k].a;
+    return NULL;
+}
+
+/* Interface of n whose prefix contains gw, or -1 */
+static int onlink6(const nl_node *n, const nl_ip6 *gw)
+{
+    int i, k;
+
+    for (i = 0; i < n->nif; i++)
+        for (k = 0; k < n->ifc[i].nip6; k++)
+            if (!nl_ip6_linklocal(&n->ifc[i].ip6[k].a) &&
+                nl_ip6_match(gw, &n->ifc[i].ip6[k].a, n->ifc[i].ip6[k].plen))
+                return i;
+    return -1;
+}
+
+/* Address of node `name` on a subnet shared with n; 1 = found */
+static int shared6(const nl_node *n, const char *name, nl_ip6 *out, int *ifx)
+{
+    const nl_node *r = nl_node_find(name);
+    int i, k;
+
+    for (i = 0; r && i < r->nif; i++)
+        for (k = 0; k < r->ifc[i].nip6; k++)
+            if (!nl_ip6_linklocal(&r->ifc[i].ip6[k].a) && (*ifx = onlink6(n, &r->ifc[i].ip6[k].a)) >= 0) {
+                *out = r->ifc[i].ip6[k].a;
+                return 1;
+            }
+    return 0;
+}
+
+static int cmd_ip6(nl_node *n, int ifx, const nl_ip6 *ip, int plen)
+{
+    int i;
+
+    for (i = 0; ifx < 0 && i < n->nif; i++)
+        if (!global6(n, i))
+            ifx = i;
+    if (ifx < 0)
+        return fail(_("node %s has no free interface for an address"), n->name);
+    W.ip6 = 1;
+    if (nl_if_add_addr6(n, ifx, ip, plen) != 0)
+        return fail(_("too many IPv6 addresses on %s:%s (max %d)"), n->name, n->ifc[ifx].name, NL_MAX_IP6 - 1);
+    return 0;
+}
+
+static int cmd_gw6(nl_node *n, const nl_ip6 *gw)
+{
+    int ifx = onlink6(n, gw);
+
+    if (ifx < 0)
+        return fail(_("gateway %s is not on a subnet of %s"), nl_ip6_str(gw), n->name);
+    nl_route6_set(n, &(nl_ip6){ { 0 } }, 0, gw, ifx, 1, NL_RT_STATIC);
+    return 0;
+}
+
+static int cmd_route6(nl_node *n, const nl_ip6 *dst, int plen, const char *kw, const char *arg, int del, int metric)
+{
+    nl_ip6 gw;
+    int ifx;
+
+    if (del) {
+        nl_route6_del(n, dst, plen, NL_RT_STATIC);
+        return 0;
+    }
+    if (!kw || !arg)
+        return fail(_("usage: route NODE [add|del] PREFIX via GATEWAY | route NODE PREFIX dev IF"));
+    if (strcmp(kw, "dev") == 0) {
+        ifx = nl_if_find(n, arg);
+        if (ifx < 0)
+            return fail(_("unknown interface '%s'"), arg);
+        nl_route6_set(n, dst, plen, NULL, ifx, metric, NL_RT_STATIC);
+        return 0;
+    }
+    if (nl_parse_ip6(arg, &gw)) {
+        ifx = onlink6(n, &gw);
+        if (ifx < 0)
+            return fail(_("gateway %s is not on a subnet of %s"), arg, n->name);
+    } else if (!shared6(n, arg, &gw, &ifx)) {
+        return fail(_("unknown gateway '%s'"), arg);
+    }
+    nl_route6_set(n, dst, plen, &gw, ifx, metric, NL_RT_STATIC);
+    return 0;
+}
+
 static int cmd_ip(const nl_args *a)
 {
     const char *who = nl_arg_pos(a, 1), *addr = nl_arg_pos(a, 2);
@@ -196,8 +291,14 @@ static int cmd_ip(const nl_args *a)
     nl_ip ip;
     int ifx, plen, i;
 
+    if (who && addr && strchr(addr, ':')) {
+        nl_ip6 ip6;
+        if (!nl_parse_prefix6(addr, &ip6, &plen) || !(n = end_point(who, &ifx, 0)))
+            return fail(_("usage: ip NODE[:IF] A.B.C.D/LEN | ip NODE[:IF] IPV6-ADDRESS/LEN"));
+        return cmd_ip6(n, ifx, &ip6, plen);
+    }
     if (!who || !addr || !nl_parse_prefix(addr, &ip, &plen))
-        return fail(_("usage: ip NODE[:IF] A.B.C.D/LEN"));
+        return fail(_("usage: ip NODE[:IF] A.B.C.D/LEN | ip NODE[:IF] IPV6-ADDRESS/LEN"));
     n = end_point(who, &ifx, 0);
     if (!n)
         return fail(_("unknown node or interface '%s'"), who);
@@ -219,6 +320,21 @@ static int cmd_gw(const nl_args *a)
 
     if (!n || !gw)
         return fail(_("usage: gw NODE GATEWAY"));
+    if (strchr(gw, ':')) {
+        nl_ip6 g6;
+        if (!nl_parse_ip6(gw, &g6))
+            return fail(_("usage: gw NODE GATEWAY"));
+        return cmd_gw6(n, &g6);
+    }
+    {   /* a node name also sets the IPv6 default route when both have IPv6 */
+        nl_ip6 g6;
+        int ifx6;
+        if (!nl_parse_ip(gw, &g) && shared6(n, gw, &g6, &ifx6)) {
+            nl_route6_set(n, &(nl_ip6){ { 0 } }, 0, &g6, ifx6, 1, NL_RT_STATIC);
+            if (!nl_node_ip(n))
+                return 0;
+        }
+    }
     if (!nl_parse_ip(gw, &g)) {
         /* a node name: pick its address on a subnet we share */
         nl_node *r = nl_node_find(gw);
@@ -254,6 +370,12 @@ static int cmd_route(const nl_args *a)
         pfx = kw;
         kw = arg;
         arg = nl_arg_pos(a, 5);
+    }
+    if (n && pfx && strchr(pfx, ':')) {
+        nl_ip6 d6;
+        if (!nl_parse_prefix6(pfx, &d6, &plen))
+            return fail(_("usage: route NODE [add|del] PREFIX via GATEWAY | route NODE PREFIX dev IF"));
+        return cmd_route6(n, &d6, plen, kw, arg, del, (int)nl_arg_int(a, "metric", 1));
     }
     if (!n || !pfx || !nl_parse_prefix(pfx, &dst, &plen))
         return fail(_("usage: route NODE [add|del] PREFIX via GATEWAY | route NODE PREFIX dev IF"));
@@ -593,7 +715,17 @@ int nl_exec(const char *line0)
             if (!w || !strcmp(w, "all")) W.auto_addr = W.auto_routes = 1;
             else if (!strcmp(w, "addr")) W.auto_addr = 1;
             else if (!strcmp(w, "routes")) W.auto_routes = 1;
-            else return fail(_("usage: auto addr|routes|all"));
+            else if (!strcmp(w, "addr6")) W.ip6 = W.auto_addr6 = 1;
+            else if (!strcmp(w, "routes6")) W.ip6 = W.auto_routes6 = 1;
+            else if (!strcmp(w, "all6")) W.ip6 = W.auto_addr6 = W.auto_routes6 = 1;
+            else return fail(_("usage: auto addr|routes|all|addr6|routes6|all6"));
+            return 0;
+        }
+        if (!strcmp(key, "ipv6")) {
+            const char *w = nl_arg_pos(&a, 1);
+            if (!w || (strcmp(w, "on") && strcmp(w, "off")))
+                return fail(_("usage: ipv6 on|off"));
+            W.ip6 = w[1] == 'n';
             return 0;
         }
         if (!strcmp(key, "place")) {
@@ -925,6 +1057,109 @@ static void auto_routes(void)
     }
 }
 
+/* IPv6 twins of the two functions above: 2001:db8:N::/64 per subnet,
+ * routers ::1, ::2, ..., hosts ::10, ::11, ... (hexadecimal) */
+static void auto_addr6(void)
+{
+    int subnet = 1, li, i, k;
+
+    for (li = 0; li < W.nlinks; li++) {
+        nl_link *l = &W.links[li];
+        int d = g_dom[l->n[0]->idx][l->ifx[0]], any = 0, members = 0, r = 1, h = 0x10;
+
+        for (i = 0; i < W.nnodes; i++)
+            for (k = 0; k < W.nodes[i].nif; k++)
+                if (g_dom[i][k] == d && W.nodes[i].kind != NL_SWITCH && W.nodes[i].ifc[k].link) {
+                    members++;
+                    if (global6(&W.nodes[i], k))
+                        any = 1;
+                }
+        if (any || members < 2)
+            continue;
+        for (i = 0; i < W.nnodes; i++)
+            for (k = 0; k < W.nodes[i].nif; k++)
+                if (g_dom[i][k] == d && W.nodes[i].kind != NL_SWITCH && W.nodes[i].ifc[k].link) {
+                    nl_ip6 a = { { 0x20, 0x01, 0x0d, 0xb8 } };
+                    nl_put16(a.b + 4, (uint16_t)subnet);
+                    nl_put16(a.b + 14, (uint16_t)(W.nodes[i].forward ? r++ : h++));
+                    nl_if_add_addr6(&W.nodes[i], k, &a, 64);
+                }
+        subnet++;
+    }
+    for (i = 0; i < W.nnodes; i++) {
+        nl_node *n = &W.nodes[i];
+        nl_ip6 far = { { 0x20, 0x01, 0x0d, 0xb8, 0xff, 0xff } };
+        int j, m, done = 0;
+
+        if (n->forward || n->kind == NL_SWITCH || nl_route6_lookup(n, &far))
+            continue;
+        for (k = 0; k < n->nif && !done; k++)
+            for (j = 0; j < W.nnodes && !done; j++)
+                for (m = 0; m < W.nodes[j].nif && !done; m++)
+                    if (W.nodes[j].forward && global6(n, k) && global6(&W.nodes[j], m) && g_dom[j][m] == g_dom[i][k]) {
+                        nl_route6_set(n, &(nl_ip6){ { 0 } }, 0, global6(&W.nodes[j], m), k, 1, NL_RT_STATIC);
+                        done = 1;
+                    }
+    }
+}
+
+static void auto_routes6(void)
+{
+    int s, i, k, j, m;
+
+    for (s = 0; s < W.nnodes; s++) {
+        nl_node *src = &W.nodes[s];
+        int dist[NL_MAX_NODES], fif[NL_MAX_NODES], queue[NL_MAX_NODES], qh = 0, qt = 0;
+        nl_ip6 fgw[NL_MAX_NODES];
+
+        if (src->kind == NL_SWITCH)
+            continue;
+        for (i = 0; i < W.nnodes; i++)
+            dist[i] = -1;
+        dist[s] = 0;
+        queue[qt++] = s;
+        while (qh < qt) {
+            int u = queue[qh++];
+            nl_node *nu = &W.nodes[u];
+
+            if (u != s && !nu->forward)
+                continue;
+            for (k = 0; k < nu->nif; k++) {
+                if (!global6(nu, k))
+                    continue;
+                for (j = 0; j < W.nnodes; j++)
+                    for (m = 0; m < W.nodes[j].nif; m++)
+                        if (dist[j] < 0 && global6(&W.nodes[j], m) && g_dom[j][m] == g_dom[u][k] &&
+                            W.nodes[j].kind != NL_SWITCH) {
+                            dist[j] = dist[u] + 1;
+                            fif[j] = u == s ? k : fif[u];
+                            fgw[j] = u == s ? *global6(&W.nodes[j], m) : fgw[u];
+                            queue[qt++] = j;
+                        }
+            }
+        }
+        for (j = 0; j < W.nnodes; j++) {
+            if (j == s || dist[j] < 0)
+                continue;
+            for (m = 0; m < W.nodes[j].nif; m++) {
+                const nl_ip6 *g = global6(&W.nodes[j], m);
+                int z, known = 0;
+
+                if (!g)
+                    continue;
+                for (z = 0; z < src->nrt6; z++) {
+                    const nl_route6 *have = &src->rt6[z];
+                    if (have->plen == 64 && nl_ip6_match(g, &have->dst, 64) &&
+                        (have->proto == NL_RT_CONNECTED || have->metric <= dist[j]))
+                        known = 1;
+                }
+                if (!known)
+                    nl_route6_set(src, g, 64, &fgw[j], fif[j], dist[j], NL_RT_STATIC);
+            }
+        }
+    }
+}
+
 static void auto_layout(void)
 {
     double x[NL_MAX_NODES], y[NL_MAX_NODES], dx[NL_MAX_NODES], dy[NL_MAX_NODES];
@@ -1018,6 +1253,11 @@ void nl_scenario_finalize(void)
         auto_addr();
     if (W.auto_routes)
         auto_routes();
+    if (W.auto_addr6)
+        auto_addr6();
+    if (W.auto_routes6)
+        auto_routes6();
+    nl_ip6_start();
     auto_layout();
     for (i = 0; i < W.nnodes; i++)
         if (!W.nodes[i].under_port)

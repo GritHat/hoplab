@@ -49,6 +49,7 @@ void nl_stack_init(nl_node *n)
     s->eph = 49152;
     s->ip_id = (uint16_t)(n->idx * 1000 + 1);
     n->stack = s;
+    nl_ip6_init(n);
 }
 
 void nl_stack_node_down(nl_node *n)
@@ -61,6 +62,7 @@ void nl_stack_node_down(nl_node *n)
         memset(&n->arp[i], 0, sizeof(n->arp[i]));
     }
     nl_fdb_flush(n);
+    nl_ip6_node_down(n);
 }
 
 /* ------------------------------------------------------------------ */
@@ -73,6 +75,7 @@ const char *nl_route_proto_name(int proto)
     case NL_RT_CONNECTED: return "connected";
     case NL_RT_STATIC:    return "static";
     case NL_RT_DHCP:      return "dhcp";
+    case NL_RT_RA:        return "ra";
     case NL_RT_BGP:       return "bgp";
     case NL_RT_OSPF:      return "ospf";
     case NL_RT_RIP:       return "rip";
@@ -1203,6 +1206,8 @@ void nl_stack_rx(nl_node *n, int ifx, nl_pkt *p)
         nl_pkt_free(p);
     } else if (type == NL_ETH_IP) {
         ip_input(n, ifx, p);
+    } else if (type == NL_ETH_IP6 && W.ip6) {
+        nl_ip6_input(n, ifx, p);
     } else {
         nl_pkt_free(p);
     }
@@ -1362,6 +1367,25 @@ void nl_dissect_tcp_payload(nl_dissect *o, uint16_t sport, uint16_t dport, const
         fn(o, d, len, off);
 }
 
+void nl_dissect_udp_payload(nl_dissect *o, uint16_t sport, uint16_t dport, const uint8_t *d, int len, int off)
+{
+    nl_dissect_fn fn = dis_find(DK_UDP, dport);
+
+    if (!fn)
+        fn = dis_find(DK_UDP, sport);
+    if (fn && len > 0)
+        fn(o, d, len, off);
+}
+
+int nl_dissect_ipproto(nl_dissect *o, uint8_t proto, const uint8_t *d, int len, int off)
+{
+    nl_dissect_fn fn = dis_find(DK_IP, proto);
+
+    if (fn)
+        fn(o, d, len, off);
+    return fn != NULL;
+}
+
 static const char *icmp_name(int type, int code)
 {
     switch (type) {
@@ -1482,7 +1506,7 @@ void nl_dissect_frame(const uint8_t *d, int len, nl_dissect *o)
         off += 4;
     }
     nl_dis_field(o, "Ethernet", "EtherType", off - 2, 2, "0x%04x (%s)", type,
-                 type == NL_ETH_IP ? "IPv4" : type == NL_ETH_ARP ? "ARP" : "other");
+                 type == NL_ETH_IP ? "IPv4" : type == NL_ETH_ARP ? "ARP" : type == NL_ETH_IP6 ? "IPv6" : "other");
     if (type == NL_ETH_ARP && len >= NL_ETH_HLEN + 28) {
         const uint8_t *a = d + NL_ETH_HLEN;
         int op = nl_get16(a + 6);

@@ -171,7 +171,7 @@ msgstr ""
 
 #: rdt.c:282 src/nat.c:262 src/nat.c:270 src/stp.c:237 src/stp.c:359
 #: src/stp.c:451 src/stp.c:485 src/stp.c:569 src/stp.c:667 src/stp.c:744
-#: src/ui.c:474
+#: src/ui.c:489
 msgid "port"
 msgstr ""
 
@@ -254,7 +254,7 @@ msgstr ""
 msgid "remote"
 msgstr ""
 
-#: tui.c:1208 src/apps.c:731 src/core.c:451 src/ui.c:557
+#: tui.c:1208 src/apps.c:925 src/core.c:451 src/ui.c:613
 msgid "lost"
 msgstr ""
 
@@ -272,7 +272,7 @@ msgstr ""
 msgid "acknowledgements"
 msgstr ""
 
-#: tui.c:1313 src/mac.c:550 src/scenario.c:171 src/ui.c:546
+#: tui.c:1313 src/mac.c:550 src/scenario.c:171 src/ui.c:602
 msgid "delay"
 msgstr ""
 
@@ -1232,210 +1232,228 @@ msgstr ""
 msgid "Selective repeat: interrupted after %d segments (%zu bytes) delivered\n"
 msgstr ""
 
-#: src/apps.c:42 src/fec.c:841 src/qdisc.c:705 src/qdisc.c:708 src/qdisc.c:820
+#: src/apps.c:60 src/fec.c:841 src/qdisc.c:705 src/qdisc.c:708 src/qdisc.c:820
 #: src/qdisc.c:992 src/qdisc.c:1019
 msgid "sent"
 msgstr ""
 
-#: src/apps.c:43 src/apps.c:729 src/clock.c:283
+#: src/apps.c:61 src/apps.c:923 src/clock.c:283
 msgid "received"
 msgstr ""
 
-#: src/apps.c:43 src/scenario.c:171 src/ui.c:547
+#: src/apps.c:61 src/scenario.c:171 src/ui.c:603
 msgid "loss"
 msgstr ""
 
-#: src/apps.c:44
+#: src/apps.c:62
 msgid " — destination unreachable?"
 msgstr ""
 
-#: src/apps.c:57
+#: src/apps.c:75
 msgid "no reply"
 msgstr ""
 
-#: src/apps.c:69
+#: src/apps.c:88
 msgid "cannot send (no route or packet too big)"
 msgstr ""
 
-#: src/apps.c:99
+#: src/apps.c:118 src/apps.c:163
 msgid "reply"
 msgstr ""
 
-#: src/apps.c:99 src/apps.c:108 src/apps.c:381 src/apps.c:453 src/bgp.c:611
-#: src/chord.c:528 src/chord.c:598 src/clock.c:163 src/clock.c:274
-#: src/clock.c:283 src/clock.c:291 src/clock.c:314 src/dhcp.c:265
-#: src/dhcp.c:273 src/dhcp.c:286 src/dhcp.c:591 src/dns.c:941 src/dns.c:971
-#: src/gossip.c:564 src/gossip.c:566 src/ospf.c:480 src/ospf.c:497
-#: src/ospf.c:574 src/rip.c:328 src/stack.c:864 src/tcp.c:1463 src/twopc.c:213
+#: src/apps.c:118 src/apps.c:127 src/apps.c:163 src/apps.c:181 src/apps.c:505
+#: src/apps.c:518 src/apps.c:594 src/apps.c:606 src/bgp.c:611 src/chord.c:528
+#: src/chord.c:598 src/clock.c:163 src/clock.c:274 src/clock.c:283
+#: src/clock.c:291 src/clock.c:314 src/dhcp.c:265 src/dhcp.c:273
+#: src/dhcp.c:286 src/dhcp.c:591 src/dns.c:941 src/dns.c:971 src/gossip.c:564
+#: src/gossip.c:566 src/ip6.c:1110 src/ospf.c:480 src/ospf.c:497
+#: src/ospf.c:574 src/rip.c:328 src/stack.c:867 src/tcp.c:1463 src/twopc.c:213
 #: src/twopc.c:387
 msgid "from"
 msgstr ""
 
-#: src/apps.c:109
+#: src/apps.c:128
 msgid "time to live exceeded"
 msgstr ""
 
-#: src/apps.c:110
+#: src/apps.c:129
 msgid "fragmentation needed (packet too big)"
 msgstr ""
 
-#: src/apps.c:111
+#: src/apps.c:130 src/apps.c:179
 msgid "port unreachable"
 msgstr ""
 
-#: src/apps.c:111
+#: src/apps.c:130
 msgid "host unreachable"
 msgstr ""
 
-#: src/apps.c:112
+#: src/apps.c:131
 msgid "network unreachable"
 msgstr ""
 
-#: src/apps.c:127 src/apps.c:297 src/apps.c:486 src/apps.c:592 src/lb.c:897
-#: src/stack.c:605 src/tcp.c:1524
+#: src/apps.c:175
+msgid "packet too big"
+msgstr ""
+
+#: src/apps.c:178
+msgid "hop limit exceeded"
+msgstr ""
+
+#: src/apps.c:179
+msgid "address unreachable"
+msgstr ""
+
+#: src/apps.c:180
+msgid "no route to destination"
+msgstr ""
+
+#: src/apps.c:198 src/apps.c:415 src/apps.c:647 src/apps.c:770 src/lb.c:897
+#: src/stack.c:608 src/tcp.c:1524
 msgid "unknown destination"
 msgstr ""
 
-#: src/apps.c:142
+#: src/apps.c:214
 msgid "too many sessions"
 msgstr ""
 
-#: src/apps.c:159
+#: src/apps.c:233
 msgid "data bytes"
 msgstr ""
 
-#: src/apps.c:190
+#: src/apps.c:265
 msgid "replies"
 msgstr ""
 
-#: src/apps.c:199
+#: src/apps.c:274
 msgid "ping — is a host reachable, and how far is it?"
 msgstr ""
 
-#: src/apps.c:200
+#: src/apps.c:275
 msgid ""
-"run NODE ping DEST [count=4] [interval=1s] [size=56] [ttl=64] [df=1]\n"
-"  DEST is an address or a node name; count=0 pings forever."
+"run NODE ping DEST [count=4] [interval=1s] [size=56] [ttl=64] [df=1] [v6=1]\n"
+"  DEST is an address or a node name; count=0 pings forever.\n"
+"  An IPv6 address, or v6=1 with a node name, pings over IPv6 (ICMPv6)."
 msgstr ""
 
-#: src/apps.c:202
+#: src/apps.c:278
 msgid "ping sends ICMP Echo Request messages and waits for the matching Echo Reply. Each request carries an identifier and a sequence number, so the sender can match replies, measure the round-trip time and notice losses. Routers on the path only forward the packets; if one cannot, it answers with an ICMP error (destination unreachable, time exceeded) that ping reports."
 msgstr ""
 
-#: src/apps.c:235
+#: src/apps.c:313
 msgid "no answer"
 msgstr ""
 
-#: src/apps.c:244
+#: src/apps.c:322
 msgid "destination reached in"
 msgstr ""
 
-#: src/apps.c:244
+#: src/apps.c:322
 msgid "destination not reached"
 msgstr ""
 
-#: src/apps.c:245 src/chord.c:370 src/rip.c:295
+#: src/apps.c:323 src/chord.c:370 src/rip.c:295
 msgid "hops"
 msgstr ""
 
-#: src/apps.c:320
+#: src/apps.c:441
 msgid "max hops"
 msgstr ""
 
-#: src/apps.c:343
+#: src/apps.c:465
 msgid "to"
 msgstr ""
 
-#: src/apps.c:357
+#: src/apps.c:481
 msgid "traceroute — which routers does a packet cross?"
 msgstr ""
 
-#: src/apps.c:358
-msgid "run NODE traceroute DEST [maxhops=16]"
+#: src/apps.c:482
+msgid "run NODE traceroute DEST [maxhops=16] [v6=1]"
 msgstr ""
 
-#: src/apps.c:359
+#: src/apps.c:483
 msgid "traceroute sends probes with TTL 1, 2, 3, ... Every router decrements the TTL; the one that brings it to zero discards the packet and reports back with an ICMP Time Exceeded message, revealing its address. The probe that finally reaches the destination is answered directly, and the list of hops is complete."
 msgstr ""
 
-#: src/apps.c:382
+#: src/apps.c:506 src/apps.c:519
 msgid "sent back"
 msgstr ""
 
-#: src/apps.c:399 src/nat.c:732
+#: src/apps.c:537 src/nat.c:732
 msgid "server listening on UDP port"
 msgstr ""
 
-#: src/apps.c:420 src/lb.c:768 src/nat.c:761
+#: src/apps.c:559 src/lb.c:768 src/nat.c:761
 msgid "UDP port"
 msgstr ""
 
-#: src/apps.c:421
+#: src/apps.c:560
 msgid "datagrams echoed"
 msgstr ""
 
-#: src/apps.c:426
+#: src/apps.c:565
 msgid "UDP echo server"
 msgstr ""
 
-#: src/apps.c:427
+#: src/apps.c:566
 msgid "run NODE echo [port=7]"
 msgstr ""
 
-#: src/apps.c:428
+#: src/apps.c:567
 msgid "The simplest possible service: every datagram received is sent back to its sender. UDP adds only ports and a checksum to IP: no connection, no retransmission, no order."
 msgstr ""
 
-#: src/apps.c:452 src/dns.c:848
+#: src/apps.c:593 src/apps.c:605 src/dns.c:848
 msgid "answer"
 msgstr ""
 
-#: src/apps.c:524
+#: src/apps.c:689
 msgid "UDP client: send datagrams and show the answers"
 msgstr ""
 
-#: src/apps.c:525
+#: src/apps.c:690
 msgid ""
-"run NODE udp DEST [port=7] [msg=hello] [count=1] [interval=1s] [size=N]\n"
+"run NODE udp DEST [port=7] [msg=hello] [count=1] [interval=1s] [size=N] [v6=1]\n"
 "  size pads the datagram to N bytes (try more than the MTU to see fragmentation)."
 msgstr ""
 
-#: src/apps.c:564
+#: src/apps.c:731
 msgid "finished"
 msgstr ""
 
-#: src/apps.c:564
+#: src/apps.c:731
 msgid "datagrams sent"
 msgstr ""
 
-#: src/apps.c:633
+#: src/apps.c:814
 msgid "Constant-bit-rate UDP traffic generator"
 msgstr ""
 
-#: src/apps.c:634
+#: src/apps.c:815
 msgid ""
-"run NODE cbr DEST [rate=1M] [size=500] [port=9000] [duration=10s] [tos=N]\n"
+"run NODE cbr DEST [rate=1M] [size=500] [port=9000] [duration=10s] [tos=N] [v6=1]\n"
 "run NODE cbr stop\n"
 "  Pair it with `run DEST sink` to measure throughput, loss and delay."
 msgstr ""
 
-#: src/apps.c:729
+#: src/apps.c:923
 msgid "datagrams"
 msgstr ""
 
-#: src/apps.c:733 src/tcp.c:1186
+#: src/apps.c:927 src/tcp.c:1186
 msgid "out of order"
 msgstr ""
 
-#: src/apps.c:734
+#: src/apps.c:928
 msgid "mean delay / jitter"
 msgstr ""
 
-#: src/apps.c:742
+#: src/apps.c:936
 msgid "Traffic sink: throughput, loss, delay and jitter of a cbr flow"
 msgstr ""
 
-#: src/apps.c:744
+#: src/apps.c:938
 msgid "run NODE sink [port=9000]"
 msgstr ""
 
@@ -1580,7 +1598,7 @@ msgid "relation"
 msgstr ""
 
 #: src/bgp.c:867 src/dhcp.c:694 src/ospf.c:730 src/qdisc.c:440 src/stp.c:745
-#: src/ui.c:511
+#: src/ui.c:544
 msgid "state"
 msgstr ""
 
@@ -1678,7 +1696,7 @@ msgstr ""
 msgid "does not answer: removed from my tables"
 msgstr ""
 
-#: src/chord.c:424 src/dns.c:1397 src/http.c:385 src/main.c:308 src/tcp.c:1416
+#: src/chord.c:424 src/dns.c:1397 src/http.c:385 src/main.c:310 src/tcp.c:1416
 msgid "failed"
 msgstr ""
 
@@ -1882,7 +1900,7 @@ msgstr ""
 msgid "broadcast"
 msgstr ""
 
-#: src/clock.c:470 src/http.c:464 src/main.c:408 src/qdisc.c:977 src/stp.c:675
+#: src/clock.c:470 src/http.c:464 src/main.c:410 src/qdisc.c:977 src/stp.c:675
 #: src/tcp.c:1546 src/twopc.c:462
 msgid "unknown command"
 msgstr ""
@@ -2182,7 +2200,7 @@ msgstr ""
 msgid "releasing"
 msgstr ""
 
-#: src/dhcp.c:695 src/ospf.c:729
+#: src/dhcp.c:695 src/ip6.c:918 src/ospf.c:729
 msgid "address"
 msgstr ""
 
@@ -2973,19 +2991,19 @@ msgstr ""
 msgid "Getting started"
 msgstr ""
 
-#: src/guide.c:122 src/main.c:260 src/menu.c:429
+#: src/guide.c:122 src/main.c:262 src/menu.c:429
 msgid "Foundations"
 msgstr ""
 
-#: src/guide.c:123 src/main.c:260 src/menu.c:430
+#: src/guide.c:123 src/main.c:262 src/menu.c:430
 msgid "Core"
 msgstr ""
 
-#: src/guide.c:124 src/main.c:260 src/menu.c:431
+#: src/guide.c:124 src/main.c:262 src/menu.c:431
 msgid "Advanced"
 msgstr ""
 
-#: src/guide.c:125 src/main.c:260 src/menu.c:432
+#: src/guide.c:125 src/main.c:262 src/menu.c:432
 msgid "Frontier"
 msgstr ""
 
@@ -3110,6 +3128,142 @@ msgid ""
 "A web page is usually an HTML document plus the objects it references. HTTP/1.0 opened a new TCP connection for every object, paying a three-way handshake and a fresh slow start each time. HTTP/1.1 keeps the connection open (persistent connections), so later requests skip the handshake and inherit an already opened congestion window: compare keepalive=1 and keepalive=0 on a path with some delay and the difference in page load time is exactly those saved round trips. Here requests on a connection are strictly sequential; HTTP/2 multiplexes them and HTTP/3 moves the whole thing onto QUIC to avoid head-of-line blocking."
 msgstr ""
 
+#: src/ip6.c:617
+msgid "reachable → stale"
+msgstr ""
+
+#: src/ip6.c:692 src/ip6.c:1405 src/stack.c:722 src/stack.c:1137
+#: src/tcp.c:1231
+msgid "no route to"
+msgstr ""
+
+#: src/ip6.c:697
+msgid "no usable source address yet for"
+msgstr ""
+
+#: src/ip6.c:714
+msgid "source fragmentation"
+msgstr ""
+
+#: src/ip6.c:715
+msgid "path MTU"
+msgstr ""
+
+#: src/ip6.c:715 src/stack.c:651
+msgid "fragments"
+msgstr ""
+
+#: src/ip6.c:852
+msgid "is anybody already using"
+msgstr ""
+
+#: src/ip6.c:883
+msgid "neighbor cache"
+msgstr ""
+
+#: src/ip6.c:919
+msgid "is already in use on this link (DAD)"
+msgstr ""
+
+#: src/ip6.c:919
+msgid "not configured"
+msgstr ""
+
+#: src/ip6.c:949
+msgid "autoconfigured address"
+msgstr ""
+
+#: src/ip6.c:949
+msgid "prefix advertised by"
+msgstr ""
+
+#: src/ip6.c:1035 src/stack.c:819
+msgid "wrong checksum: discarded"
+msgstr ""
+
+#: src/ip6.c:1087
+msgid "path MTU towards"
+msgstr ""
+
+#: src/ip6.c:1088
+msgid "reported by"
+msgstr ""
+
+#: src/ip6.c:1216 src/stack.c:976
+msgid "wrong checksum: datagram discarded"
+msgstr ""
+
+#: src/ip6.c:1326 src/stack.c:1077
+msgid "datagram reassembled"
+msgstr ""
+
+#: src/ip6.c:1397 src/stack.c:1129
+msgid "expired"
+msgstr ""
+
+#: src/ip6.c:1414
+msgid "routers do not fragment IPv6: dropped, Packet Too Big sent"
+msgstr ""
+
+#: src/ip6.c:1482
+msgid "router solicitation: is there a router?"
+msgstr ""
+
+#: src/ip6.c:1501
+msgid "nobody objected (DAD): address in use"
+msgstr ""
+
+#: src/ip6.c:1520 src/stack.c:415
+msgid "no answer for"
+msgstr ""
+
+#: src/ip6.c:1530
+msgid "does not answer any more: removed from the neighbor cache"
+msgstr ""
+
+#: src/ip6.c:1724
+msgid "router advertisement on"
+msgstr ""
+
+#: src/ip6.c:1725
+msgid "prefix(es)"
+msgstr ""
+
+#: src/ip6.c:1725
+msgid "router lifetime"
+msgstr ""
+
+#: src/ip6.c:1749
+msgid "needs a router in a lab that uses IPv6"
+msgstr ""
+
+#: src/ip6.c:1794
+msgid "advertisements sent"
+msgstr ""
+
+#: src/ip6.c:1795
+msgid "interval / router lifetime"
+msgstr ""
+
+#: src/ip6.c:1804
+msgid "on-link, autonomous"
+msgstr ""
+
+#: src/ip6.c:1810
+msgid "Router advertisements: IPv6 hosts configure themselves (SLAAC)"
+msgstr ""
+
+#: src/ip6.c:1812
+msgid ""
+"run ROUTER ra [interval=10s] [lifetime=1800s]\n"
+"  Advertises, on every interface, the /64 prefixes configured there, and answers\n"
+"  router solicitations. Hosts of a lab that uses IPv6 listen without any command."
+msgstr ""
+
+#: src/ip6.c:1815
+msgid "An IPv6 host needs no server to get an address. Every interface first gives itself a link-local address (fe80::/64 plus an identifier derived from its MAC address) and checks with duplicate address detection that nobody else on the link uses it. Then it asks \"is there a router?\" with a Router Solicitation sent to the all-routers group. A router answers with a Router Advertisement carrying the prefixes of the link: for each prefix marked autonomous the host builds prefix + its own identifier, checks that address too, and uses the router's link-local address as default gateway for as long as the advertised router lifetime. Routers also repeat the advertisement periodically. This is stateless address autoconfiguration (RFC 4862) on top of Neighbor Discovery (RFC 4861). Simplified here: preferred and valid lifetimes are advertised but addresses do not expire, there are no privacy addresses and no DHCPv6, and the M and O flags are always 0."
+msgstr ""
+
 #: src/launch.c:54 src/main.c:98
 msgid "scenario not found (see `netlab list`)"
 msgstr ""
@@ -3118,11 +3272,11 @@ msgstr ""
 msgid "Opened a kitty window: the whole network on the left, one pane per node on the right."
 msgstr ""
 
-#: src/launch.c:177
+#: src/launch.c:178
 msgid "tmux session started; attach with:"
 msgstr ""
 
-#: src/launch.c:180
+#: src/launch.c:181
 msgid "# Run each command in its own terminal (the first one first):"
 msgstr ""
 
@@ -3509,75 +3663,75 @@ msgid ""
 "scenario parameters.\n"
 msgstr ""
 
-#: src/main.c:94 src/main.c:396
+#: src/main.c:94 src/main.c:398
 msgid "which scenario? (see `netlab list`)"
 msgstr ""
 
-#: src/main.c:128
+#: src/main.c:130
 msgid "bad time"
 msgstr ""
 
-#: src/main.c:179 src/ui.c:1391
+#: src/main.c:181 src/ui.c:1447
 msgid "expectations"
 msgstr ""
 
-#: src/main.c:193
+#: src/main.c:195
 msgid "usage: netlab node SCENARIO NODE[,NODE...]"
 msgstr ""
 
-#: src/main.c:210
+#: src/main.c:212
 msgid "unknown node"
 msgstr ""
 
-#: src/main.c:273
+#: src/main.c:275
 msgid "Other"
 msgstr ""
 
-#: src/main.c:280
+#: src/main.c:282
 msgid "no scenarios found in"
 msgstr ""
 
-#: src/main.c:305
+#: src/main.c:307
 msgid "error or crash"
 msgstr ""
 
-#: src/main.c:308
+#: src/main.c:310
 msgid "scenarios"
 msgstr ""
 
-#: src/main.c:320
+#: src/main.c:322
 msgid "unknown module"
 msgstr ""
 
-#: src/main.c:335
+#: src/main.c:337
 msgid "Queue disciplines (link ... qdisc=NAME):"
 msgstr ""
 
-#: src/main.c:336 src/qdisc.c:971
+#: src/main.c:338 src/qdisc.c:971
 msgid "drop arrivals when the queue is full (default)"
 msgstr ""
 
-#: src/main.c:339
+#: src/main.c:341
 msgid "Link codes (link ... codec=NAME):"
 msgstr ""
 
-#: src/main.c:340
+#: src/main.c:342
 msgid "frame check sequence: damaged frames are discarded (default)"
 msgstr ""
 
-#: src/main.c:341
+#: src/main.c:343
 msgid "no check: damaged frames reach the upper layers"
 msgstr ""
 
-#: src/main.c:356
+#: src/main.c:358
 msgid "# Copy netlab and the scenario file to every machine, then run:"
 msgstr ""
 
-#: src/main.c:361
+#: src/main.c:363
 msgid "# and, on the machine named in the `monitor` line:"
 msgstr ""
 
-#: src/main.c:362
+#: src/main.c:364
 msgid ""
 "# Each node listens on the UDP port of its `place` line (default: baseport + index).\n"
 "# Nodes placed on the same machine can share one process: netlab node FILE a,b,c"
@@ -4231,7 +4385,7 @@ msgstr ""
 msgid "LSAs flooded / retransmitted"
 msgstr ""
 
-#: src/ospf.c:730 src/rip.c:435 src/ui.c:488
+#: src/ospf.c:730 src/rip.c:435 src/ui.c:503
 msgid "dev"
 msgstr ""
 
@@ -4243,7 +4397,7 @@ msgstr ""
 msgid "(neighbor:cost, network/cost)"
 msgstr ""
 
-#: src/ospf.c:741 src/rip.c:435 src/ui.c:474
+#: src/ospf.c:741 src/rip.c:435 src/ui.c:489
 msgid "age"
 msgstr ""
 
@@ -4271,7 +4425,7 @@ msgid ""
 msgstr ""
 
 #: src/qdisc.c:182 src/qdisc.c:297 src/qdisc.c:434 src/qdisc.c:533
-#: src/qdisc.c:899 src/qdisc.c:991 src/qdisc.c:1027 src/ui.c:551
+#: src/qdisc.c:899 src/qdisc.c:991 src/qdisc.c:1027 src/ui.c:607
 msgid "queue"
 msgstr ""
 
@@ -4700,7 +4854,7 @@ msgstr ""
 msgid "metric"
 msgstr ""
 
-#: src/rip.c:435 src/ui.c:488
+#: src/rip.c:435 src/ui.c:503
 msgid "next hop"
 msgstr ""
 
@@ -4795,205 +4949,186 @@ msgstr ""
 msgid "too many links (max %d)"
 msgstr ""
 
-#: src/scenario.c:200
-msgid "usage: ip NODE[:IF] A.B.C.D/LEN"
-msgstr ""
-
-#: src/scenario.c:203
-#, c-format
-msgid "unknown node or interface '%s'"
-msgstr ""
-
-#: src/scenario.c:208
+#: src/scenario.c:241 src/scenario.c:309
 #, c-format
 msgid "node %s has no free interface for an address"
 msgstr ""
 
-#: src/scenario.c:221
-msgid "usage: gw NODE GATEWAY"
-msgstr ""
-
-#: src/scenario.c:235
+#: src/scenario.c:244
 #, c-format
-msgid "gateway '%s' is not on a subnet of %s"
+msgid "too many IPv6 addresses on %s:%s (max %d)"
 msgstr ""
 
-#: src/scenario.c:242 src/scenario.c:287
+#: src/scenario.c:253 src/scenario.c:279 src/scenario.c:358 src/scenario.c:409
 #, c-format
 msgid "gateway %s is not on a subnet of %s"
 msgstr ""
 
-#: src/scenario.c:259 src/scenario.c:265
+#: src/scenario.c:268 src/scenario.c:377 src/scenario.c:381 src/scenario.c:387
 msgid "usage: route NODE [add|del] PREFIX via GATEWAY | route NODE PREFIX dev IF"
 msgstr ""
 
-#: src/scenario.c:269
+#: src/scenario.c:272 src/scenario.c:391
 #, c-format
 msgid "unknown interface '%s'"
 msgstr ""
 
-#: src/scenario.c:272
+#: src/scenario.c:281 src/scenario.c:394
 #, c-format
 msgid "unknown gateway '%s'"
 msgstr ""
 
-#: src/scenario.c:300
+#: src/scenario.c:297 src/scenario.c:301
+msgid "usage: ip NODE[:IF] A.B.C.D/LEN | ip NODE[:IF] IPV6-ADDRESS/LEN"
+msgstr ""
+
+#: src/scenario.c:304
+#, c-format
+msgid "unknown node or interface '%s'"
+msgstr ""
+
+#: src/scenario.c:322 src/scenario.c:326
+msgid "usage: gw NODE GATEWAY"
+msgstr ""
+
+#: src/scenario.c:351
+#, c-format
+msgid "gateway '%s' is not on a subnet of %s"
+msgstr ""
+
+#: src/scenario.c:422
 msgid "usage: vlan SWITCH:PORT N|trunk"
 msgstr ""
 
-#: src/scenario.c:303
+#: src/scenario.c:425
 #, c-format
 msgid "unknown port '%s'"
 msgstr ""
 
-#: src/scenario.c:337
+#: src/scenario.c:459
 #, c-format
 msgid "unknown node '%s'"
 msgstr ""
 
-#: src/scenario.c:339
+#: src/scenario.c:461
 #, c-format
 msgid "unknown module '%s' (try: help)"
 msgstr ""
 
-#: src/scenario.c:343
+#: src/scenario.c:465
 #, c-format
 msgid "node %s is down"
 msgstr ""
 
-#: src/scenario.c:360
+#: src/scenario.c:482
 #, c-format
 msgid "module '%s' cannot be run"
 msgstr ""
 
-#: src/scenario.c:361
+#: src/scenario.c:483
 #, c-format
 msgid "%s on %s failed (see the log)"
 msgstr ""
 
-#: src/scenario.c:427
+#: src/scenario.c:549
 msgid "Commands: NODE MODULE args… · link A B up|down|key=value · node N up|down · stop NODE MODULE · set speed|detail N · help MODULE"
 msgstr ""
 
-#: src/scenario.c:561
+#: src/scenario.c:688
 msgid "usage: note TIME text"
 msgstr ""
 
-#: src/scenario.c:578
+#: src/scenario.c:705
 msgid "usage: duration TIME"
 msgstr ""
 
-#: src/scenario.c:591
-msgid "usage: auto addr|routes|all"
+#: src/scenario.c:721
+msgid "usage: auto addr|routes|all|addr6|routes6|all6"
 msgstr ""
 
-#: src/scenario.c:597
+#: src/scenario.c:727
+msgid "usage: ipv6 on|off"
+msgstr ""
+
+#: src/scenario.c:734
 msgid "usage: place NODE HOST[:PORT]"
 msgstr ""
 
-#: src/scenario.c:605
+#: src/scenario.c:742
 msgid "usage: monitor HOST[:PORT]"
 msgstr ""
 
-#: src/scenario.c:613
+#: src/scenario.c:750
 msgid "usage: expect NODE COUNTER ==|!=|>=|<=|>|< VALUE"
 msgstr ""
 
-#: src/scenario.c:630
+#: src/scenario.c:767
 msgid "usage: at TIME command"
 msgstr ""
 
-#: src/scenario.c:635
+#: src/scenario.c:772
 msgid "usage: run NODE MODULE [args]"
 msgstr ""
 
-#: src/scenario.c:642
+#: src/scenario.c:779
 msgid "usage: stop NODE MODULE"
 msgstr ""
 
-#: src/scenario.c:655
+#: src/scenario.c:792
 msgid "usage: node NAME up|down"
 msgstr ""
 
-#: src/scenario.c:663
+#: src/scenario.c:800
 msgid "usage: set speed|detail|baseport VALUE"
 msgstr ""
 
-#: src/scenario.c:667
+#: src/scenario.c:804
 #, c-format
 msgid "unknown setting '%s'"
 msgstr ""
 
-#: src/scenario.c:677
+#: src/scenario.c:814
 #, c-format
 msgid "unknown command '%s' (try: help)"
 msgstr ""
 
-#: src/scenario.c:723
+#: src/scenario.c:860
 msgid "cannot open scenario"
 msgstr ""
 
-#: src/scenario.c:1045
+#: src/scenario.c:1290
 msgid "got"
 msgstr ""
 
-#: src/stack.c:412
-msgid "no answer for"
-msgstr ""
-
-#: src/stack.c:478
+#: src/stack.c:481
 msgid "cache"
 msgstr ""
 
-#: src/stack.c:587
+#: src/stack.c:590
 msgid "learned"
 msgstr ""
 
-#: src/stack.c:588
+#: src/stack.c:591
 msgid " (moved)"
 msgstr ""
 
-#: src/stack.c:606
+#: src/stack.c:609
 msgid "flooding"
 msgstr ""
 
-#: src/stack.c:647
+#: src/stack.c:650
 msgid "fragmentation"
 msgstr ""
 
-#: src/stack.c:648
-msgid "fragments"
-msgstr ""
-
-#: src/stack.c:719 src/stack.c:1134 src/tcp.c:1231
-msgid "no route to"
-msgstr ""
-
-#: src/stack.c:735
+#: src/stack.c:738
 msgid "packet too big and DF set: not sent"
 msgstr ""
 
-#: src/stack.c:816
-msgid "wrong checksum: discarded"
-msgstr ""
-
-#: src/stack.c:973
-msgid "wrong checksum: datagram discarded"
-msgstr ""
-
-#: src/stack.c:1074
-msgid "datagram reassembled"
-msgstr ""
-
-#: src/stack.c:1108
+#: src/stack.c:1111
 msgid "wrong header checksum: packet discarded"
 msgstr ""
 
-#: src/stack.c:1126
-msgid "expired"
-msgstr ""
-
-#: src/stack.c:1154
+#: src/stack.c:1157
 msgid "too big and DF set: dropped, ICMP sent"
 msgstr ""
 
@@ -5485,290 +5620,318 @@ msgstr ""
 msgid "Enter starts now"
 msgstr ""
 
-#: src/ui.c:408
+#: src/ui.c:413
 msgid "(remote)"
 msgstr ""
 
-#: src/ui.c:420 src/ui.c:574
+#: src/ui.c:425 src/ui.c:630
 msgid "Node"
 msgstr ""
 
-#: src/ui.c:421
+#: src/ui.c:426
 msgid "MAC table"
 msgstr ""
 
-#: src/ui.c:421
+#: src/ui.c:426
 msgid "Routes"
 msgstr ""
 
-#: src/ui.c:424
+#: src/ui.c:429
 msgid "Links"
 msgstr ""
 
-#: src/ui.c:437
+#: src/ui.c:442
 msgid "router"
 msgstr ""
 
-#: src/ui.c:437
+#: src/ui.c:442
 msgid "switch"
 msgstr ""
 
-#: src/ui.c:437
+#: src/ui.c:442
 msgid "host"
 msgstr ""
 
-#: src/ui.c:438
+#: src/ui.c:443
 msgid " — DOWN"
 msgstr ""
 
-#: src/ui.c:438
+#: src/ui.c:443
 msgid " — runs elsewhere"
 msgstr ""
 
-#: src/ui.c:462
+#: src/ui.c:470
+msgid "tentative (DAD)"
+msgstr ""
+
+#: src/ui.c:471
+msgid "DUPLICATE"
+msgstr ""
+
+#: src/ui.c:477
 msgid "Counters"
 msgstr ""
 
-#: src/ui.c:485
+#: src/ui.c:500
 msgid "(empty: nothing learned yet)"
 msgstr ""
 
-#: src/ui.c:488
+#: src/ui.c:503
 msgid "destination"
 msgstr ""
 
-#: src/ui.c:489
+#: src/ui.c:504
 msgid "m"
 msgstr ""
 
-#: src/ui.c:489
+#: src/ui.c:504
 msgid "source"
 msgstr ""
 
-#: src/ui.c:500
+#: src/ui.c:515
 msgid "direct"
 msgstr ""
 
-#: src/ui.c:518
+#: src/ui.c:551
 msgid "resolving"
 msgstr ""
 
-#: src/ui.c:521
+#: src/ui.c:554
 msgid "expires in"
 msgstr ""
 
-#: src/ui.c:525
+#: src/ui.c:558 src/ui.c:580
 msgid "(empty: no neighbor resolved yet)"
 msgstr ""
 
-#: src/ui.c:545
-msgid "DOWN"
+#: src/ui.c:560
+msgid "incomplete"
 msgstr ""
 
-#: src/ui.c:549
-msgid "corrupt"
+#: src/ui.c:560
+msgid "reachable"
 msgstr ""
 
-#: src/ui.c:550
-msgid "code"
+#: src/ui.c:560
+msgid "stale"
 msgstr ""
 
-#: src/ui.c:557
-msgid "damaged"
+#: src/ui.c:560
+msgid "probe"
 msgstr ""
 
-#: src/ui.c:558
-msgid "queue drops"
+#: src/ui.c:564
+msgid "IPv6 neighbors (NDP)"
 msgstr ""
 
 #: src/ui.c:601
+msgid "DOWN"
+msgstr ""
+
+#: src/ui.c:605
+msgid "corrupt"
+msgstr ""
+
+#: src/ui.c:606
+msgid "code"
+msgstr ""
+
+#: src/ui.c:613
+msgid "damaged"
+msgstr ""
+
+#: src/ui.c:614
+msgid "queue drops"
+msgstr ""
+
+#: src/ui.c:657
 msgid "(this node runs in another process)"
 msgstr ""
 
-#: src/ui.c:643
+#: src/ui.c:699
 msgid "(End: newest)"
 msgstr ""
 
-#: src/ui.c:714 src/ui.c:755
+#: src/ui.c:770 src/ui.c:811
 msgid "(no frame transmitted yet)"
 msgstr ""
 
-#: src/ui.c:723
+#: src/ui.c:779
 msgid "link"
 msgstr ""
 
-#: src/ui.c:723
+#: src/ui.c:779
 msgid "summary"
 msgstr ""
 
-#: src/ui.c:776
+#: src/ui.c:832
 msgid "(too many nodes for this width: widen the window or zoom with z)"
 msgstr ""
 
-#: src/ui.c:817
+#: src/ui.c:873
 msgid "(the selected node records no time series; pick another node with n)"
 msgstr ""
 
-#: src/ui.c:959
+#: src/ui.c:1015
 msgid "What happens"
 msgstr ""
 
-#: src/ui.c:969
+#: src/ui.c:1025
 msgid "Try it"
 msgstr ""
 
-#: src/ui.c:970
+#: src/ui.c:1026
 msgid "Press : and type a command, for example:  h1 ping h2   ·   link r1 r2 down   ·   link h1 r1 loss=0.3   ·   node r2 down   ·   help"
 msgstr ""
 
-#: src/ui.c:977
+#: src/ui.c:1033
 msgid "Log"
 msgstr ""
 
-#: src/ui.c:977
+#: src/ui.c:1033
 msgid "Packets"
 msgstr ""
 
-#: src/ui.c:977
+#: src/ui.c:1033
 msgid "Sequence"
 msgstr ""
 
-#: src/ui.c:977
+#: src/ui.c:1033
 msgid "Graphs"
 msgstr ""
 
-#: src/ui.c:977
+#: src/ui.c:1033
 msgid "Guide"
 msgstr ""
 
-#: src/ui.c:985
+#: src/ui.c:1041
 msgid "only"
 msgstr ""
 
-#: src/ui.c:1004
+#: src/ui.c:1060
 msgid "pause / resume"
 msgstr ""
 
-#: src/ui.c:1005
+#: src/ui.c:1061
 msgid "when paused: advance to the next event"
 msgstr ""
 
-#: src/ui.c:1006
+#: src/ui.c:1062
 msgid "faster / slower"
 msgstr ""
 
-#: src/ui.c:1007
+#: src/ui.c:1063
 msgid "skip idle time automatically (on/off)"
 msgstr ""
 
-#: src/ui.c:1008
+#: src/ui.c:1064
 msgid "detail: overview, protocol messages, every frame"
 msgstr ""
 
-#: src/ui.c:1009
+#: src/ui.c:1065
 msgid "move the focus: network, node, bottom panel"
 msgstr ""
 
-#: src/ui.c:1010
+#: src/ui.c:1066
 msgid "focused panel: select node / change tab / scroll"
 msgstr ""
 
-#: src/ui.c:1011
+#: src/ui.c:1067
 msgid "next / previous node"
 msgstr ""
 
-#: src/ui.c:1012
+#: src/ui.c:1068
 msgid "bottom panel: log, packets, sequence, graphs, guide"
 msgstr ""
 
-#: src/ui.c:1013
+#: src/ui.c:1069
 msgid "packets: open or close the dissection of the selected frame"
 msgstr ""
 
-#: src/ui.c:1014
+#: src/ui.c:1070
 msgid "packet dissection: previous / next field (highlights its bytes)"
 msgstr ""
 
-#: src/ui.c:1015
+#: src/ui.c:1071
 msgid "log: show only the selected node (on/off)"
 msgstr ""
 
-#: src/ui.c:1016
+#: src/ui.c:1072
 msgid "zoom the focused panel to the whole window"
 msgstr ""
 
-#: src/ui.c:1017
+#: src/ui.c:1073
 msgid "crash / recover the selected node"
 msgstr ""
 
-#: src/ui.c:1018
+#: src/ui.c:1074
 msgid "command line (h1 ping h2 · link a b down · help)"
 msgstr ""
 
-#: src/ui.c:1019
+#: src/ui.c:1075
 msgid "this help"
 msgstr ""
 
-#: src/ui.c:1020 src/ui.c:1111
+#: src/ui.c:1076 src/ui.c:1167
 msgid "quit"
 msgstr ""
 
-#: src/ui.c:1028
+#: src/ui.c:1084
 msgid "Keys"
 msgstr ""
 
-#: src/ui.c:1064
+#: src/ui.c:1120
 msgid "  [node]"
 msgstr ""
 
-#: src/ui.c:1064
+#: src/ui.c:1120
 msgid "  [monitor]"
 msgstr ""
 
-#: src/ui.c:1067 src/ui.c:1109
+#: src/ui.c:1123 src/ui.c:1165
 msgid "speed"
 msgstr ""
 
-#: src/ui.c:1068 src/ui.c:1109
+#: src/ui.c:1124 src/ui.c:1165
 msgid "detail"
 msgstr ""
 
-#: src/ui.c:1109
+#: src/ui.c:1165
 msgid "pause"
 msgstr ""
 
-#: src/ui.c:1109
+#: src/ui.c:1165
 msgid "step"
 msgstr ""
 
-#: src/ui.c:1110
+#: src/ui.c:1166
 msgid "focus"
 msgstr ""
 
-#: src/ui.c:1110
+#: src/ui.c:1166
 msgid "node"
 msgstr ""
 
-#: src/ui.c:1110
+#: src/ui.c:1166
 msgid "views"
 msgstr ""
 
-#: src/ui.c:1110
+#: src/ui.c:1166
 msgid "command"
 msgstr ""
 
-#: src/ui.c:1111
+#: src/ui.c:1167
 msgid "help"
 msgstr ""
 
-#: src/ui.c:1275
+#: src/ui.c:1331
 msgid "idle time is skipped"
 msgstr ""
 
-#: src/ui.c:1275
+#: src/ui.c:1331
 msgid "real pace: idle time is not skipped"
 msgstr ""
 
-#: src/ui.c:1371
+#: src/ui.c:1427
 msgid "press ? for the keys, u for the guide"
 msgstr ""

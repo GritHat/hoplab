@@ -45,6 +45,9 @@
 #define NL_ETH_HLEN    14
 #define NL_IP_HLEN     20
 #define NL_UDP_HLEN    8
+#define NL_IP6_HLEN    40
+#define NL_MAX_IP6     4           /* IPv6 addresses per interface (the first is link-local) */
+#define NL_MAX_ROUTES6 64
 #define NL_DEFAULT_MTU 1500
 #define NL_MAX_ARGS    40
 
@@ -56,6 +59,9 @@ typedef long long nl_time;                     /* virtual microseconds */
 typedef uint32_t nl_ip;                        /* host byte order */
 #define NL_IP(a, b, c, d) (((nl_ip)(a) << 24) | ((nl_ip)(b) << 16) | ((nl_ip)(c) << 8) | (nl_ip)(d))
 #define NL_IP_BROADCAST 0xFFFFFFFFu
+
+/* IPv6 address, in network byte order */
+typedef struct nl_ip6 { uint8_t b[16]; } nl_ip6;
 
 typedef struct nl_node   nl_node;
 typedef struct nl_link   nl_link;
@@ -257,9 +263,18 @@ typedef struct nl_iface {
     int      blocked;          /* bridge port not forwarding (set by STP) */
     int      vlan;             /* access VLAN (0 = untagged world), -1 = 802.1Q trunk */
     uint64_t rx, tx, rx_bytes, tx_bytes;
+    struct {
+        nl_ip6  a;
+        uint8_t plen;
+        uint8_t state;         /* NL_A6_TENTATIVE while duplicate address detection runs */
+        uint8_t autoconf;      /* formed from a router advertisement (SLAAC) */
+    } ip6[NL_MAX_IP6];
+    int      nip6;
 } nl_iface;
 
-enum { NL_RT_CONNECTED = 0, NL_RT_STATIC = 1, NL_RT_BGP = 20, NL_RT_OSPF = 110, NL_RT_RIP = 120, NL_RT_DHCP = 5 };
+enum { NL_A6_TENTATIVE = 0, NL_A6_OK = 1, NL_A6_DUPLICATE = 2 };
+
+enum { NL_RT_CONNECTED = 0, NL_RT_STATIC = 1, NL_RT_RA = 4, NL_RT_BGP = 20, NL_RT_OSPF = 110, NL_RT_RIP = 120, NL_RT_DHCP = 5 };
 
 typedef struct nl_route {
     nl_ip dst;
@@ -270,6 +285,26 @@ typedef struct nl_route {
     int   proto;               /* NL_RT_*: also the administrative distance */
     nl_time since;
 } nl_route;
+
+typedef struct nl_route6 {
+    nl_ip6  dst;
+    int     plen;
+    nl_ip6  gw;                /* all zero = directly connected (on-link) */
+    int     ifx;
+    int     metric;
+    int     proto;             /* NL_RT_*: NL_RT_RA for routes learned from router advertisements */
+    nl_time since, expire;     /* expire 0 = never */
+} nl_route6;
+
+/* IPv6 neighbor cache entry (RFC 4861); the DELAY state is folded into PROBE */
+enum { NL_NBR_FREE = 0, NL_NBR_INCOMPLETE, NL_NBR_REACHABLE, NL_NBR_STALE, NL_NBR_PROBE };
+typedef struct nl_nbr {
+    nl_ip6  ip;
+    uint8_t mac[6];
+    int     state, ifx, router, tries, nwait;
+    nl_time confirmed, next;   /* last reachability confirmation; next retransmission */
+    void   *wait[3];           /* packets waiting for the address (private) */
+} nl_nbr;
 
 typedef struct nl_arp {
     nl_ip   ip;
@@ -329,6 +364,11 @@ struct nl_node {
     int      under_port;
     int      sock;             /* tunnel socket when local, else -1 */
     void    *stack;            /* core private (sockets, handlers, hooks) */
+
+    nl_route6 rt6[NL_MAX_ROUTES6];
+    int       nrt6;
+    nl_nbr    nbr[32];
+    void     *stack6;          /* core private (IPv6) */
 };
 
 nl_node *nl_node_find(const char *name);
@@ -500,6 +540,118 @@ uint32_t nl_udp_send(nl_node *n, uint16_t sport, nl_ip dst, uint16_t dport, cons
 /* Full control: tx->proto is ignored */
 uint32_t nl_udp_send_ex(nl_node *n, const nl_iptx *tx, uint16_t sport, uint16_t dport,
                         const void *data, int len);
+
+/* ------------------------------------------------------------------ */
+/* IPv6 (ip6.c)                                                       */
+/* ------------------------------------------------------------------ */
+
+/* A lab uses IPv6 when its scenario says so (`ipv6 on`, an IPv6 `ip` line,
+ * `auto addr6`): every interface of hosts and routers then gets a
+ * link-local address and speaks Neighbor Discovery. Labs that do not ask
+ * stay IPv4-only, frame for frame. */
+#define NL_ETH_IP6     0x86DD
+#define NL_PROTO_ICMP6 58
+#define NL_PROTO_FRAG6 44
+#define NL_IP6_MIN_MTU 1280
+
+int         nl_ip6_enabled(void);
+int         nl_parse_ip6(const char *s, nl_ip6 *out);                   /* 1 = ok; accepts :: compression */
+int         nl_parse_prefix6(const char *s, nl_ip6 *ip, int *plen);     /* addr/len; no /len = 128 */
+const char *nl_ip6_str(const nl_ip6 *ip);                               /* canonical text (RFC 5952); rotating buffers */
+int         nl_ip6_eq(const nl_ip6 *a, const nl_ip6 *b);
+int         nl_ip6_zero(const nl_ip6 *a);                               /* the unspecified address :: */
+int         nl_ip6_linklocal(const nl_ip6 *a);                          /* fe80::/10 */
+int         nl_ip6_multicast(const nl_ip6 *a);                          /* ff00::/8 */
+int         nl_ip6_match(const nl_ip6 *a, const nl_ip6 *prefix, int plen);
+/* IPv6 literal, node name (its first global address, else link-local) or NODE:IF */
+int         nl_resolve6(const char *s, nl_ip6 *out);
+
+/* Add an address to an interface: installs the connected route and starts
+ * duplicate address detection. Returns 0, or -1 when the interface is full. */
+int   nl_if_add_addr6(nl_node *n, int ifx, const nl_ip6 *ip, int plen);
+int   nl_ip6_is_local(const nl_node *n, const nl_ip6 *ip);
+nl_node *nl_node_by_ip6(const nl_ip6 *ip);
+/* Source address the node would use towards dst (RFC 6724 in miniature:
+ * link-local for link-local, else a global address of the outgoing
+ * interface). 0 = none usable yet. Needed before computing a checksum. */
+int   nl_ip6_src(const nl_node *n, const nl_ip6 *dst, nl_ip6 *src);
+/* Largest packet the node may send towards dst: the link MTU, lowered by
+ * the Packet Too Big messages received (path MTU discovery) */
+int   nl_ip6_mtu(const nl_node *n, const nl_ip6 *dst);
+
+void             nl_route6_set(nl_node *n, const nl_ip6 *dst, int plen, const nl_ip6 *gw, int ifx, int metric,
+                               int proto);
+void             nl_route6_del(nl_node *n, const nl_ip6 *dst, int plen, int proto);
+void             nl_route6_flush(nl_node *n, int proto);
+const nl_route6 *nl_route6_lookup(const nl_node *n, const nl_ip6 *dst);
+
+typedef struct nl_ip6meta {    /* a received IPv6 packet, parsed (extension headers skipped, reassembled) */
+    nl_ip6   src, dst;
+    uint8_t  proto, hlim, tclass;      /* proto = the upper-layer next header */
+    int      in_if;
+    uint32_t pkt_id;
+    const uint8_t *l4;
+    int      l4len;
+    const nl_pkt *pkt;
+} nl_ip6meta;
+typedef void (*nl_ip6_fn)(nl_node *n, void *ctx, const nl_ip6meta *m);
+
+typedef struct nl_ip6tx {      /* zero = defaults */
+    nl_ip6   src, dst;         /* src all zero = chosen as by nl_ip6_src() */
+    uint8_t  proto, hlim, tclass;      /* hlim 0 = 64 */
+    int      ifx, use_if;      /* use_if = 1: send out of ifx (needed for link-local and multicast) */
+    uint32_t pkt_id;
+} nl_ip6tx;
+
+void     nl_ip6_bind(nl_node *n, uint8_t proto, nl_ip6_fn fn, void *ctx);
+/* Sends l4 as the payload; fragments AT THE SOURCE when it exceeds the path
+ * MTU (routers never fragment IPv6). 0 = not sent. */
+uint32_t nl_ip6_send(nl_node *n, const nl_ip6tx *tx, const void *l4, int len);
+/* Upper-layer checksum with the IPv6 pseudo-header (RFC 8200 section 8.1) */
+uint16_t nl_l4_cksum6(const nl_ip6 *src, const nl_ip6 *dst, uint8_t proto, const void *seg, int len);
+
+/* Packet hooks on IPv6 packets: same callback and points as nl_hook_add */
+void nl_hook6_add(nl_node *n, int point, nl_hook_fn fn, void *ctx);
+void nl_hook6_del(nl_node *n, int point, nl_hook_fn fn, void *ctx);
+
+/* ICMPv6 (RFC 4443) */
+#define NL_ICMP6_UNREACH       1
+#define NL_ICMP6_TOO_BIG       2
+#define NL_ICMP6_TIME_EXCEEDED 3
+#define NL_ICMP6_ECHO          128
+#define NL_ICMP6_ECHO_REPLY    129
+typedef struct nl_icmp6meta {
+    nl_ip6   from;
+    uint8_t  type, code, hlim;
+    uint16_t id, seq;          /* echo */
+    const uint8_t *data;       /* echo payload, or the quoted packet for errors */
+    int      len;
+    nl_ip6   orig_src, orig_dst;       /* errors: the quoted packet */
+    uint8_t  orig_proto;
+    uint16_t orig_sport, orig_dport, orig_id, orig_seq;
+    int      mtu;              /* packet too big */
+    uint32_t pkt_id;
+} nl_icmp6meta;
+typedef void (*nl_icmp6_fn)(nl_node *n, void *ctx, const nl_icmp6meta *m);
+void     nl_icmp6_watch(nl_node *n, nl_icmp6_fn fn, void *ctx);
+void     nl_icmp6_unwatch(nl_node *n, nl_icmp6_fn fn, void *ctx);
+uint32_t nl_icmp6_echo(nl_node *n, const nl_ip6 *dst, uint16_t id, uint16_t seq, int hlim, int size);
+
+/* UDP over IPv6: its own port space, checksum mandatory */
+typedef struct nl_udp6msg {
+    nl_ip6   src, dst;
+    uint16_t sport, dport;
+    const uint8_t *data;
+    int      len, in_if;
+    uint8_t  hlim;
+    uint32_t pkt_id;
+} nl_udp6msg;
+typedef void (*nl_udp6_fn)(nl_node *n, void *ctx, const nl_udp6msg *m);
+int      nl_udp6_bind(nl_node *n, uint16_t port, nl_udp6_fn fn, void *ctx);     /* port 0 = ephemeral */
+void     nl_udp6_unbind(nl_node *n, uint16_t port);
+uint32_t nl_udp6_send(nl_node *n, uint16_t sport, const nl_ip6 *dst, uint16_t dport, const void *data, int len);
+uint32_t nl_udp6_send_ex(nl_node *n, const nl_ip6tx *tx, uint16_t sport, uint16_t dport, const void *data,
+                         int len);
 
 /* ------------------------------------------------------------------ */
 /* Layer 4: TCP (implemented by tcp.c)                                */

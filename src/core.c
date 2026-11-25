@@ -668,6 +668,7 @@ void nl_node_set_up(nl_node *n, int up)
     } else {
         n->up = 1;
         nl_log(n, NL_L_SIM, 1, 0, T_OK "● %s", _("node recovered"));
+        nl_ip6_node_up(n);
         for (i = 0; i < n->nmod; i++)
             if (n->mod[i].m->recover)
                 n->mod[i].m->recover(n);
