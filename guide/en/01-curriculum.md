@@ -42,6 +42,7 @@ Take these in order; each uses what the previous one showed.
 - `100-two-hosts` Two hosts and a cable: frames, addresses and ARP
 - `101-ping` Two networks and a router: ping, traceroute, fragmentation
 - `102-link-properties` What a link does to packets: delay, bandwidth, loss, queue
+- `103-ipv6-first` IPv6, first contact: link-local addresses and Neighbor Discovery
 - `120-tcp-handshake` TCP, segment by segment: handshake, data, teardown
 - `121-http-page` Loading a web page: HTTP over TCP
 - `140-dns-first` A first name lookup
@@ -61,6 +62,9 @@ The first seven labs are the journey of a web request seen from the bottom up: a
 - `201-mtu-fragmentation` MTU, fragmentation and path MTU discovery
 - `202-routing-loop` A routing loop, and the TTL that saves the network
 - `203-vlans` VLANs and trunks: several networks on the same switches
+- `204-ipv6-slaac` IPv6 autoconfiguration: router advertisements and SLAAC
+- `205-ipv6-pmtu` IPv6 never fragments on the way: Packet Too Big and path MTU discovery
+- `206-dual-stack` Dual stack: IPv4 and IPv6 side by side on the same cables
 - `220-tcp-loss` TCP on a lossy path: timeout and fast retransmit
 - `221-tcp-flow-control` TCP flow control: a fast sender and a slow reader
 - `230-rip-convergence` RIP: routers discover the network, then route around a failure

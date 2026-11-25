@@ -434,6 +434,42 @@ before bridging, which is how spanning tree receives BPDUs (`src/stp.c`). A
 bridge module can block a port by setting `n->ifc[i].blocked` and should call
 `nl_fdb_flush(n)` when the topology changes.
 
+### IPv6
+
+When the lab uses IPv6 (`nl_ip6_enabled()`), a module can use the second
+network layer through calls that mirror the IPv4 ones. Addresses are
+`nl_ip6` (16 bytes, network order); `nl_parse_ip6`, `nl_ip6_str`,
+`nl_resolve6` convert them.
+
+```c
+/* UDP over IPv6: its own port space */
+static void on_msg6(nl_node *n, void *ctx, const nl_udp6msg *m) { /* m->src, m->sport, m->data, m->len */ }
+nl_udp6_bind(n, 7000, on_msg6, st);
+nl_udp6_send(n, 7000, &peer, 7000, buf, len);
+
+/* a transport of your own, or TCP: next header PROTO */
+static void on_seg(nl_node *n, void *ctx, const nl_ip6meta *m) { /* m->l4, m->l4len, m->src, m->dst */ }
+nl_ip6_bind(n, PROTO, on_seg, st);
+
+nl_ip6tx tx = { 0 };
+tx.dst = peer;
+tx.proto = PROTO;
+if (nl_ip6_src(n, &peer, &tx.src)) {            /* the checksum covers the source address */
+    nl_put16(seg + CK, nl_l4_cksum6(&tx.src, &tx.dst, PROTO, seg, len));
+    nl_ip6_send(n, &tx, seg, len);
+}
+```
+
+`nl_ip6_send` fragments at the source when the segment exceeds the path MTU;
+a transport that wants to size its segments instead asks `nl_ip6_mtu(n,
+&dst)`, which already reflects the Packet Too Big messages received. Use
+`tx.use_if = 1` and `tx.ifx` for link-local and multicast destinations.
+ICMPv6 errors and echoes are observed with `nl_icmp6_watch`, routes are
+managed with `nl_route6_set / _del / _flush / _lookup` (same protocol
+constants as IPv4), packet hooks with `nl_hook6_add`, and an upper-layer
+dissector registered with `nl_dissector_ip(PROTO, fn)` is also called for
+IPv6 packets whose next header is PROTO.
+
 ## Routes
 
 ```c

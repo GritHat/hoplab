@@ -42,6 +42,7 @@ Affrontali in ordine; ognuno usa ciò che ha mostrato il precedente.
 - `100-two-hosts` Due host e un cavo: frame, indirizzi e ARP
 - `101-ping` Due reti e un router: ping, traceroute, frammentazione
 - `102-link-properties` Che cosa fa un collegamento ai pacchetti: ritardo, banda, perdita, coda
+- `103-ipv6-first` IPv6, primo contatto: indirizzi link-local e Neighbor Discovery
 - `120-tcp-handshake` TCP, segmento per segmento: handshake, dati, chiusura
 - `121-http-page` Caricare una pagina web: HTTP su TCP
 - `140-dns-first` Una prima risoluzione di nome
@@ -61,6 +62,9 @@ I primi sette laboratori sono il viaggio di una richiesta web visto dal basso ve
 - `201-mtu-fragmentation` MTU, frammentazione e scoperta della MTU del percorso
 - `202-routing-loop` Un ciclo di instradamento, e il TTL che salva la rete
 - `203-vlans` VLAN e trunk: più reti sugli stessi switch
+- `204-ipv6-slaac` Autoconfigurazione IPv6: router advertisement e SLAAC
+- `205-ipv6-pmtu` IPv6 non frammenta lungo il percorso: Packet Too Big e scoperta della MTU
+- `206-dual-stack` Dual stack: IPv4 e IPv6 fianco a fianco sugli stessi cavi
 - `220-tcp-loss` TCP su un percorso con perdite: timeout e fast retransmit
 - `221-tcp-flow-control` Controllo di flusso TCP: mittente veloce, lettore lento
 - `230-rip-convergence` RIP: i router scoprono la rete, poi aggirano un guasto

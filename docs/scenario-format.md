@@ -473,6 +473,61 @@ Typical combinations:
 | `ip ...` + `auto routes` | You want specific addresses but no routing work. |
 | `ip ...` + `gw ...` + `route ...` | Static routing is the subject. |
 
+### IPv6
+
+A lab is IPv4-only until its scenario asks for IPv6; then every interface of
+every host and router also gets a link-local address (`fe80::/64` plus an
+identifier derived from the MAC address), checks its addresses with duplicate
+address detection for one second, and speaks Neighbor Discovery instead of
+ARP. Existing IPv4 labs are not affected in any way. IPv6 is switched on by
+any of:
+
+| Directive | Effect |
+|---|---|
+| `ip NODE[:IF] 2001:db8:1::10/64` | An IPv6 address on an interface (up to 3 global addresses each, besides the link-local one). Without `:IF`, the first interface that has no global IPv6 address. |
+| `auto addr6` | Like `auto addr`: every subnet without a global IPv6 address gets `2001:db8:N::/64` (N = 1, 2, ... in the order of the `link` lines); routers `::1`, `::2`, ..., hosts `::10`, `::11`, ... (hexadecimal); every host gets a default route through the first router of its subnet. |
+| `auto routes6` | Like `auto routes`: static shortest-path IPv6 routes on every node. |
+| `auto all6` | Both. Combine with `auto all` for a dual-stack lab. |
+| `ipv6 on` | Only the link-local addresses: hosts then configure themselves from router advertisements (SLAAC). |
+
+`gw` and `route` accept IPv6 too, and choose the table from the form of the
+address:
+
+```
+ip r1:eth0 2001:db8:a::1/64
+gw h1 2001:db8:a::1
+route r1 2001:db8:b::/64 via 2001:db8:12::2
+route r1 2001:db8:c::/64 dev eth1
+route r1 del 2001:db8:b::/64
+```
+
+A gateway must be a global address on a subnet of the node (or a node name:
+`gw h1 r1` sets the default route of both protocols when both nodes have
+addresses of both). With `auto addr6` the addresses do not exist yet while the
+file is read, so `route ... via NAME` cannot be used together with it: write
+the address.
+
+Routers advertise their prefixes with the `ra` module
+(`run r1 ra [interval=10s] [lifetime=1800s]`); hosts listen without any
+command.
+
+The tools choose the protocol from the destination: an IPv6 literal, or
+`v6=1` with a node name (`run h1 ping h2 v6=1`), uses IPv6; a node name
+without `v6=1` uses IPv4 when the node has an IPv4 address and IPv6 otherwise.
+A node name stands for its first global IPv6 address, or its link-local one
+when it has no other.
+
+Counters worth using in `expect`: `ip6.forwarded`, `ip6.too_big`,
+`ip6.hlim_expired`, `ip6.noroute`, `ip6.fragmented`, `ip6.reassembled`,
+`ip6.pmtu_updates`, `nd.ns_sent`, `nd.failed`, `nd.dad_failed`,
+`slaac.addresses`, `ra.sent`, `icmp6.echo_served`, `icmp6.errors_sent`.
+
+Limits: no MLD, no DHCPv6, extension headers other than Fragment are skipped,
+and the routing protocols (RIP, OSPF, BGP) and TCP still run over IPv4 only.
+In a distributed run a node name resolves only to the addresses written in
+the file (or assigned by `auto addr6`), not to those formed by SLAAC in
+another process.
+
 ## Running things
 
 ### `run`
