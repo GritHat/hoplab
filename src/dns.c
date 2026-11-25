@@ -75,6 +75,16 @@ static int da_eq(const daddr *a, const daddr *b)
 
 static const char *da_str(const daddr *a) { return a->v6 ? nl_ip6_str(&a->a6) : nl_ip_str(a->v4); }
 
+/* `v6=1|0` or `family=6|4`: 1, 0, or -1 when neither is given */
+static int arg_v6(const nl_args *a)
+{
+    if (nl_arg_has(a, "family"))
+        return nl_arg_int(a, "family", 4) == 6;
+    if (nl_arg_has(a, "v6"))
+        return nl_arg_int(a, "v6", 0) != 0;
+    return -1;
+}
+
 /* Can this node send to the address at all? */
 static int da_usable(const nl_node *n, const daddr *a)
 {
@@ -1272,11 +1282,11 @@ static int dns_run(nl_node *n, const nl_args *a)
         const char *root = nl_arg_str(a, "root", NULL);
 
         st->resolver = 1;
-        if (!root || !da_resolve(root, (int)nl_arg_int(a, "v6", 0), &st->root)) {
+        if (!root || !da_resolve(root, arg_v6(a) == 1, &st->root)) {
             nl_log(n, NL_L_APP, 1, 0, T_ERR "dns: %s", _("resolver needs root=ADDRESS (a root name server)"));
             return -1;
         }
-        st->prefer4 = nl_arg_has(a, "v6") && !nl_arg_int(a, "v6", 0);
+        st->prefer4 = arg_v6(a) == 0;
         st->randomize = (int)nl_arg_int(a, "randomize", st->randomize);
         st->timeout = nl_arg_time(a, "timeout", st->timeout);
         if (nl_arg_has(a, "entropy")) {
@@ -1709,7 +1719,7 @@ static int dig_run(nl_node *n, const nl_args *a)
     const char *tname = nl_arg_str(a, "type", NULL), *then = nl_arg_str(a, "then", "");
     dig_q *q = NULL;
     daddr server = g_default_server[n->idx];
-    int type, trace, want6 = (int)nl_arg_int(a, "v6", 0);
+    int type, trace, want6 = arg_v6(a) == 1;
 
     if (!st) {
         st = calloc(1, sizeof(*st));
@@ -1824,11 +1834,15 @@ NL_MODULE(dig_mod)
 
 typedef struct {
     nl_node *n;
-    nl_ip    victim, as, fake;
+    daddr    victim, as;                /* same family: the one the race is run over */
+    nl_ip    fake;
+    nl_ip6   fake6;
+    int      qtype;                     /* T_A or T_AAAA: the record that is forged */
     char     base[NAME_MAX_], name[NAME_MAX_];
     int      guesses, sent, first_id, port, sport;
     int      idbits, portbits;          /* blind mode: the space the resolver draws from */
     int      rounds, round, waiting;
+    int      asked;                     /* races in which the resolver really asked upstream */
     uint32_t ttl;
     nl_time  gap, lead;
     nl_ev    timer, round_timer;
@@ -1843,7 +1857,6 @@ static void spoof_tick(void *ctx)
     spoof_state *s = ctx;
     dns_buf o;
     dns_rr r;
-    nl_iptx tx;
     uint16_t id, port;
 
     s->timer = 0;
@@ -1851,18 +1864,29 @@ static void spoof_tick(void *ctx)
         return;
     /* port known (the resolver always uses the same one): walk the ids from
      * the one expected next; port unknown: id and port are both guessed */
-    id = s->port ? (uint16_t)(s->first_id + s->round + s->sent) : (uint16_t)nl_rand(1u << s->idbits);
+    id = s->port ? (uint16_t)(s->first_id + s->asked + s->sent) : (uint16_t)nl_rand(1u << s->idbits);
     port = s->port ? (uint16_t)s->port : (uint16_t)(49152 + nl_rand(1u << s->portbits));
-    buf_start(&o, id, F_QR | F_AA, s->name, T_A);
+    buf_start(&o, id, F_QR | F_AA, s->name, s->qtype);
     memset(&r, 0, sizeof(r));
     strcpy(r.name, s->name);
-    r.type = T_A;
+    r.type = s->qtype;
     r.ip = s->fake;
+    r.ip6 = s->fake6;
     put_rr(&o, SEC_AN, &r, s->ttl);
-    memset(&tx, 0, sizeof(tx));
-    tx.src = s->as;                     /* forged source: the authoritative server */
-    tx.dst = s->victim;
-    nl_udp_send_ex(s->n, &tx, DNS_PORT, port, o.b, o.len);
+    /* forged source: the authoritative server, in the family of the race */
+    if (s->victim.v6) {
+        nl_ip6tx tx;
+        memset(&tx, 0, sizeof(tx));
+        tx.src = s->as.a6;
+        tx.dst = s->victim.a6;
+        nl_udp6_send_ex(s->n, &tx, DNS_PORT, port, o.b, o.len);
+    } else {
+        nl_iptx tx;
+        memset(&tx, 0, sizeof(tx));
+        tx.src = s->as.v4;
+        tx.dst = s->victim.v4;
+        nl_udp_send_ex(s->n, &tx, DNS_PORT, port, o.b, o.len);
+    }
     s->sent++;
     s->sent_total++;
     nl_count(s->n, "spoof.forged", 1);
@@ -1905,7 +1929,8 @@ static void spoof_end(spoof_state *s, int won, uint32_t pkt_id)
             nl_count_set(s->n, "spoof.first", 1);
         nl_log(s->n, NL_L_APP, s->rounds > 1 && s->round > 0 ? 2 : 1, pkt_id,
                T_ERR "dnsspoof: %s" T_RESET " — %s %s → %s (%d %s)", _("cache POISONED"),
-               _("the resolver now answers"), s->name, nl_ip_str(s->fake), s->sent, _("forged responses sent"));
+               _("the resolver now answers"), s->name,
+               s->qtype == T_AAAA ? nl_ip6_str(&s->fake6) : nl_ip_str(s->fake), s->sent, _("forged responses sent"));
     } else {
         s->sent_lost += (unsigned)s->sent;
         nl_log(s->n, NL_L_APP, s->rounds > 1 && s->round > 0 ? 2 : 1, pkt_id,
@@ -1945,13 +1970,13 @@ static void spoof_round(void *ctx)
         snprintf(s->name, sizeof(s->name), "x%d.%.*s", s->round, (int)(sizeof(s->name) - 12), s->base);
     s->sent = 0;
     s->waiting = 1;
-    buf_start(&o, (uint16_t)(0x6600 + s->attacks * 64 + s->round), F_RD, s->name, T_A);
-    nl_udp_send(s->n, (uint16_t)s->sport, s->victim, DNS_PORT, o.b, o.len);
+    buf_start(&o, (uint16_t)(0x6600 + s->attacks * 64 + s->round), F_RD, s->name, s->qtype);
+    da_send(s->n, (uint16_t)s->sport, &s->victim, DNS_PORT, o.b, o.len);
     s->timer = nl_after(s->n, s->lead, spoof_tick, s);
     s->round_timer = nl_after(s->n, NL_SEC(3), spoof_giveup, s);
 }
 
-static void spoof_rx(nl_node *n, void *ctx, const nl_udpmsg *m)
+static void spoof_rx(nl_node *n, void *ctx, const dns_in *m)
 {
     spoof_state *s = ctx;
     dns_msg *r = malloc(sizeof(*r));
@@ -1962,31 +1987,50 @@ static void spoof_rx(nl_node *n, void *ctx, const nl_udpmsg *m)
         return;
     if (msg_parse(m->data, m->len, r))
         for (i = 0; i < r->nrr; i++)
-            if (r->rr[i].sec == SEC_AN && r->rr[i].type == T_A && r->rr[i].ip == s->fake)
+            if (r->rr[i].sec == SEC_AN && r->rr[i].type == s->qtype &&
+                (s->qtype == T_AAAA ? nl_ip6_eq(&r->rr[i].ip6, &s->fake6) : r->rr[i].ip == s->fake))
                 won = 1;
     free(r);
-    if (s->waiting)
+    if (s->waiting) {
+        s->asked++;                     /* an answer came back: the resolver used one more id */
         spoof_end(s, won, m->pkt_id);
+    }
 }
 
 static int spoof_run(nl_node *n, const nl_args *a)
 {
     spoof_state *s = nl_mod_get(n, &spoof_mod);
     const char *victim = nl_arg_str(a, "resolver", NULL), *as = nl_arg_str(a, "as", NULL);
-    const char *name = nl_arg_str(a, "name", NULL), *fake = nl_arg_str(a, "fake", "6.6.6.6");
-    int bits;
+    const char *name = nl_arg_str(a, "name", NULL), *fake = nl_arg_str(a, "fake", NULL);
+    int bits, want6 = arg_v6(a) == 1, ok;
 
     if (!s) {
         s = calloc(1, sizeof(*s));
         if (!s)
             return -1;
         s->n = n;
-        s->sport = nl_udp_bind(n, 0, spoof_rx, s);
+        s->sport = da_bind(n, 0, spoof_rx, s);
         nl_mod_set(n, &spoof_mod, s);
     }
-    if (!victim || !as || !name || !nl_resolve(victim, &s->victim) || !nl_resolve(as, &s->as) ||
-        !nl_resolve(fake, &s->fake)) {
-        nl_log(n, NL_L_APP, 1, 0, T_ERR "dnsspoof: %s", _("usage: dnsspoof resolver=ADDR as=ADDR name=NAME [fake=ADDR]"));
+    /* the race runs over the family of the resolver's address; the forged
+     * record is an A or an AAAA according to the fake address */
+    ok = victim && as && name && da_resolve(victim, want6, &s->victim) &&
+         da_resolve(as, s->victim.v6, &s->as) && s->as.v6 == s->victim.v6;
+    if (ok) {
+        if (!fake)
+            fake = s->victim.v6 ? "2001:db8:bad::6" : "6.6.6.6";
+        memset(&s->fake6, 0, sizeof(s->fake6));
+        s->fake = 0;
+        if (nl_parse_ip6(fake, &s->fake6))
+            s->qtype = T_AAAA;
+        else if (nl_resolve(fake, &s->fake))
+            s->qtype = T_A;
+        else
+            ok = 0;
+    }
+    if (!ok) {
+        nl_log(n, NL_L_APP, 1, 0, T_ERR "dnsspoof: %s",
+               _("usage: dnsspoof resolver=ADDR as=ADDR name=NAME [fake=ADDR] [family=4|6] (resolver and as in the same family)"));
         return -1;
     }
     nl_cancel(&s->timer);
@@ -2008,15 +2052,15 @@ static int spoof_run(nl_node *n, const nl_args *a)
     s->ttl = (uint32_t)nl_arg_int(a, "ttl", 3600);
     s->gap = nl_arg_time(a, "gap", NL_US(200));
     s->lead = nl_arg_time(a, "lead", NL_US(100));
-    s->round = 0;
+    s->round = s->asked = 0;
     s->wins = s->done = s->sent_total = s->sent_lost = 0;
     s->attacks++;
     nl_count_set(n, "spoof.success", 0);
     nl_count_set(n, "spoof.rounds", 0);
     nl_count_set(n, "spoof.first", 0);
     nl_log(n, NL_L_APP, 1, 0, T_ERR "dnsspoof" T_RESET " %s %s: %s %s, %s %d %s %s %s",
-           _("attack on resolver"), nl_ip_str(s->victim), _("trigger a lookup of"), s->base, _("then race"),
-           s->guesses, _("forged answers pretending to come from"), nl_ip_str(s->as),
+           _("attack on resolver"), da_str(&s->victim), _("trigger a lookup of"), s->base, _("then race"),
+           s->guesses, _("forged answers pretending to come from"), da_str(&s->as),
            s->port ? "" : _("(blind: random ports and ids)"));
     spoof_round(s);
     return 0;
@@ -2030,7 +2074,7 @@ static void spoof_stop(nl_node *n)
         return;
     nl_cancel(&s->timer);
     nl_cancel(&s->round_timer);
-    nl_udp_unbind(n, (uint16_t)s->sport);
+    da_unbind(n, (uint16_t)s->sport);
     nl_mod_set(n, &spoof_mod, NULL);
     free(s);
 }
@@ -2042,9 +2086,10 @@ static int spoof_panel(nl_node *n, int x, int y, int w, int h, int detail)
 
     (void)h;
     (void)detail;
-    row += nl_ui_kv(x, y + row, w, _("target resolver"), "%s", nl_ip_str(s->victim));
-    row += nl_ui_kv(x, y + row, w, _("impersonated server"), "%s", nl_ip_str(s->as));
-    row += nl_ui_kv(x, y + row, w, _("forged record"), "%s A %s", s->base, nl_ip_str(s->fake));
+    row += nl_ui_kv(x, y + row, w, _("target resolver"), "%s", da_str(&s->victim));
+    row += nl_ui_kv(x, y + row, w, _("impersonated server"), "%s", da_str(&s->as));
+    row += nl_ui_kv(x, y + row, w, _("forged record"), "%s %s %s", s->base, s->qtype == T_AAAA ? "AAAA" : "A",
+                    s->qtype == T_AAAA ? nl_ip6_str(&s->fake6) : nl_ip_str(s->fake));
     row += nl_ui_kv(x, y + row, w, _("races run / won"), "%u / %u", s->done, s->wins);
     if (!s->port)
         row += nl_ui_kv(x, y + row, w, _("pairs to guess from"), "2^%d", s->idbits + s->portbits);
@@ -2054,8 +2099,10 @@ static int spoof_panel(nl_node *n, int x, int y, int w, int h, int detail)
 
 static const nl_module spoof_mod = {
     .name = "dnsspoof", .title = N_("DNS cache poisoning: an off-path forger of answers"), .layer = NL_L_APP,
-    .usage = N_("run NODE dnsspoof resolver=ADDR as=ADDR name=NAME [fake=6.6.6.6] [guesses=64]\n"
+.usage = N_("run NODE dnsspoof resolver=ADDR as=ADDR name=NAME [fake=ADDR] [family=4|6] [guesses=64]\n"
                 "        [port=53] [firstid=1] [blind=0] [entropy=30] [rounds=1] [ttl=3600] [gap=200us]\n"
+                "  family=6 (or IPv6 addresses): the race runs over IPv6. An IPv6 fake address forges an\n"
+                "  AAAA record, an IPv4 one an A record (defaults: 6.6.6.6, or 2001:db8:bad::6 over IPv6).\n"
                 "  Asks the resolver for NAME, then sends `guesses` forged answers with the source\n"
                 "  address of the authoritative server `as`. port=N: the resolver's known source\n"
                 "  port, ids firstid, firstid+1, ...; blind=1 (or port=0): port and id unknown, both\n"
@@ -2075,8 +2122,10 @@ static const nl_module spoof_mod = {
                  "(the fix deployed after Kaminsky's 2008 attack) gives about 30, which makes a blind "
                  "race impractical: a forger who lands n answers before the genuine one wins with "
                  "probability about n / 2^bits, and the lab lets you shrink the number of random bits "
-                 "to watch that law at work. DNSSEC, not modelled here, removes the problem by signing "
-                 "records."),
+                 "to watch that law at work. Over IPv6 nothing changes: the question still carries a "
+                 "16-bit identifier and leaves from a 16-bit port, and the size of the address space "
+                 "adds nothing to what the forger must guess. DNSSEC, not modelled here, removes the "
+                 "problem by signing records."),
     .run = spoof_run, .stop = spoof_stop, .panel = spoof_panel,
 };
 NL_MODULE(spoof_mod)

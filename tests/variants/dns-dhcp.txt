@@ -38,6 +38,23 @@ PASS  440-dns-poisoning  randomize=1 guesses=2000
 PASS  440-dns-poisoning  randomize=1 rounds=1
 PASS  440-dns-poisoning  rounds=1
 PASS  440-dns-poisoning  rounds=200
+PASS  440-dns-poisoning  family=6
+PASS  440-dns-poisoning  guesses=20  family=6
+PASS  440-dns-poisoning  guesses=2000  family=6
+PASS  440-dns-poisoning  randomize=1  family=6
+PASS  440-dns-poisoning  randomize=1 entropy=10  family=6
+PASS  440-dns-poisoning  randomize=1 entropy=12  family=6
+PASS  440-dns-poisoning  randomize=1 entropy=4  family=6
+PASS  440-dns-poisoning  randomize=1 entropy=6  family=6
+PASS  440-dns-poisoning  randomize=1 entropy=8  family=6
+PASS  440-dns-poisoning  randomize=1 entropy=8 guesses=2000  family=6
+PASS  440-dns-poisoning  randomize=1 entropy=8 guesses=50  family=6
+PASS  440-dns-poisoning  randomize=1 entropy=8 rounds=70  family=6
+PASS  440-dns-poisoning  randomize=1 entropy=9 rounds=200  family=6
+PASS  440-dns-poisoning  randomize=1 guesses=2000  family=6
+PASS  440-dns-poisoning  randomize=1 rounds=1  family=6
+PASS  440-dns-poisoning  rounds=1  family=6
+PASS  440-dns-poisoning  rounds=200  family=6
 PASS  242-dns-aaaa
 PASS  242-dns-aaaa  v6=0
 PASS  242-dns-aaaa  delay=1ms
