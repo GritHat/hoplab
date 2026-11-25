@@ -552,6 +552,8 @@ typedef struct nl_qdisc {
     int     (*enqueue)(void *st, nl_link *l, int dir, nl_pkt *p);    /* NL_Q_ACCEPT or NL_Q_DROP */
     nl_pkt *(*dequeue)(void *st, nl_link *l, int dir);
     void    (*panel)(void *st, nl_link *l, int dir, int x, int y, int w, int h);
+    int     (*backlog)(void *st, nl_link *l, int dir);  /* packets held outside the ring */
+    void    (*flush)(void *st, nl_link *l, int dir);    /* free them */
 } nl_qdisc;
 
 NL_INIT(my_qdisc) { nl_qdisc_register(&q_mine); }
@@ -573,6 +575,17 @@ NL_INIT(my_qdisc) { nl_qdisc_register(&q_mine); }
   discards a packet with a log line and a capture. NULL = plain FIFO.
 - A shaper whose `dequeue` returns NULL while packets are waiting must
   arrange to be asked again: arm a timer and call `nl_link_kick(l, dir)`.
+- A discipline that moves packets out of the ring into lists of its own (one
+  per flow as `fq` does, one per class as `prio` does) must also provide
+  `backlog`, returning how many packets it holds there, and `flush`, which
+  frees them: the core calls `flush` when the link goes down or is
+  reconfigured, just before it releases the state. `nl_link_backlog(l, dir)`
+  adds the ring and the private backlog, and is what the queue badge on the
+  map and the queue bar of the Links tab show, so use it rather than
+  `l->d[dir].qlen` wherever you report a queue length. Keep the total within
+  `l->cfg.qcap`: `queue=` is the size of the whole queue, not of the ring
+  (`fq` drops from the head of the flow with the largest backlog when the
+  total would exceed it, `prio` from the lowest non-empty band).
 - `panel` draws two rows in the Links tab of the transmitting node.
 
 Record measurements with `nl_sample()` on the transmitting node

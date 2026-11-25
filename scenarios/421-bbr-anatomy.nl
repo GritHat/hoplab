@@ -81,7 +81,13 @@ note[it] 22s Il collo di bottiglia è tornato. Ogni fase di sonda a 1,25 trova i
 
 duration 40s
 expect h1 tcp.send_done == 1
-expect h1 tcp.bbr_drain >= 1
-expect h1 tcp.bbr_probe_bw >= 2
-expect h1 tcp.bbr_probe_rtt >= 1
+expect h1 tcp.bbr_drain >= 1 if $cc == bbr
+expect h1 tcp.bbr_probe_bw >= 2 if $cc == bbr
+expect h1 tcp.bbr_probe_rtt >= 1 if $cc == bbr
+# a loss-based controller has none of these states: it has no model of the
+# path, fills the queue until it overflows and backs off on the losses
+expect h1 tcp.bbr_drain == 0 if $cc != bbr
+expect h1 tcp.bbr_probe_bw == 0 if $cc != bbr
+expect h1 tcp.bbr_probe_rtt == 0 if $cc != bbr
+expect h1 tcp.fast_retransmits >= 1 if $cc != bbr
 expect h1 tcp.steady_kbps >= 2000

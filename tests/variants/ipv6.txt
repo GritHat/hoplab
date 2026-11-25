@@ -1,6 +1,5 @@
 # Parameter variants of the IPv6 labs and the result their `expect` lines must give.
-# Format: PASS|FAIL  scenario  [key=value ...]     (checked with seeds 1..5)
-# A FAIL line is a documented experiment: the lab is meant to behave differently there.
+# Format: PASS  scenario  [key=value ...]     (checked with seeds 1..5)
 
 PASS  103-ipv6-first
 PASS  103-ipv6-first    loss=0
@@ -10,16 +9,26 @@ PASS  204-ipv6-slaac    interval=2s
 PASS  204-ipv6-slaac    interval=20s
 PASS  204-ipv6-slaac    lifetime=600s
 # a router lifetime shorter than the advertisement interval: the default route expires between two advertisements
-FAIL  204-ipv6-slaac    lifetime=3s
+PASS  204-ipv6-slaac    lifetime=3s
+PASS  204-ipv6-slaac    lifetime=1s
+PASS  204-ipv6-slaac    interval=10s lifetime=6s
+PASS  204-ipv6-slaac    interval=2s lifetime=1s
+PASS  204-ipv6-slaac    interval=20s lifetime=10s
 
 PASS  205-ipv6-pmtu
 PASS  205-ipv6-pmtu     size=1300
 PASS  205-ipv6-pmtu     size=2000
-# everything fits: no Packet Too Big, no fragments
-FAIL  205-ipv6-pmtu     size=1200
-FAIL  205-ipv6-pmtu     mtu=1500
+# the pings fit: it is the first big UDP datagram that discovers the path MTU
+PASS  205-ipv6-pmtu     size=1200
+PASS  205-ipv6-pmtu     size=100
+PASS  205-ipv6-pmtu     mtu=1400 size=1300
+# no bottleneck: no Packet Too Big at all
+PASS  205-ipv6-pmtu     mtu=1500
+PASS  205-ipv6-pmtu     mtu=1500 size=3000
 # below the IPv6 minimum of 1280 a source does not shrink its packets: a black hole
-FAIL  205-ipv6-pmtu     mtu=1000
+PASS  205-ipv6-pmtu     mtu=1000
+PASS  205-ipv6-pmtu     mtu=1000 size=500
+PASS  205-ipv6-pmtu     mtu=1100 size=1100
 
 PASS  206-dual-stack
 PASS  206-dual-stack    delay=1ms

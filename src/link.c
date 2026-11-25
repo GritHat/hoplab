@@ -116,8 +116,13 @@ void nl_link_reconf(nl_link *l)
             q->qhead = 0;
             q->qlen = keep;
         }
+        /* packets the old discipline keeps outside the ring would be lost
+         * with its state: let it free them first */
+        if (q->qd && q->qd->flush && q->qstate)
+            q->qd->flush(q->qstate, l, d);
         free(q->qstate);
         q->qstate = qd && qd->create ? qd->create(l, d, &a) : NULL;
+        q->qd = qd;
     }
 }
 
@@ -170,7 +175,19 @@ void nl_link_set_up(nl_link *l, int up)
             nl_pkt *p;
             while ((p = nl_q_pop(l, d, NULL)) != NULL)
                 nl_pkt_free(p);
+            if (l->d[d].qd && l->d[d].qd->flush && l->d[d].qstate)
+                l->d[d].qd->flush(l->d[d].qstate, l, d);
         }
+}
+
+int nl_link_backlog(const nl_link *l, int dir)
+{
+    const nl_linkdir *q = &l->d[dir];
+    int n = q->qlen;
+
+    if (q->qd && q->qd->backlog && q->qstate)
+        n += q->qd->backlog(q->qstate, (nl_link *)l, dir);
+    return n;
 }
 
 /* ------------------------------------------------------------------ */

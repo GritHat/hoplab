@@ -39,12 +39,15 @@ note[it] 12s CSMA/CA: in radio non si possono rilevare le collisioni; al loro po
 
 duration 14s
 # the ALOHA peaks do not depend on the cable: 18% and 37% (a little more with few stations)
-at 13900ms run bench check aloha "bench:mac.sweeps == 7 && bench:mac.aloha.peak >= 12 && bench:mac.aloha.peak <= 23 && bench:mac.slotted.peak >= 31 && bench:mac.slotted.peak <= 52"
+# (a handful of stations do a little better than the infinite-population 18.4%: N = 2 peaks at 25%)
+at 13900ms run bench check aloha "bench:mac.sweeps == 7 && bench:mac.aloha.peak >= 12 && bench:mac.aloha.peak <= 23 + ($stations < 4) * 5 && bench:mac.slotted.peak >= 31 && bench:mac.slotted.peak <= 52"
 # carrier sensing is as good as the cable is short: a = prop / 100 ms
 at 13900ms run bench check short "$prop / 100ms > 0.02 || (bench:mac.csma.peak >= 62 && bench:mac.csmacd.peak >= 80 && bench:mac.csmaca.peak >= 60)"
-at 13900ms run bench check long "$prop / 100ms < 0.08 || (bench:mac.csmacd.peak <= 75 && bench:mac.csma.peak <= 75)"
+# (with two or three stations there is seldom anybody to collide with, whatever the cable:
+# the claims about long cables and about persistence are for a populated channel)
+at 13900ms run bench check long "$prop / 100ms < 0.08 || $stations < 4 || (bench:mac.csmacd.peak <= 75 && bench:mac.csma.peak <= 75)"
 # and listening always beats not listening
-at 13900ms run bench check order "bench:mac.csma.peak > bench:mac.slotted.peak && bench:mac.csmacd.peak > bench:mac.csma1.peak"
+at 13900ms run bench check order "bench:mac.csma.peak > bench:mac.slotted.peak && ($stations < 4 || bench:mac.csmacd.peak > bench:mac.csma1.peak)"
 expect bench check.aloha == 1
 expect bench check.short == 1
 expect bench check.long == 1

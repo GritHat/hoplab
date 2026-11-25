@@ -1,9 +1,7 @@
 # Parameterised runs of the TCP labs that must keep their outcome.
-#   PASS|FAIL  scenario  key=value ...
-# PASS: every `expect` of the scenario holds with these parameters.
-# FAIL: at least one does not, on purpose (the variant shows the other
-#       behaviour: see the scenario's description).
-# tools/check-variants.sh runs each line with seeds 1..5.
+#   PASS  scenario  key=value ...
+# Every `expect` of the scenario holds with these parameters, seeds 1..5
+# (tests/regress.sh).
 
 PASS 120-tcp-handshake
 PASS 120-tcp-handshake bytes=50000
@@ -54,8 +52,17 @@ PASS 321-tcp-sack
 PASS 321-tcp-sack cc=cubic
 PASS 321-tcp-sack cc=reno
 PASS 321-tcp-sack delay=80ms
-FAIL 321-tcp-sack sack=0
-FAIL 321-tcp-sack sack=0 cc=cubic
+PASS 321-tcp-sack sack=0
+PASS 321-tcp-sack sack=0 cc=cubic
+PASS 321-tcp-sack sack=0 cc=reno
+PASS 321-tcp-sack sack=0 delay=80ms
+PASS 321-tcp-sack queue=30
+PASS 321-tcp-sack queue=6
+PASS 321-tcp-sack sack=0 queue=6
+PASS 321-tcp-sack bytes=1M
+PASS 321-tcp-sack bytes=100k
+PASS 321-tcp-sack sack=0 bytes=100k
+PASS 321-tcp-sack delay=10ms
 
 PASS 420-tcp-fairness
 PASS 420-tcp-fairness cc1=reno cc2=reno
@@ -77,5 +84,10 @@ PASS 421-bbr-anatomy queue=5
 PASS 421-bbr-anatomy queue=300
 PASS 421-bbr-anatomy bw=8M bw2=2M
 PASS 421-bbr-anatomy delay=50ms
-FAIL 421-bbr-anatomy cc=cubic
-FAIL 421-bbr-anatomy cc=reno
+PASS 421-bbr-anatomy cc=cubic
+PASS 421-bbr-anatomy cc=reno
+PASS 421-bbr-anatomy cc=newreno
+PASS 421-bbr-anatomy cc=cubic queue=5
+PASS 421-bbr-anatomy cc=reno queue=300
+PASS 421-bbr-anatomy cc=cubic queue=300
+PASS 421-bbr-anatomy cc=cubic delay=50ms

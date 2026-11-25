@@ -149,6 +149,20 @@ static void start_tx(sim *s, station *t)
         s->offered++;
 }
 
+/* Slotted ALOHA: stay out of the next `slots` slots. A transmission ends on
+ * the last tick of its slot, so zero means "try again in the very next
+ * slot": the station must be ready before that slot begins, or every choice
+ * would skip one slot and two stations would fall into a perfect alternation. */
+static void slot_wait(sim *s, station *t, long slots)
+{
+    if (slots <= 0) {
+        t->state = ST_READY;
+    } else {
+        t->state = ST_WAIT;
+        t->wait = slots * s->F;
+    }
+}
+
 static void finish_tx(sim *s, station *t, int ok)
 {
     long c, cw = s->F / MAC_CELLS > 0 ? s->F / MAC_CELLS : 1;
@@ -172,8 +186,7 @@ static void finish_tx(sim *s, station *t, int ok)
                 t->state = ST_WAIT;
                 t->wait = 1 + (long)nl_rand((unsigned)(s->n * s->F));
             } else if (s->proto == P_SLOTTED) {
-                t->state = ST_WAIT;
-                t->wait = (long)nl_rand((unsigned)s->n) * s->F;
+                slot_wait(s, t, (long)nl_rand((unsigned)s->n));
             }
         } else {
             t->state = ST_IDLE;
@@ -188,7 +201,7 @@ static void finish_tx(sim *s, station *t, int ok)
         t->wait = 1 + (long)nl_rand((unsigned)(2 * s->n * s->F));    /* random retransmission delay */
         break;
     case P_SLOTTED:
-        t->wait = (long)nl_rand((unsigned)(2 * s->n)) * s->F;
+        slot_wait(s, t, (long)nl_rand((unsigned)(2 * s->n)));
         break;
     case P_CSMACD:
         if (t->k >= 16) {               /* excessive collisions: the frame is dropped */

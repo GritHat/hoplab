@@ -33,12 +33,19 @@ PASS  361-mac-curves  prop=100us
 PASS  361-mac-curves  prop=10ms
 PASS  361-mac-curves  prop=30ms
 PASS  361-mac-curves  prop=3ms
+PASS  361-mac-curves  stations=2
+PASS  361-mac-curves  stations=2  prop=10ms
+PASS  361-mac-curves  stations=2  prop=30ms
+PASS  361-mac-curves  stations=3  prop=10ms
 PASS  361-mac-curves  stations=24
 PASS  361-mac-curves  stations=3
 PASS  361-mac-curves  stations=4
 PASS  361-mac-curves  stations=5
 PASS  460-hidden-terminal
 PASS  460-hidden-terminal  frame=10ms
+PASS  460-hidden-terminal  load=0.02
+PASS  460-hidden-terminal  load=0.05
+PASS  460-hidden-terminal  load=0.05  stations=4
 PASS  460-hidden-terminal  load=0.1
 PASS  460-hidden-terminal  load=0.2
 PASS  460-hidden-terminal  load=0.3

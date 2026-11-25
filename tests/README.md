@@ -13,7 +13,8 @@ A variant file is a list of lines
 PASS  scenario-name  key=value key=value
 ```
 
-`FAIL` is accepted for the rare case in which a failing expectation is the
-documented outcome; there is none at present. See "Expectations that depend
-on parameters" in `docs/scenario-format.md` for how labs state what they
-should show for any value of their parameters.
+There is no `FAIL`: a lab must hold for every value a student would give its
+parameters, so its expectations describe each configuration (`expect ... if
+$param == value`, or the `check` module for numeric conditions). A `FAIL` line
+in a variants file is reported as an error. See "Expectations that depend
+on parameters" in `docs/scenario-format.md`.

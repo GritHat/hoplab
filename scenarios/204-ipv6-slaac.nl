@@ -5,10 +5,10 @@ layer 3
 topic ip6
 about      Nobody configures the two hosts of this lab, and there is no DHCP server. Each host gives itself a link-local address, asks "is there a router?" (Router Solicitation), and the router answers with a Router Advertisement that carries the prefix of the link. The host glues the prefix to its own interface identifier, checks that the result is unique (DAD), and takes the router's link-local address as default gateway. That is stateless address autoconfiguration. At 10 s h1 is switched off and on again: it has forgotten everything, and configures itself once more.
 about
-about      Things to try: watch the Node and Routes tabs of h1 fill in during the first two seconds (the default route is marked "ra"). Open a Router Advertisement in the Packets view and read the prefix option. Stop the advertisements with  :stop r1 ra  and restart h1 (k): it keeps only its link-local address and cannot leave the link.
+about      Things to try: watch the Node and Routes tabs of h1 fill in during the first two seconds (the default route is marked "ra"). Open a Router Advertisement in the Packets view and read the prefix option. Stop the advertisements with  :stop r1 ra  and restart h1 (k): it keeps only its link-local address and cannot leave the link. Set lifetime below interval (lifetime=3s): the default route learned from an advertisement expires before the next one arrives, and pings sent in the gap cannot leave the host: count the replies h2 gets from r1.
 about[it]  Nessuno configura i due host di questo laboratorio, e non c'è un server DHCP. Ogni host si assegna un indirizzo link-local, chiede «c'è un router?» (Router Solicitation), e il router risponde con un Router Advertisement che porta il prefisso del collegamento. L'host unisce il prefisso al proprio identificatore di interfaccia, verifica che il risultato sia unico (DAD) e prende l'indirizzo link-local del router come gateway predefinito. Questa è l'autoconfigurazione senza stato. A 10 s h1 viene spento e riacceso: ha dimenticato tutto, e si configura di nuovo.
 about[it]
-about[it]  Da provare: osserva le schede Nodo e Rotte di h1 riempirsi nei primi due secondi (la rotta predefinita è marcata «ra»). Apri un Router Advertisement nella vista Pacchetti e leggi l'opzione del prefisso. Ferma gli annunci con  :stop r1 ra  e riavvia h1 (k): conserva solo l'indirizzo link-local e non può uscire dal collegamento.
+about[it]  Da provare: osserva le schede Nodo e Rotte di h1 riempirsi nei primi due secondi (la rotta predefinita è marcata «ra»). Apri un Router Advertisement nella vista Pacchetti e leggi l'opzione del prefisso. Ferma gli annunci con  :stop r1 ra  e riavvia h1 (k): conserva solo l'indirizzo link-local e non può uscire dal collegamento. Imposta lifetime sotto interval (lifetime=3s): la rotta predefinita imparata da un annuncio scade prima che arrivi il successivo, e i ping inviati nell'intervallo non possono lasciare l'host: conta le risposte che h2 riceve da r1.
 param      interval 5s Interval between unsolicited router advertisements
 param[it]  interval Intervallo fra i router advertisement non sollecitati
 param+     lifetime 60s Router lifetime announced to the hosts
@@ -35,8 +35,9 @@ note[it] 0 Prima gli indirizzi link-local: ogni interfaccia costruisce fe80:: + 
 note 1s    The hosts ask for routers; the advertisement brings the prefix: address = prefix + identifier, then DAD again.
 note[it] 1s Gli host cercano i router; l'annuncio porta il prefisso: indirizzo = prefisso + identificatore, poi di nuovo DAD.
 at 4s run h1 ping h2 count=3 v6=1
-note 4s    Both hosts are configured: ping from one autoconfigured address to the other.
-note[it] 4s Entrambi gli host sono configurati: ping da un indirizzo autoconfigurato all'altro.
+at 4s run h2 ping r1 count=12 v6=1
+note 4s    Both hosts are configured: ping from one autoconfigured address to the other. h2 also pings r1 once a second for twelve seconds: it only works while h2 has a default route.
+note[it] 4s Entrambi gli host sono configurati: ping da un indirizzo autoconfigurato all'altro. Inoltre h2 fa ping a r1 una volta al secondo per dodici secondi: funziona solo finché h2 ha una rotta predefinita.
 at 8s run h1 traceroute h2 v6=1
 at 10s node h1 down
 at 11s node h1 up
@@ -44,7 +45,10 @@ note 11s   h1 restarts with nothing: link-local, DAD, solicitation, advertisemen
 note[it] 11s h1 riparte da zero: link-local, DAD, solicitation, advertisement, indirizzo. Nessun server lo ricordava.
 at 15s run h1 ping h2 count=2 v6=1
 duration 19s
+# A router lifetime shorter than the advertisement interval is a
+# misconfiguration worth seeing: the default route of the hosts expires before
+# the next advertisement renews it, and comes back when it arrives.
+at 18900ms run h2 check reachable "($lifetime >= $interval && h1:ping.reply == 5 && h1:traceroute.hops == 3 && h2:ping.reply == 12) || ($lifetime < $interval && ($lifetime > 10s || h2:ping.reply < 12))"
 expect h1 slaac.addresses == 2
 expect h2 slaac.addresses == 1
-expect h1 ping.reply == 5
-expect h1 traceroute.hops == 3
+expect h2 check.reachable == 1

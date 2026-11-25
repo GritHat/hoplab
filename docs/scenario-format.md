@@ -727,7 +727,7 @@ everywhere else. Run the check on a node that is alive at that moment (a
 crashed node runs nothing).
 
 Write the expectations so that they hold for every value a student may
-reasonably give to the parameters: `tests/run-variants.sh` runs the lines of
+reasonably give to the parameters: `tests/regress.sh` runs the lines of
 `tests/variants/*.txt` (`PASS  scenario  key=value ...`) with five seeds and
 reports any that disagrees; `tests/try.sh` and `tests/counters.sh` help while
 designing them.

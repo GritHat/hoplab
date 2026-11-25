@@ -32,8 +32,10 @@ note 30s     `rtscts`: same hidden groups, but the access point's CTS silences e
 note[it] 30s `rtscts`: stessi gruppi nascosti, ma il CTS dell'access point zittisce tutti. Le collisioni si riducono all'RTS.
 
 duration 60s
-# hidden terminals collide where a shared channel does not, at any load
-at 59900ms run open check collide "hidden:mac.collisions > open:mac.collisions + 5"
+# hidden terminals collide where a shared channel does not; under a very light
+# load collisions of any kind are rare events (their number grows with the
+# square of the load), so there the claim is only that they are not fewer
+at 59900ms run open check collide "hidden:mac.collisions >= open:mac.collisions && ($load < 0.1 || hidden:mac.collisions > open:mac.collisions + 5)"
 # light load: retries still get everything through, at the price of those collisions
 at 59900ms run open check light "$load > 0.25 || (open:mac.throughput_pct >= 55 * $load && hidden:mac.throughput_pct >= 55 * $load && rtscts:mac.throughput_pct >= 55 * $load)"
 # from moderate load on (and with at least two stations per group) the hidden cell collapses, and

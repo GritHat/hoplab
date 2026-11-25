@@ -6,8 +6,8 @@
 #
 #  1. every lab of the catalog, headless, seeds 1..5: its `expect` lines hold
 #  2. the parameter variants in tests/variants/*.txt, seeds 1..5. A line is
-#         PASS|FAIL  lab-name  key=value ...
-#     and states the outcome guaranteed for those parameter values
+#         PASS  lab-name  key=value ...
+#     the lab's expectations must hold for those parameter values too
 #  3. the same catalog under AddressSanitizer and UBSan (seed 2)
 #  4. the multi-process mode: one lab split over three processes joined by
 #     UDP tunnels, with the start-up rendezvous
@@ -36,7 +36,14 @@ note "== 2. parameter variants"
 for v in tests/variants/*.txt; do
     [ -e "$v" ] || continue
     while read -r want lab params; do
-        case "$want" in PASS|FAIL) ;; *) continue ;; esac
+        # a lab must hold for every value of its parameters: there is no such
+        # thing as a variant that is supposed to fail
+        if [ "$want" = FAIL ]; then
+            total=$((total + 1))
+            bad "$(basename "$v"): '$lab $params' is listed as FAIL: fix the lab's expectations instead"
+            continue
+        fi
+        [ "$want" = PASS ] || continue
         for s in $SEEDS; do
             total=$((total + 1))
             # shellcheck disable=SC2086

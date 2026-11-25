@@ -188,6 +188,7 @@ typedef struct nl_linkdir {    /* one direction of a link: queue + transmitter *
     nl_time   busy_until;      /* transmitter busy until */
     int       sending;
     void     *qstate;          /* queue discipline state */
+    const struct nl_qdisc *qd; /* the discipline that owns qstate (NULL = drop-tail) */
     int       ge_bad;          /* Gilbert-Elliott state */
     uint64_t  tx, tx_bytes, lost, corrupted, qdrops, marked, fixed, undetected, fcs_drops;
 } nl_linkdir;
@@ -223,11 +224,24 @@ typedef struct nl_qdisc {
      * packets itself with nl_q_drop(). NULL callback = plain FIFO. */
     nl_pkt *(*dequeue)(void *st, nl_link *l, int dir);
     void  (*panel)(void *st, nl_link *l, int dir, int x, int y, int w, int h);
+    /* A discipline that moves packets out of the core ring into lists of
+     * its own (per flow, per class) must provide both of these, or nobody
+     * else knows about those packets. backlog(): how many it holds outside
+     * the ring, so that nl_link_backlog() - and with it the queue gauges of
+     * the interface - tell the truth. flush(): free them all (nl_pkt_free),
+     * called when the link goes down or is reconfigured, before the state
+     * is released. Both NULL for disciplines that leave packets in the ring. */
+    int   (*backlog)(void *st, nl_link *l, int dir);
+    void  (*flush)(void *st, nl_link *l, int dir);
 } nl_qdisc;
 void    nl_qdisc_register(const nl_qdisc *q);
 nl_pkt *nl_q_pop(nl_link *l, int dir, nl_time *sojourn);      /* head of the FIFO, or NULL */
 const nl_qitem *nl_q_peek(const nl_link *l, int dir, int i);  /* i-th from the head */
 void    nl_q_drop(nl_link *l, int dir, nl_pkt *p, const char *why);   /* count, log, free */
+/* Packets waiting to be transmitted in a direction: the core ring plus what
+ * the queue discipline holds privately. Never more than cfg.qcap for the
+ * disciplines shipped here: `queue=` bounds the whole backlog. */
+int     nl_link_backlog(const nl_link *l, int dir);
 int     nl_ecn_capable(const nl_pkt *p);       /* IPv4 packet with ECT(0)/ECT(1) */
 int     nl_ecn_mark(nl_pkt *p);                /* set CE (fixes the IP checksum); 1 = marked */
 

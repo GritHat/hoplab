@@ -351,10 +351,10 @@ static void draw_map(int x, int y, int w, int h)
         if (!l->up)
             tui_put((ax + bx) / 2, (ay + by) / 2, STB(C_ERR), "✗");
         for (d = 0; d < 2 && W.detail >= 2; d++)
-            if (l->d[d].qlen > 0) {
+            if (nl_link_backlog(l, d) > 0) {
                 int qx = d ? bx + (ax - bx) / 5 : ax + (bx - ax) / 5;
                 int qy = d ? by + (ay - by) / 5 : ay + (by - ay) / 5;
-                tui_print(qx, qy, 6, TS(16, C_WARN_BG, TA_BOLD), "%d", l->d[d].qlen);
+                tui_print(qx, qy, 6, TS(16, C_WARN_BG, TA_BOLD), "%d", nl_link_backlog(l, d));
             }
         if (W.detail >= 3 && W.nlinks <= 12)
             tui_print((ax + bx) / 2 - 5, (ay + by) / 2 + (ay == by ? 1 : 0), 22, ST(C_FAINT), "%s %s",
@@ -605,9 +605,13 @@ static int tab_links(const nl_node *n, int x, int y, int w, int h)
             tui_print(x, y + row++, w, ST(C_DIM), "  BER %.2g · %s %.3g%% · %s %s", c->ber, _("corrupt"),
                       c->corrupt * 100, _("code"), c->codec);
         tui_print(x, y + row, 10, ST(C_DIM), "  %s", _("queue"));
-        tui_bar(x + 9, y + row, w - 24 > 6 ? w - 24 : 6, (double)q->qlen / (q->qalloc ? q->qalloc : 1),
-                q->qlen * 10 > q->qalloc * 8 ? C_ERR : C_WARN);
-        tui_print(x + w - 14, y + row++, 14, ST(C_TEXT), "%d/%d %s", q->qlen, q->qalloc, c->qdisc);
+        {
+            int backlog = nl_link_backlog(l, f->end), cap = q->qalloc ? q->qalloc : 1;
+
+            tui_bar(x + 9, y + row, w - 24 > 6 ? w - 24 : 6, (double)backlog / cap,
+                    backlog * 10 > cap * 8 ? C_ERR : C_WARN);
+            tui_print(x + w - 14, y + row++, 14, ST(C_TEXT), "%d/%d %s", backlog, q->qalloc, c->qdisc);
+        }
         if (W.detail >= 2 && row < h)
             tui_print(x, y + row++, w, ST(C_DIM), "  tx %llu · %s %llu · %s %llu · %s %llu",
                       (unsigned long long)q->tx, _("lost"), (unsigned long long)q->lost, _("damaged"),

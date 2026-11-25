@@ -683,6 +683,28 @@ static nl_pkt *fq_dequeue(void *st, nl_link *l, int dir)
     return NULL;
 }
 
+static int fq_backlog(void *st, nl_link *l, int dir)
+{
+    fq_st *f = st;
+
+    (void)l; (void)dir;
+    return f ? f->pool.total : 0;
+}
+
+static void fq_flush(void *st, nl_link *l, int dir)
+{
+    fq_st *f = st;
+    nl_pkt *p;
+    int i;
+
+    (void)l; (void)dir;
+    for (i = 0; f && i < FQ_FLOWS; i++) {
+        while ((p = list_pop(&f->pool, &f->flow[i].q, NULL)) != NULL)
+            nl_pkt_free(p);
+        f->flow[i].deficit = 0;
+    }
+}
+
 static int fq_rows(void *st, nl_link *l, int dir, int x, int y, int w, int h)
 {
     fq_st *f = st;
@@ -802,6 +824,26 @@ static nl_pkt *prio_dequeue(void *st, nl_link *l, int dir)
             return list_pop(&s->pool, &s->band[i], NULL);
         }
     return NULL;
+}
+
+static int prio_backlog(void *st, nl_link *l, int dir)
+{
+    prio_st *s = st;
+
+    (void)l; (void)dir;
+    return s ? s->pool.total : 0;
+}
+
+static void prio_flush(void *st, nl_link *l, int dir)
+{
+    prio_st *s = st;
+    nl_pkt *p;
+    int i;
+
+    (void)l; (void)dir;
+    for (i = 0; s && i < PRIO_BANDS; i++)
+        while ((p = list_pop(&s->pool, &s->band[i], NULL)) != NULL)
+            nl_pkt_free(p);
 }
 
 static int prio_rows(void *st, nl_link *l, int dir, int x, int y, int w, int h)
@@ -933,10 +975,12 @@ static const nl_qdisc q_pie = {
 static const nl_qdisc q_fq = {
     .name = "fq", .title = N_("fair queueing: one queue per flow, served by deficit round robin"),
     .create = fq_create, .enqueue = fq_enqueue, .dequeue = fq_dequeue, .panel = fq_panel,
+    .backlog = fq_backlog, .flush = fq_flush,
 };
 static const nl_qdisc q_prio = {
     .name = "prio", .title = N_("strict priority: three bands chosen by the DSCP of the packet"),
     .create = prio_create, .enqueue = prio_enqueue, .dequeue = prio_dequeue, .panel = prio_panel,
+    .backlog = prio_backlog, .flush = prio_flush,
 };
 static const nl_qdisc q_tbf = {
     .name = "tbf", .title = N_("token bucket shaper: a long-term rate with a bounded burst"),
@@ -989,7 +1033,7 @@ static int qdisc_run(nl_node *n, const nl_args *a)
         nl_log(n, NL_L_NET, 1, 0,
                T_INFO "%s" T_RESET " → %s: " T_BOLD "%s" T_RESET " %s, %s %d/%d, %s %llu, %s %llu, %s %llu",
                n->ifc[i].name, l->n[!n->ifc[i].end]->name, l->cfg.qdisc, nl_rate_str(l->cfg.bw), _("queue"),
-               q->qlen, l->cfg.qcap, _("sent"), (unsigned long long)q->tx, _("dropped"),
+               nl_link_backlog(l, n->ifc[i].end), l->cfg.qcap, _("sent"), (unsigned long long)q->tx, _("dropped"),
                (unsigned long long)q->qdrops, _("ECN marked"), (unsigned long long)q->marked);
     }
     return 0;
@@ -1024,7 +1068,7 @@ static int qdisc_panel(nl_node *n, int x, int y, int w, int h, int detail)
         if (k < N_ALL && q->qstate)
             row += g_all[k].rows(q->qstate, l, dir, x + 2, y + row, w - 2, h - row);
         else if (row < h)
-            row += nl_ui_kv(x + 2, y + row, w - 2, _("queue"), "%d/%d", q->qlen, l->cfg.qcap);
+            row += nl_ui_kv(x + 2, y + row, w - 2, _("queue"), "%d/%d", nl_link_backlog(l, dir), l->cfg.qcap);
     }
     return row;
 }
