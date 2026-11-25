@@ -71,6 +71,7 @@ typedef struct bconn {
     int      st;                /* 0 = unused, else BS_CONNECT .. BS_ESTABLISHED */
     int      as4;               /* the neighbor announced the four-octet AS capability */
     int      mp4, mp6;          /* address families negotiated for this connection */
+    int      enh;               /* IPv4 prefixes travel with an IPv6 next hop (RFC 8950) */
     nl_time  last_rx, last_tx, t_open, hold;
     int      len;
     uint8_t  buf[BGP_MAXMSG];   /* bytes of the stream not yet forming a whole message */
@@ -110,7 +111,7 @@ typedef struct bstate {
     uint32_t  as;
     nl_ip     id;
     nl_time   keepalive, hold, mrai, retry;
-    int       prepend, rov, policy, connected, transport;
+    int       prepend, rov, policy, connected, transport, enh;
     peer      p[MAX_PEER];
     int       np;
     bpfx      net[MAX_NET], sup[MAX_NET];                         /* originated / suppressed */
@@ -277,7 +278,7 @@ static void send_open(bconn *bc)
 {
     bstate *s = bc->s;
     const peer *p = &s->p[bc->peer];
-    uint8_t b[BHDR + 10 + 2 + 6 + 6 + 6];
+    uint8_t b[BHDR + 10 + 2 + 6 + 6 + 6 + 8];
     int c = BHDR + 12, fam;
 
     b[BHDR] = 4;
@@ -286,7 +287,7 @@ static void send_open(bconn *bc)
     nl_put32(b + BHDR + 5, s->id);
     /* optional parameters: one, the capabilities (RFC 5492) */
     for (fam = 1; fam <= 2; fam++)      /* multiprotocol: AFI 1 = IPv4, 2 = IPv6; SAFI 1 = unicast (RFC 4760) */
-        if (fam == 1 ? p->has4 : p->has6) {
+        if (fam == 1 ? p->has4 || (s->enh && p->has6) : p->has6) {
             b[c++] = 1;
             b[c++] = 4;
             nl_put16(b + c, (uint16_t)fam);
@@ -294,6 +295,14 @@ static void send_open(bconn *bc)
             b[c + 3] = 1;
             c += 4;
         }
+    if (s->enh && p->has6) {            /* extended next hop: IPv4 unicast NLRI, IPv6 next hop (RFC 8950) */
+        b[c++] = 5;
+        b[c++] = 6;
+        nl_put16(b + c, 1);
+        nl_put16(b + c + 2, 1);
+        nl_put16(b + c + 4, 2);
+        c += 6;
+    }
     b[c++] = 65;                        /* four-octet AS numbers (RFC 6793) */
     b[c++] = 4;
     nl_put32(b + c, s->as);
@@ -379,7 +388,9 @@ static int put_as_path(uint8_t *a, const uint32_t *path, int npath, int w)
 }
 
 /* path == NULL: a withdrawal. IPv4 prefixes travel in the classic fields of
- * the UPDATE; IPv6 ones inside the MP_REACH_NLRI / MP_UNREACH_NLRI attributes. */
+ * the UPDATE; IPv6 ones inside the MP_REACH_NLRI / MP_UNREACH_NLRI attributes,
+ * and so do IPv4 ones when the session uses the extended next hop encoding:
+ * their next hop is then an IPv6 address, which the classic NEXT_HOP cannot hold. */
 static void send_update(bstate *s, peer *p, const bpfx *pfx, const uint32_t *path, int npath)
 {
     uint8_t b[BHDR + 2 + 2 + 9 + MAX_PATH * 4 + 7 + 4 + 5 + 32 + 20];
@@ -389,13 +400,13 @@ static void send_update(bstate *s, peer *p, const bpfx *pfx, const uint32_t *pat
 
     if (!bc || !fam_ok(p, pfx->fam))
         return;
-    if (pfx->fam == 4 && !path) {
+    if (pfx->fam == 4 && !bc->enh && !path) {
         int wl = put_prefix(b + len + 2, pfx);
         nl_put16(b + len, (uint16_t)wl);
         len += 2 + wl;
         nl_put16(b + len, 0);
         len += 2;
-    } else if (pfx->fam == 4) {
+    } else if (pfx->fam == 4 && !bc->enh) {
         nl_put16(b + len, 0);
         len += 2;
         a = b + len + 2;
@@ -417,12 +428,19 @@ static void send_update(bstate *s, peer *p, const bpfx *pfx, const uint32_t *pat
         a[alen++] = 0x80;                                                   /* optional, non-transitive */
         a[alen++] = path ? 14 : 15;                                         /* MP_REACH_NLRI / MP_UNREACH_NLRI */
         lenp = &a[alen++];
-        nl_put16(a + alen, 2);                                              /* AFI: IPv6 */
+        nl_put16(a + alen, pfx->fam == 4 ? 1 : 2);                          /* AFI: IPv4 (RFC 8950) or IPv6 */
         a[alen + 2] = 1;                                                    /* SAFI: unicast */
         alen += 3;
         if (path) {
-            /* next hop: our global address and, on a shared link, the link-local one (RFC 2545) */
-            int ll = !nl_ip6_zero(&p->myll6);
+            /* next hop: our global address and, on a shared link, the link-local one (RFC 2545).
+             * The link-local address may have appeared after the neighbor was configured. */
+            const nl_iface *f = &s->n->ifc[p->ifx];
+            int ll, q;
+
+            for (q = 0; q < f->nip6 && nl_ip6_zero(&p->myll6); q++)
+                if (nl_ip6_linklocal(&f->ip6[q].a) && f->ip6[q].state != NL_A6_DUPLICATE)
+                    p->myll6 = f->ip6[q].a;
+            ll = !nl_ip6_zero(&p->myll6);
 
             a[alen++] = ll ? 32 : 16;
             memcpy(a + alen, p->my6.b, 16);
@@ -606,7 +624,10 @@ static void bgp_process(void *ctx)
         o = loc_find(s->loc, &l->p, 0);
         if (l->src >= 0 && l->p.fam == 4) {
             routes++;
-            nl_route_set(n, pfx_ip4(&l->p), l->p.plen, l->nh, s->p[l->src].ifx, l->npath, NL_RT_BGP);
+            if (nl_ip6_zero(&l->nh6))
+                nl_route_set(n, pfx_ip4(&l->p), l->p.plen, l->nh, s->p[l->src].ifx, l->npath, NL_RT_BGP);
+            else                        /* learned with an IPv6 next hop: forwarded through Neighbor Discovery */
+                nl_route_set_via6(n, pfx_ip4(&l->p), l->p.plen, &l->nh6, s->p[l->src].ifx, l->npath, NL_RT_BGP);
         } else if (l->src >= 0) {
             routes6++;
             nl_route6_set(n, &l->p.a, l->p.plen, &l->nh6, s->p[l->src].ifx, l->npath, NL_RT_BGP);
@@ -819,13 +840,14 @@ static int rx_update(bstate *s, peer *p, const bconn *bc, const uint8_t *b, int 
 {
     uint32_t path[MAX_PATH];
     bpfx reach[8], pfx;
-    nl_ip6 nh6;
+    nl_ip6 nh6, none;
     int wlen, alen, off, npath = 0, nreach = 0, i, used, err, w = bc->as4 ? 4 : 2;
 
     if (len < 4)
         return 1;
     memset(path, 0, sizeof(path));
     memset(&nh6, 0, sizeof(nh6));
+    memset(&none, 0, sizeof(none));
     p->rx_updates++;
     nl_count(s->n, "bgp.updates_rcvd", 1);
     wlen = nl_get16(b);
@@ -861,43 +883,44 @@ static int rx_update(bstate *s, peer *p, const bconn *bc, const uint8_t *b, int 
                     path[npath++] = w == 4 ? nl_get32(v + q + 2 + k * 4) : nl_get16(v + q + 2 + k * 2);
                 q += 2 + cnt * w;
             }
-        } else if (type == 14 && l >= 5 && nl_get16(v) == 2 && v[2] == 1) {    /* MP_REACH_NLRI, IPv6 unicast */
-            int nhl = v[3], q = 4 + nhl + 1;
+        } else if (type == 14 && l >= 5 && (nl_get16(v) == 2 || nl_get16(v) == 1) && v[2] == 1) {
+            /* MP_REACH_NLRI: IPv6 unicast, or IPv4 unicast with an IPv6 next hop (RFC 8950) */
+            int nhl = v[3], q = 4 + nhl + 1, fam = nl_get16(v) == 1 ? 4 : 6;
 
             if ((nhl != 16 && nhl != 32) || q > l)
                 return 9;               /* optional attribute error */
             /* prefer the link-local next hop when the neighbor gives one: it is on our link */
             memcpy(nh6.b, v + 4 + (nhl == 32 ? 16 : 0), 16);
             while (q < l) {
-                used = get_prefix(v + q, l - q, 6, &pfx);
+                used = get_prefix(v + q, l - q, fam, &pfx);
                 if (used < 0)
                     return 9;
-                if (nreach < 8)
+                if (nreach < 8 && (fam == 6 || bc->enh))
                     reach[nreach++] = pfx;
                 q += used;
             }
-        } else if (type == 15 && l >= 3 && nl_get16(v) == 2 && v[2] == 1) {    /* MP_UNREACH_NLRI */
-            int q = 3;
+        } else if (type == 15 && l >= 3 && (nl_get16(v) == 2 || nl_get16(v) == 1) && v[2] == 1) {
+            int q = 3, fam = nl_get16(v) == 1 ? 4 : 6;                         /* MP_UNREACH_NLRI */
 
             while (q < l) {
-                used = get_prefix(v + q, l - q, 6, &pfx);
+                used = get_prefix(v + q, l - q, fam, &pfx);
                 if (used < 0)
                     return 9;
-                if (bc->mp6)
+                if (fam == 6 ? bc->mp6 : bc->enh)
                     rx_withdraw(s, p, &pfx);
                 q += used;
             }
         }
         i += hl + l;
     }
-    for (i = 0; i < nreach && bc->mp6; i++)
-        if ((err = rx_route(s, p, &reach[i], path, npath, &nh6)) != 0)
+    for (i = 0; i < nreach; i++)
+        if ((reach[i].fam == 4 || bc->mp6) && (err = rx_route(s, p, &reach[i], path, npath, &nh6)) != 0)
             return err;
     for (off += alen; off < len; off += used) {
         used = get_prefix(b + off, len - off, 4, &pfx);
         if (used < 0)
             return 10;
-        if (bc->mp4 && (err = rx_route(s, p, &pfx, path, npath, &nh6)) != 0)
+        if (bc->mp4 && !bc->enh && (err = rx_route(s, p, &pfx, path, npath, &none)) != 0)
             return err;
     }
     bgp_schedule(s);
@@ -911,7 +934,7 @@ static void rx_open(bconn *bc, const uint8_t *b, int len)
     bconn *other = &p->conn[!bc->dir];
     uint32_t as;
     nl_time hold;
-    int optlen, q, as4 = 0, peer4 = 0, peer6 = 0, anymp = 0;
+    int optlen, q, as4 = 0, peer4 = 0, peer6 = 0, anymp = 0, peer_enh = 0;
 
     if (bc->st != BS_OPENSENT) {
         conn_error(bc, E_FSM, 0, _("OPEN received in the wrong state"));
@@ -940,6 +963,11 @@ static void rx_open(bconn *bc, const uint8_t *b, int len)
                 anymp = 1;
                 if (nl_get16(b + k + 2) == 1) peer4 = 1;
                 if (nl_get16(b + k + 2) == 2) peer6 = 1;
+            } else if (b[k] == 5) {
+                int t;
+                for (t = k + 2; t + 6 <= k + 2 + b[k + 1] && t + 6 <= end; t += 6)
+                    if (nl_get16(b + t) == 1 && nl_get16(b + t + 2) == 1 && nl_get16(b + t + 4) == 2)
+                        peer_enh = 1;
             }
     }
     if (as != p->as) {
@@ -960,9 +988,15 @@ static void rx_open(bconn *bc, const uint8_t *b, int len)
      * multiprotocol capability at all speaks plain IPv4 BGP */
     bc->mp4 = p->has4 && (peer4 || !anymp);
     bc->mp6 = p->has6 && peer6;
+    /* no IPv4 network in common, but both ends can give IPv4 routes an IPv6
+     * next hop: the IPv4 family is carried all the same */
+    bc->enh = !p->has4 && p->has6 && s->enh && peer_enh && peer4;
+    if (bc->enh)
+        bc->mp4 = 1;
     bc->hold = hold < s->hold ? hold : s->hold;         /* the smaller of the two proposals */
-    nl_log(s->n, NL_L_NET, 2, 0, T_OK "BGP" T_RESET " ← %s: OPEN (AS %u, id %s, hold %s%s%s)", p->name, as,
-           nl_ip_str(p->id), nl_time_str(hold), peer4 ? ", IPv4" : "", peer6 ? ", IPv6" : "");
+    nl_log(s->n, NL_L_NET, 2, 0, T_OK "BGP" T_RESET " ← %s: OPEN (AS %u, id %s, hold %s%s%s%s)", p->name, as,
+           nl_ip_str(p->id), nl_time_str(hold), peer4 ? ", IPv4" : "", peer6 ? ", IPv6" : "",
+           peer_enh ? ", extended next hop" : "");
     if (!bc->mp4 && !bc->mp6) {
         conn_error(bc, E_OPEN, 7, _("no address family in common"));
         return;
@@ -1426,6 +1460,7 @@ static int bgp_run(nl_node *n, const nl_args *a)
     s->policy = (int)nl_arg_int(a, "policy", 1);
     s->connected = (int)nl_arg_int(a, "connected", 0);
     s->transport = (int)nl_arg_int(a, "transport", 4);
+    s->enh = (int)nl_arg_int(a, "enh", 1);
     for (i = 0; i < n->nif; i++)
         if (n->ifc[i].ip > s->id)
             s->id = n->ifc[i].ip;
@@ -1570,15 +1605,17 @@ static int bgp_panel(nl_node *n, int x, int y, int w, int h, int detail)
                   p->rx_updates, p->tx_updates);
         if (detail >= 2 && p->est >= 0 && row < h) {
             const bconn *bc = &p->conn[p->est];
-            tui_print(x, y + row++, w, TS(C_DIM, C_DEFAULT, 0), "         TCP/IPv%d %s · %s %s · %s%s%s",
-                      nl_tcp_family(bc->c), bc->dir ? _("opened by the neighbor") : _("opened by us"), _("hold"),
-                      nl_time_str(bc->hold), bc->mp4 ? "IPv4" : "", bc->mp4 && bc->mp6 ? " + " : "",
-                      bc->mp6 ? "IPv6" : "");
+            tui_print(x, y + row++, w, TS(C_DIM, C_DEFAULT, 0), "  TCP/IPv%d · %s %s · %s%s%s",
+                      nl_tcp_family(bc->c), _("hold"), nl_time_str(bc->hold),
+                      bc->mp4 ? bc->enh ? _("IPv4 via IPv6 next hop") : "IPv4" : "",
+                      bc->mp4 && bc->mp6 ? " + " : "", bc->mp6 ? "IPv6" : "");
+            if (detail >= 3 && row < h)
+                tui_print(x, y + row++, w, TS(C_DIM, C_DEFAULT, 0), "  %s",
+                          bc->dir ? _("opened by the neighbor") : _("opened by us"));
         }
     }
     if (row < h)
-        tui_print(x, y + row++, w, TS(C_DIM, C_DEFAULT, 0), "%-20s %-8s %-18s %s", _("prefix"), _("via"),
-                  _("AS path"), _("why it is the best"));
+        tui_print(x, y + row++, w, TS(C_DIM, C_DEFAULT, 0), "%-19s %-6s %s", _("prefix"), _("via"), _("AS path"));
     for (i = 0; i < MAX_RIB && row < h; i++) {
         loc_route *l = &s->loc[i];
         const char *net;
@@ -1586,15 +1623,24 @@ static int bgp_panel(nl_node *n, int x, int y, int w, int h, int detail)
         if (!l->used)
             continue;
         net = pfx_str(&l->p);
-        tui_print(x, y + row++, w, TS(l->src < 0 ? C_INFO : C_TEXT, C_DEFAULT, 0), "%-20s %-8s %-18s %s", net,
-                  l->src < 0 ? "-" : s->p[l->src].name, path_str(l->path, l->npath), l->why ? _(l->why) : "");
+        {
+            /* the reason goes on the same row when it fits, else on one of its own */
+            const char *path = path_str(l->path, l->npath), *why = l->why ? _(l->why) : "";
+            int used = 27 + tui_text_width(path), fits = used + 2 + tui_text_width(why) <= w;
+
+            tui_print(x, y + row++, w, TS(l->src < 0 ? C_INFO : C_TEXT, C_DEFAULT, 0),
+                      "%-19s %-6s %s" T_DIM "%s%s", net, l->src < 0 ? "-" : s->p[l->src].name, path,
+                      fits && *why ? "  " : "", fits ? why : "");
+            if (!fits && *why && detail >= 2 && row < h)
+                tui_print(x, y + row++, w, TS(C_DIM, C_DEFAULT, 0), "%27s%s", "", why);
+        }
         if (detail < 3)
             continue;
         for (k = 0; k < s->np && row < h; k++) {       /* the alternatives heard (Adj-RIB-In) */
             int j;
             for (j = 0; j < MAX_RIB; j++)
                 if (s->p[k].in[j].used && pfx_eq(&s->p[k].in[j].p, &l->p) && k != l->src)
-                    tui_print(x, y + row++, w, TS(C_DIM, C_DEFAULT, 0), "%-20s %-8s %s", "", s->p[k].name,
+                    tui_print(x, y + row++, w, TS(C_DIM, C_DEFAULT, 0), "%-19s %-6s %s", "", s->p[k].name,
                               path_str(s->p[k].in[j].path, s->p[k].in[j].npath));
         }
     }
@@ -1606,7 +1652,7 @@ static const nl_module bgp_mod = {
     .usage = N_("run ROUTER bgp as=N [network=PREFIX/LEN ...] [neighbor=NODE:AS[:RELATION] ...]\n"
                 "               [connected=1] [keepalive=30s] [hold=3×keepalive] [retry=keepalive]\n"
                 "               [mrai=500ms] [prepend=N] [prepend.NEIGHBOR=N] [policy=1]\n"
-                "               [rov=1 roa=PREFIX/LEN:AS[:MAXLEN] ...] [transport=6] [id=A.B.C.D]\n"
+                "               [rov=1 roa=PREFIX/LEN:AS[:MAXLEN] ...] [transport=6] [enh=0] [id=A.B.C.D]\n"
                 "run ROUTER bgp announce|withdraw PREFIX/LEN\n"
                 "  network= and neighbor= can be repeated. RELATION says what the neighbor is for\n"
                 "  this AS: customer, peer or provider (none: no policy on that session).\n"
@@ -1622,6 +1668,8 @@ static const nl_module bgp_mod = {
                 "  families of the networks the two routers share (multiprotocol BGP). It runs over\n"
                 "  IPv4 when they share an IPv4 network, else over IPv6; transport=6 (or\n"
                 "  transport.NEIGHBOR=6) prefers IPv6. A neighbor can also be [IPV6-ADDRESS]:AS.\n"
+                "  Routers that share only IPv6 networks still exchange IPv4 prefixes, with an IPv6\n"
+                "  next hop (extended next hop encoding, RFC 8950); enh=0 turns that off.\n"
                 "  Counters: bgp.routes (IPv4) and bgp.routes6 (IPv6)."),
     .theory = N_("The Internet is a network of autonomous systems (AS): networks under one administration, "
                  "each with its own interior routing. BGP is the protocol they use to tell each other which "
@@ -1661,6 +1709,15 @@ static const nl_module bgp_mod = {
                  "goes in the forwarding table. Everything else is shared: one session, one AS path, the "
                  "same decision process and policies for both families. The TCP connection itself may run "
                  "over either protocol, independently of what it carries.\n\n"
+                 "The same attributes solve a problem of dual-stack backbones: links between routers that "
+                 "carry only IPv6 addresses. An IPv4 prefix cannot be announced over such a link in the "
+                 "classic way, because NEXT_HOP must be an IPv4 address. With the extended next hop "
+                 "encoding (RFC 8950), negotiated by a capability in the OPEN, IPv4 prefixes travel in "
+                 "MP_REACH_NLRI with an IPv6 next hop. The route is installed with that next hop, and the "
+                 "IPv4 packets are still sent as IPv4 frames: only the link-layer address is found with "
+                 "Neighbor Discovery instead of ARP. A router on such a path that has no IPv4 address at "
+                 "all forwards IPv4 perfectly well, but cannot be the source of an ICMP error: traceroute "
+                 "shows it as a silent hop.\n\n"
                  "Not modelled here: iBGP (there is one router per AS and neighbors are directly connected), "
                  "MED, communities, aggregation and route-flap damping; each UPDATE carries one prefix."),
     .run = bgp_run, .stop = bgp_stop, .crash = bgp_crash, .recover = bgp_recover, .panel = bgp_panel,
@@ -1709,6 +1766,10 @@ static int dis_bgp_msg(nl_dissect *o, const uint8_t *d, int len, int off, char *
                     nl_dis_field(o, "BGP", "Capability", off + k, 6, "multiprotocol: %s unicast (AFI %d, SAFI %d)",
                                  nl_get16(d + k + 2) == 1 ? "IPv4" : nl_get16(d + k + 2) == 2 ? "IPv6" : "?",
                                  nl_get16(d + k + 2), d[k + 5]);
+                } else if (d[k] == 5 && d[k + 1] >= 6 && k + 8 <= mlen) {
+                    nl_dis_field(o, "BGP", "Capability", off + k, 2 + d[k + 1],
+                                 "extended next hop: AFI %d SAFI %d NLRI with AFI %d next hops (RFC 8950)",
+                                 nl_get16(d + k + 2), nl_get16(d + k + 4), nl_get16(d + k + 6));
                 } else {
                     nl_dis_field(o, "BGP", "Capability", off + k, 2 + d[k + 1], "code %d", d[k]);
                 }
@@ -1754,11 +1815,12 @@ static int dis_bgp_msg(nl_dissect *o, const uint8_t *d, int len, int off, char *
                 nl_dis_field(o, "BGP", "AS_PATH", off + i, hl + l, "AS_SEQUENCE: %s", path);
             } else if (d[i + 1] == 3 && l == 4) {
                 nl_dis_field(o, "BGP", "NEXT_HOP", off + i, hl + l, "%s", nl_ip_str(nl_get32(v)));
-            } else if (d[i + 1] == 14 && l >= 5 && nl_get16(v) == 2) {
-                int nhl = v[3], q = 4 + nhl + 1;
+            } else if (d[i + 1] == 14 && l >= 5 && (nl_get16(v) == 2 || nl_get16(v) == 1)) {
+                int nhl = v[3], q = 4 + nhl + 1, fam = nl_get16(v) == 1 ? 4 : 6;
                 nl_ip6 a6;
 
-                nl_dis_field(o, "BGP", "MP_REACH_NLRI", off + i, hl + 3, "AFI 2 (IPv6), SAFI %d (unicast)", v[2]);
+                nl_dis_field(o, "BGP", "MP_REACH_NLRI", off + i, hl + 3, "AFI %d (IPv%d), SAFI %d (unicast)%s",
+                             nl_get16(v), fam, v[2], fam == 4 ? ", IPv6 next hop" : "");
                 if (nhl >= 16 && 4 + nhl <= l) {
                     memcpy(a6.b, v + 4, 16);
                     nl_dis_field(o, "BGP", "  next hop", off + i + hl + 4, 16, "%s", nl_ip6_str(&a6));
@@ -1767,17 +1829,18 @@ static int dis_bgp_msg(nl_dissect *o, const uint8_t *d, int len, int off, char *
                         nl_dis_field(o, "BGP", "  next hop (link-local)", off + i + hl + 20, 16, "%s", nl_ip6_str(&a6));
                     }
                 }
-                while (q < l && (used = get_prefix(v + q, l - q, 6, &pfx)) > 0) {
+                while (q < l && (used = get_prefix(v + q, l - q, fam, &pfx)) > 0) {
                     nl_dis_field(o, "BGP", "  NLRI (announced)", off + i + hl + q, used, "%s", pfx_str(&pfx));
                     if (!nn++)
                         snprintf(first, sizeof(first), "%s", pfx_str(&pfx));
                     q += used;
                 }
-            } else if (d[i + 1] == 15 && l >= 3 && nl_get16(v) == 2) {
-                int q = 3;
+            } else if (d[i + 1] == 15 && l >= 3 && (nl_get16(v) == 2 || nl_get16(v) == 1)) {
+                int q = 3, fam = nl_get16(v) == 1 ? 4 : 6;
 
-                nl_dis_field(o, "BGP", "MP_UNREACH_NLRI", off + i, hl + 3, "AFI 2 (IPv6), SAFI %d (unicast)", v[2]);
-                while (q < l && (used = get_prefix(v + q, l - q, 6, &pfx)) > 0) {
+                nl_dis_field(o, "BGP", "MP_UNREACH_NLRI", off + i, hl + 3, "AFI %d (IPv%d), SAFI %d (unicast)",
+                             nl_get16(v), fam, v[2]);
+                while (q < l && (used = get_prefix(v + q, l - q, fam, &pfx)) > 0) {
                     nl_dis_field(o, "BGP", "  withdrawn route", off + i + hl + q, used, "%s", pfx_str(&pfx));
                     if (!nw++)
                         snprintf(first, sizeof(first), "%s", pfx_str(&pfx));

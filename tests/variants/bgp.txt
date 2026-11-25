@@ -58,3 +58,12 @@ PASS  432-bgp-ipv6-hijack  keepalive=1s
 PASS  432-bgp-ipv6-hijack  keepalive=10s
 PASS  432-bgp-ipv6-hijack  keepalive=10s rov=1
 PASS  432-bgp-ipv6-hijack  keepalive=30s
+
+# IPv4 islands over an IPv6-only core: extended next hop encoding (RFC 8950)
+PASS  333-bgp-ipv4-over-ipv6
+PASS  333-bgp-ipv4-over-ipv6  enh=0
+PASS  333-bgp-ipv4-over-ipv6  keepalive=1s
+PASS  333-bgp-ipv4-over-ipv6  keepalive=10s
+PASS  333-bgp-ipv4-over-ipv6  keepalive=10s enh=0
+# IPv4 routes with an IPv6 next hop, static (core forwarding through Neighbor Discovery)
+PASS  tests/labs/v4-via-v6.nl
