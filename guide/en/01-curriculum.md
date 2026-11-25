@@ -65,6 +65,7 @@ The first seven labs are the journey of a web request seen from the bottom up: a
 - `204-ipv6-slaac` IPv6 autoconfiguration: router advertisements and SLAAC
 - `205-ipv6-pmtu` IPv6 never fragments on the way: Packet Too Big and path MTU discovery
 - `206-dual-stack` Dual stack: IPv4 and IPv6 side by side on the same cables
+- `207-tcp-over-ipv6` TCP and HTTP over IPv6, and how TCP finds the path MTU
 - `220-tcp-loss` TCP on a lossy path: timeout and fast retransmit
 - `221-tcp-flow-control` TCP flow control: a fast sender and a slow reader
 - `230-rip-convergence` RIP: routers discover the network, then route around a failure

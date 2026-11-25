@@ -679,6 +679,19 @@ void     nl_tcp_abort(nl_tcp *c);                                 /* RST */
 void     nl_tcp_peer(const nl_tcp *c, nl_ip *ip, uint16_t *port);
 void     nl_tcp_local(const nl_tcp *c, nl_ip *ip, uint16_t *port);
 nl_node *nl_tcp_node(const nl_tcp *c);
+/* TCP over IPv6. Connections of the two families are the same objects and
+ * use the same callbacks; a listener accepts both. nl_tcp_family() tells
+ * which one a connection is (4 or 6): use nl_tcp_peer / nl_tcp_local for
+ * IPv4 connections and the *6 variants for IPv6 ones (the others give 0 or
+ * the unspecified address). Over IPv6 the MSS leaves room for the 40-byte
+ * header (1440 on a 1500-byte MTU) and follows ICMPv6 Packet Too Big; over
+ * IPv4 segments carry DF and follow "fragmentation needed" unless the
+ * connection was opened with pmtud=0. */
+nl_tcp  *nl_tcp_connect6(nl_node *n, const nl_ip6 *dst, uint16_t dport, const nl_tcp_ops *ops, void *ctx,
+                         const char *opts);
+int      nl_tcp_family(const nl_tcp *c);
+void     nl_tcp_peer6(const nl_tcp *c, nl_ip6 *ip, uint16_t *port);
+void     nl_tcp_local6(const nl_tcp *c, nl_ip6 *ip, uint16_t *port);
 
 /* ------------------------------------------------------------------ */
 /* Dissection (packet inspector)                                      */

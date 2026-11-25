@@ -395,6 +395,11 @@ void    nl_tcp_abort(nl_tcp *c);                              /* RST */
 - `opts` is a string of TCP options (`"cc=cubic mss=1000 ecn=1"`) or NULL;
   modules usually pass through a user argument, as `http` does with `tcp=`.
 - `nl_tcp_peer`, `nl_tcp_local` and `nl_tcp_node` describe a connection.
+- Over IPv6: `nl_tcp_connect6(n, &addr6, port, ops, ctx, opts)` opens a
+  connection, a listener accepts both families, and `nl_tcp_family(c)`
+  (4 or 6) tells which `nl_tcp_peer` / `nl_tcp_peer6` (and `local`) to call.
+  TCP follows the path MTU by itself (ICMP "fragmentation needed" with DF
+  on IPv4, Packet Too Big on IPv6); `pmtud=0` in `opts` turns it off on IPv4.
 
 `src/http.c` is a complete client and server on this interface.
 

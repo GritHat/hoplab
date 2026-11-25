@@ -1,5 +1,5 @@
 <!-- level: 2 -->
-<!-- labs: 103-ipv6-first, 204-ipv6-slaac, 205-ipv6-pmtu, 206-dual-stack -->
+<!-- labs: 103-ipv6-first, 204-ipv6-slaac, 205-ipv6-pmtu, 206-dual-stack, 207-tcp-over-ipv6 -->
 # IPv6: indirizzi, Neighbor Discovery e autoconfigurazione
 
 IPv4 ha indirizzi a 32 bit: circa quattro miliardi, meno dei dispositivi che ne vorrebbero uno. **IPv6** è la stessa idea di livello di rete — pacchetti con un indirizzo sorgente e uno di destinazione, inoltrati salto dopo salto con il longest prefix match — con **indirizzi a 128 bit** e un'intestazione ridisegnata con trent'anni di esperienza. Non sostituisce IPv4 in un giorno preciso: i due convivono sugli stessi cavi (**dual stack**), distinti dal campo tipo del frame Ethernet.
@@ -59,7 +59,7 @@ Ogni collegamento IPv6 deve trasportare pacchetti di **1280 byte**. Un router ch
 
 **Sicurezza del Neighbor Discovery.** Come ARP, ND si fida del collegamento: chiunque può rispondere a una solicitation, o annunciarsi come router. La regola dell'hop limit 255 prova soltanto che il messaggio viene dallo stesso collegamento. Gli switch si difendono con RA Guard (RFC 6105); la risposta crittografica, SEND (RFC 3971), è quasi assente nella pratica.
 
-**Che cosa netlab tralascia.** Non c'è MLD: i nodi non annunciano i gruppi multicast che ascoltano, e gli switch si limitano a inondare il multicast, quindi il risparmio dei gruppi solicited-node rispetto al broadcast si vede in chi *elabora* una solicitation, non in chi la riceve. Non ci sono DHCPv6, il messaggio redirect, gli indirizzi di privacy; le intestazioni di estensione diverse da Fragment vengono saltate senza essere interpretate; gli indirizzi appresi con SLAAC non scadono; la cache dei vicini non ha lo stato DELAY (una voce stale passa direttamente a una verifica dopo cinque secondi). I protocolli di instradamento del laboratorio (RIP, OSPF, BGP) e TCP funzionano solo su IPv4: le rotte IPv6 sono statiche o automatiche.
+**Che cosa netlab tralascia.** Non c'è MLD: i nodi non annunciano i gruppi multicast che ascoltano, e gli switch si limitano a inondare il multicast, quindi il risparmio dei gruppi solicited-node rispetto al broadcast si vede in chi *elabora* una solicitation, non in chi la riceve. Non ci sono DHCPv6, il messaggio redirect, gli indirizzi di privacy; le intestazioni di estensione diverse da Fragment vengono saltate senza essere interpretate; gli indirizzi appresi con SLAAC non scadono; la cache dei vicini non ha lo stato DELAY (una voce stale passa direttamente a una verifica dopo cinque secondi). UDP, TCP e HTTP funzionano su entrambe le famiglie (il laboratorio `207-tcp-over-ipv6` mostra TCP scoprire la MTU del percorso dai Packet Too Big); i protocolli di instradamento del laboratorio (RIP, OSPF, BGP), il DNS e DHCP funzionano solo su IPv4: le rotte IPv6 sono statiche o automatiche, e non ci sono record AAAA.
 
 **Transizione.** Il dual stack è il caso semplice: entrambi i protocolli ovunque. Dove non è possibile, i tunnel trasportano un protocollo dentro l'altro, e i traduttori (NAT64 con DNS64, RFC 6146/6147; 464XLAT, RFC 6877) permettono a reti solo IPv6 di raggiungere l'Internet IPv4. Nulla di tutto ciò è nel laboratorio.
 
@@ -81,7 +81,7 @@ Poi `204-ipv6-slaac`: nessuno ha dato un indirizzo agli host.
 - Apri il Router Advertisement nella vista Pacchetti e leggi l'opzione del prefisso e la durata del router.
 - Scrivi `:stop r1 ra`, poi guasta e riavvia h1 premendo `k` due volte. Prevedi che cosa ha h1 dopo due secondi, e se può fare ping a h2.
 
-`205-ipv6-pmtu`: eseguilo una volta, poi esegui il laboratorio 201 e confronta chi taglia il pacchetto. Porta il parametro `size` a 1200: quali messaggi spariscono? In `206-dual-stack` confronta le due echo request campo per campo, poi spiega perché togliere una rotta IPv4 lascia intatto IPv6.
+`205-ipv6-pmtu`: eseguilo una volta, poi esegui il laboratorio 201 e confronta chi taglia il pacchetto. Porta il parametro `size` a 1200: quali messaggi spariscono? In `206-dual-stack` confronta le due echo request campo per campo, poi spiega perché togliere una rotta IPv4 lascia intatto IPv6. In `207-tcp-over-ipv6` apri la vista Pacchetti e confronta l'opzione MSS dei due SYN (1460 e 1440), poi trova i due errori ICMP che fanno abbassare l'MSS a www; rieseguilo con `mtu=1500` e con `mtu=1400` e prevedi ogni volta l'MSS (MTU meno 40 su IPv4, meno 60 su IPv6).
 
 ## Verifica
 

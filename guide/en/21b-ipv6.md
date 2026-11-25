@@ -1,5 +1,5 @@
 <!-- level: 2 -->
-<!-- labs: 103-ipv6-first, 204-ipv6-slaac, 205-ipv6-pmtu, 206-dual-stack -->
+<!-- labs: 103-ipv6-first, 204-ipv6-slaac, 205-ipv6-pmtu, 206-dual-stack, 207-tcp-over-ipv6 -->
 # IPv6: addresses, Neighbor Discovery and autoconfiguration
 
 IPv4 has 32-bit addresses: about four billion, fewer than the devices that want one. **IPv6** is the same idea of a network layer — packets with a source and a destination address, forwarded hop by hop by longest prefix match — with **128-bit addresses** and a header redesigned with thirty years of hindsight. It does not replace IPv4 on a given day: the two run side by side on the same cables (**dual stack**), told apart by the type field of the Ethernet frame.
@@ -59,7 +59,7 @@ Every IPv6 link must carry packets of **1280 bytes**. A router that cannot forwa
 
 **Security of Neighbor Discovery.** Like ARP, ND trusts the link: anybody can answer a solicitation, or advertise itself as a router. The hop limit 255 rule only proves the message comes from the same link. Switches defend with RA Guard (RFC 6105); the cryptographic answer, SEND (RFC 3971), is hardly deployed.
 
-**What netlab leaves out.** There is no MLD: nodes do not announce the multicast groups they listen to, and the switches simply flood multicast, so the saving of solicited-node groups over broadcast is visible in who *processes* a solicitation, not in who receives it. There is no DHCPv6, no redirect message, no privacy address; extension headers other than Fragment are skipped without being acted upon; addresses learned by SLAAC do not expire; the neighbor cache has no DELAY state (a stale entry goes straight to a probe after five seconds). The routing protocols of the lab (RIP, OSPF, BGP) and TCP run over IPv4 only: IPv6 routes are static or automatic.
+**What netlab leaves out.** There is no MLD: nodes do not announce the multicast groups they listen to, and the switches simply flood multicast, so the saving of solicited-node groups over broadcast is visible in who *processes* a solicitation, not in who receives it. There is no DHCPv6, no redirect message, no privacy address; extension headers other than Fragment are skipped without being acted upon; addresses learned by SLAAC do not expire; the neighbor cache has no DELAY state (a stale entry goes straight to a probe after five seconds). UDP, TCP and HTTP run over both families (lab `207-tcp-over-ipv6` shows TCP discovering the path MTU from Packet Too Big); the routing protocols of the lab (RIP, OSPF, BGP), DNS and DHCP run over IPv4 only: IPv6 routes are static or automatic, and there are no AAAA records.
 
 **Transition.** Dual stack is the simple case: both protocols everywhere. Where that is impossible, tunnels carry one protocol inside the other, and translators (NAT64 with DNS64, RFC 6146/6147; 464XLAT, RFC 6877) let IPv6-only networks reach the IPv4 Internet. None of these is in the lab.
 
@@ -81,7 +81,7 @@ Then `204-ipv6-slaac`: nobody gave the hosts an address.
 - Open the Router Advertisement in the Packets view and read the prefix option and the router lifetime.
 - Type `:stop r1 ra`, then crash and restart h1 with `k` twice. Predict what h1 has after two seconds, and whether it can ping h2.
 
-`205-ipv6-pmtu`: run it once, then run lab 201 and compare who cuts the packet. Change the parameter `size` to 1200: which messages disappear? In `206-dual-stack` compare the two echo requests field by field, then explain why removing an IPv4 route leaves IPv6 untouched.
+`205-ipv6-pmtu`: run it once, then run lab 201 and compare who cuts the packet. Change the parameter `size` to 1200: which messages disappear? In `206-dual-stack` compare the two echo requests field by field, then explain why removing an IPv4 route leaves IPv6 untouched. In `207-tcp-over-ipv6` open the Packets view and compare the MSS option of the two SYNs (1460 and 1440), then find the two ICMP errors that make www lower its MSS; run it again with `mtu=1500` and with `mtu=1400` and predict the MSS each time (MTU minus 40 over IPv4, minus 60 over IPv6).
 
 ## Check yourself
 

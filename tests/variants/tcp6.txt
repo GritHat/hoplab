@@ -1,0 +1,9 @@
+# TCP and HTTP over IPv6, path MTU discovery.
+# One run per line:  PASS|FAIL  scenario  key=value ...   (checked with seeds 1..5)
+PASS  207-tcp-over-ipv6
+PASS  207-tcp-over-ipv6  mtu=1300
+PASS  207-tcp-over-ipv6  mtu=1400
+# nothing is too big: no discovery, and the expectations say so
+PASS  207-tcp-over-ipv6  mtu=1500
+PASS  207-tcp-over-ipv6  delay=20ms
+PASS  206-dual-stack

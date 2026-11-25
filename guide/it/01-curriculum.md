@@ -65,6 +65,7 @@ I primi sette laboratori sono il viaggio di una richiesta web visto dal basso ve
 - `204-ipv6-slaac` Autoconfigurazione IPv6: router advertisement e SLAAC
 - `205-ipv6-pmtu` IPv6 non frammenta lungo il percorso: Packet Too Big e scoperta della MTU
 - `206-dual-stack` Dual stack: IPv4 e IPv6 fianco a fianco sugli stessi cavi
+- `207-tcp-over-ipv6` TCP e HTTP su IPv6, e come TCP scopre la MTU del percorso
 - `220-tcp-loss` TCP su un percorso con perdite: timeout e fast retransmit
 - `221-tcp-flow-control` Controllo di flusso TCP: mittente veloce, lettore lento
 - `230-rip-convergence` RIP: i router scoprono la rete, poi aggirano un guasto

@@ -731,7 +731,7 @@ msgstr ""
 msgid "{a}◀ ACK %u{0} {y}duplicate{0}: it only acknowledges packets already confirmed {m}(base = seq %d){0} → ignored"
 msgstr ""
 
-#: go_back_n_send.c:293 selective_repeat_send.c:306 src/tcp.c:1464
+#: go_back_n_send.c:293 selective_repeat_send.c:306 src/tcp.c:1535
 msgid "acknowledged"
 msgstr ""
 
@@ -1162,7 +1162,7 @@ msgstr ""
 msgid "in the buffer (acknowledged)"
 msgstr ""
 
-#: selective_repeat_recv.c:299 src/bgp.c:719 src/tcp.c:1770
+#: selective_repeat_recv.c:299 src/bgp.c:719 src/tcp.c:1841
 msgid "expected"
 msgstr ""
 
@@ -1267,7 +1267,7 @@ msgstr ""
 #: src/clock.c:291 src/clock.c:314 src/dhcp.c:265 src/dhcp.c:273
 #: src/dhcp.c:286 src/dhcp.c:591 src/dns.c:941 src/dns.c:971 src/gossip.c:564
 #: src/gossip.c:566 src/ip6.c:1110 src/ospf.c:480 src/ospf.c:497
-#: src/ospf.c:574 src/rip.c:328 src/stack.c:867 src/tcp.c:2150 src/twopc.c:213
+#: src/ospf.c:574 src/rip.c:328 src/stack.c:867 src/tcp.c:2355 src/twopc.c:213
 #: src/twopc.c:387
 msgid "from"
 msgstr ""
@@ -1309,7 +1309,7 @@ msgid "no route to destination"
 msgstr ""
 
 #: src/apps.c:198 src/apps.c:415 src/apps.c:647 src/apps.c:770 src/lb.c:897
-#: src/stack.c:608 src/tcp.c:2212
+#: src/stack.c:608 src/tcp.c:2424
 msgid "unknown destination"
 msgstr ""
 
@@ -1441,7 +1441,7 @@ msgstr ""
 msgid "datagrams"
 msgstr ""
 
-#: src/apps.c:927 src/tcp.c:1770
+#: src/apps.c:927 src/tcp.c:1841
 msgid "out of order"
 msgstr ""
 
@@ -1809,7 +1809,7 @@ msgstr ""
 msgid "does not answer: removed from my tables"
 msgstr ""
 
-#: src/chord.c:424 src/dns.c:1397 src/http.c:385 src/main.c:310 src/tcp.c:2084
+#: src/chord.c:424 src/dns.c:1397 src/http.c:396 src/main.c:310 src/tcp.c:2288
 msgid "failed"
 msgstr ""
 
@@ -1849,7 +1849,7 @@ msgstr ""
 msgid "usage: put key=K value=V | get key=K | lookup key=K"
 msgstr ""
 
-#: src/chord.c:695 src/http.c:441
+#: src/chord.c:695 src/http.c:452
 msgid "too many requests in progress"
 msgstr ""
 
@@ -2013,8 +2013,8 @@ msgstr ""
 msgid "broadcast"
 msgstr ""
 
-#: src/clock.c:470 src/http.c:464 src/main.c:410 src/qdisc.c:977 src/stp.c:675
-#: src/tcp.c:2237 src/twopc.c:462
+#: src/clock.c:470 src/http.c:491 src/main.c:410 src/qdisc.c:977 src/stp.c:675
+#: src/tcp.c:2449 src/twopc.c:462
 msgid "unknown command"
 msgstr ""
 
@@ -2510,7 +2510,7 @@ msgstr ""
 msgid "no answer from server"
 msgstr ""
 
-#: src/dns.c:1299 src/http.c:387 src/tcp.c:2086 src/twopc.c:536
+#: src/dns.c:1299 src/http.c:398 src/tcp.c:2290 src/twopc.c:536
 msgid "timeout"
 msgstr ""
 
@@ -3156,85 +3156,87 @@ msgstr ""
 msgid "↑ ↓ topic · → read · PgUp PgDn scroll · 1 2 3 depth · a b c run a lab · / search · Esc back"
 msgstr ""
 
-#: src/http.c:255
+#: src/http.c:266
 msgid "complete"
 msgstr ""
 
-#: src/http.c:255
+#: src/http.c:266
 msgid "object"
 msgstr ""
 
-#: src/http.c:255
+#: src/http.c:266
 msgid "objects"
 msgstr ""
 
-#: src/http.c:256
+#: src/http.c:267
 msgid "TCP connection"
 msgstr ""
 
-#: src/http.c:256
+#: src/http.c:267
 msgid "TCP connections"
 msgstr ""
 
-#: src/http.c:386 src/tcp.c:2085
+#: src/http.c:397 src/tcp.c:2289
 msgid "connection refused"
 msgstr ""
 
-#: src/http.c:388 src/tcp.c:2086
+#: src/http.c:399 src/tcp.c:2290
 msgid "connection reset"
 msgstr ""
 
-#: src/http.c:388
+#: src/http.c:399
 msgid "connection closed early"
 msgstr ""
 
-#: src/http.c:423
+#: src/http.c:434
 msgid "server listening on TCP port"
 msgstr ""
 
-#: src/http.c:432
+#: src/http.c:443
 msgid "which URL?"
 msgstr ""
 
-#: src/http.c:451
+#: src/http.c:478
 msgid "unknown host"
 msgstr ""
 
-#: src/http.c:460
+#: src/http.c:487
 msgid "persistent connection"
 msgstr ""
 
-#: src/http.c:460
+#: src/http.c:487
 msgid "one connection per object"
 msgstr ""
 
-#: src/http.c:514
+#: src/http.c:541
 msgid "server on TCP port"
 msgstr ""
 
-#: src/http.c:515 src/lb.c:769
+#: src/http.c:542 src/lb.c:769
 msgid "requests served"
 msgstr ""
 
-#: src/http.c:516
+#: src/http.c:543
 msgid "index page embeds"
 msgstr ""
 
-#: src/http.c:530
+#: src/http.c:557
 msgid "HTTP/1.1 — web server and client"
 msgstr ""
 
-#: src/http.c:531
+#: src/http.c:558
 msgid ""
 "run NODE http server [port=80] [objects=3] [objsize=5000]\n"
-"run NODE http get HOST[/PATH] [port=80] [keepalive=1] [embedded=1]\n"
+"run NODE http get HOST[/PATH] [port=80] [keepalive=1] [embedded=1] [v6=1]\n"
 "  The server answers / and /index.html with a page that embeds `objects`\n"
 "  images, and /N with N bytes. The client fetches the page and then, with\n"
 "  embedded=1, every object it references: over the same connection\n"
-"  (keepalive=1) or opening a new connection for each (keepalive=0)."
+"  (keepalive=1) or opening a new connection for each (keepalive=0).\n"
+"  HOST is a node name or an address; an IPv6 address ([2001:db8::1] as in a\n"
+"  URL), or v6=1 with a name, fetches over IPv6. The server answers both."
 msgstr ""
 
-#: src/http.c:537
+#: src/http.c:566
 msgid ""
 "HTTP is a request/response protocol carried by a TCP connection. The client sends a request made of text lines: a request line (method, path, version), headers such as Host, and an empty line. The server answers with a status line (200 OK, 404 Not Found, ...), its own headers and the body; Content-Length tells the client where the body ends, because TCP itself only delivers a stream of bytes without message boundaries.\n"
 "\n"
@@ -3246,7 +3248,7 @@ msgid "reachable → stale"
 msgstr ""
 
 #: src/ip6.c:692 src/ip6.c:1405 src/stack.c:722 src/stack.c:1137
-#: src/tcp.c:1821
+#: src/tcp.c:2015 src/tcp.c:2031
 msgid "no route to"
 msgstr ""
 
@@ -3473,7 +3475,7 @@ msgstr ""
 msgid "requests / remapped flows"
 msgstr ""
 
-#: src/lb.c:669 src/tcp.c:1997
+#: src/lb.c:669 src/tcp.c:2201
 msgid "flows"
 msgstr ""
 
@@ -5391,177 +5393,187 @@ msgid ""
 "A port must not start forwarding while the rest of the network may still hold an old view, or a temporary loop would form. So a port that becomes root or designated waits in the listening state and then in the learning state, one forward delay each, before forwarding: with the standard timers that is 30 seconds, the reason a PC plugged into a switch port once had to wait for the network (and the reason for portfast on ports that face hosts). Information is refreshed by the hello BPDUs and carries an age; when nothing has been heard on a port for max age, the information is discarded and the election is repeated. A failed link is noticed at once by the bridges attached to it, a failed bridge only through this timeout, so recovery takes between two forward delays and max age plus two forward delays. After a change, bridges are told to flush their forwarding tables (topology change notification), because stations may now be reached through a different port. Rapid STP (802.1w) replaces the timers with an explicit handshake between neighbours and converges in well under a second; today data centres often avoid spanning tree altogether with routed fabrics and ECMP."
 msgstr ""
 
-#: src/tcp.c:552
+#: src/tcp.c:623
 msgid "retransmission"
 msgstr ""
 
-#: src/tcp.c:564
+#: src/tcp.c:635
 msgid "zero-window probe"
 msgstr ""
 
-#: src/tcp.c:843
+#: src/tcp.c:914
 msgid "the delivery rate stopped growing: the pipe is full, drain the queue"
 msgstr ""
 
-#: src/tcp.c:847
+#: src/tcp.c:918
 msgid "queue drained: cruise and probe for more bandwidth"
 msgstr ""
 
-#: src/tcp.c:860
+#: src/tcp.c:931
 msgid "no new minimum RTT for 10 s: empty the pipe to measure it"
 msgstr ""
 
-#: src/tcp.c:881
+#: src/tcp.c:952
 msgid "minimum RTT refreshed"
 msgstr ""
 
-#: src/tcp.c:1020
+#: src/tcp.c:1091
 msgid "SACK shows a hole: fast retransmit"
 msgstr ""
 
-#: src/tcp.c:1020
+#: src/tcp.c:1091
 msgid "3 duplicate ACKs: fast retransmit"
 msgstr ""
 
-#: src/tcp.c:1037
+#: src/tcp.c:1108
 msgid "no answer to SYN: giving up"
 msgstr ""
 
-#: src/tcp.c:1051
+#: src/tcp.c:1122
 msgid "too many retransmissions: connection dropped"
 msgstr ""
 
-#: src/tcp.c:1061
+#: src/tcp.c:1132
 msgid "retransmission timeout"
 msgstr ""
 
-#: src/tcp.c:1142
+#: src/tcp.c:1213
 msgid "connection closed (TIME_WAIT)"
 msgstr ""
 
-#: src/tcp.c:1175
+#: src/tcp.c:1246
 msgid "window update"
 msgstr ""
 
-#: src/tcp.c:1347
+#: src/tcp.c:1418
 msgid "connection established"
 msgstr ""
 
-#: src/tcp.c:1421
+#: src/tcp.c:1492
 msgid "the receiver advertises window 0: sender blocked by flow control"
 msgstr ""
 
-#: src/tcp.c:1464
+#: src/tcp.c:1535
 msgid "segments still in flight"
 msgstr ""
 
-#: src/tcp.c:1480
+#: src/tcp.c:1551
 msgid "the receiver got this twice (a retransmission was not needed)"
 msgstr ""
 
-#: src/tcp.c:1525
+#: src/tcp.c:1596
 msgid "every hole is repaired: fast recovery ends"
 msgstr ""
 
-#: src/tcp.c:1580
+#: src/tcp.c:1651
 msgid "ECN echo: congestion signalled without loss"
 msgstr ""
 
-#: src/tcp.c:1616
+#: src/tcp.c:1687
 msgid "wrong checksum: segment discarded"
 msgstr ""
 
-#: src/tcp.c:1640
+#: src/tcp.c:1711
 msgid "no listener on port"
 msgstr ""
 
-#: src/tcp.c:1682
+#: src/tcp.c:1753
 msgid "connection refused (RST)"
 msgstr ""
 
-#: src/tcp.c:1682
+#: src/tcp.c:1753
 msgid "connection reset by peer"
 msgstr ""
 
-#: src/tcp.c:1730
+#: src/tcp.c:1801
 msgid "packet marked CE by a router: echoing ECE"
 msgstr ""
 
-#: src/tcp.c:1747
+#: src/tcp.c:1818
 msgid "connection closed"
 msgstr ""
 
-#: src/tcp.c:1841
+#: src/tcp.c:1923
+msgid "path MTU is"
+msgstr ""
+
+#: src/tcp.c:1999
 msgid "opening a connection"
 msgstr ""
 
-#: src/tcp.c:1996
+#: src/tcp.c:2200
 msgid "Jain's fairness index over"
 msgstr ""
 
-#: src/tcp.c:1997
+#: src/tcp.c:2201
 msgid "1 = equal shares"
 msgstr ""
 
-#: src/tcp.c:2047 src/tcp.c:2052
+#: src/tcp.c:2251 src/tcp.c:2256
 msgid "connected"
 msgstr ""
 
-#: src/tcp.c:2048
+#: src/tcp.c:2252
 msgid "sending for"
 msgstr ""
 
-#: src/tcp.c:2075
+#: src/tcp.c:2279
 msgid "done"
 msgstr ""
 
-#: src/tcp.c:2076
+#: src/tcp.c:2280
 msgid "steady"
 msgstr ""
 
-#: src/tcp.c:2077
+#: src/tcp.c:2281
 msgid "retransmissions"
 msgstr ""
 
-#: src/tcp.c:2077
+#: src/tcp.c:2281
 msgid "timeouts"
 msgstr ""
 
-#: src/tcp.c:2201
+#: src/tcp.c:2406
 msgid "listening on TCP port"
 msgstr ""
 
-#: src/tcp.c:2329
+#: src/tcp.c:2541
 msgid "no connections"
 msgstr ""
 
-#: src/tcp.c:2331
+#: src/tcp.c:2543
 msgid "sink received"
 msgstr ""
 
-#: src/tcp.c:2340
+#: src/tcp.c:2552
 msgid "TCP — reliable byte streams, flow and congestion control"
 msgstr ""
 
-#: src/tcp.c:2342
+#: src/tcp.c:2554
 msgid ""
 "run NODE tcp sink [port=5001] [rwnd=BYTES] [readrate=RATE] [sack=1] [delack=40ms]\n"
 "run NODE tcp send DEST [port=5001] [bytes=1M | duration=TIME] [cc=reno|tahoe|newreno|cubic|bbr]\n"
 "             [sack=1] [ecn=1] [nagle=1] [delack=40ms] [mss=1460] [iw=10] [sndbuf=256k]\n"
 "             [ssthresh=SEGMENTS] [rto_min=200ms] [jitter=TIME] [warmup=TIME]\n"
+"             [v6=1] [pmtud=1]\n"
 "  sink accepts connections and discards the data; readrate makes it a slow\n"
 "  reader (flow control). send transfers `bytes`, or sends for `duration`, and\n"
 "  reports time, goodput and the steady-state rate (after the first quarter);\n"
 "  when several transfers to the same port end, Jain's fairness index too.\n"
 "  sack=0 falls back to NewReno recovery; delack=0 acknowledges every segment;\n"
 "  jitter delays the start by a random time up to TIME.\n"
-"  Not implemented: timestamps, path-MTU discovery, tail-loss probes; bbr is\n"
+"  DEST may be an IPv6 address, or a node name with v6=1: the transfer then runs\n"
+"  over IPv6 (the sink accepts both). pmtud=0 clears DF on IPv4 and lets routers\n"
+"  fragment instead of discovering the path MTU.\n"
+"  Not implemented: timestamps, tail-loss probes; bbr is\n"
 "  version 1 without long-term (policer) sampling; tahoe never uses SACK."
 msgstr ""
 
-#: src/tcp.c:2354
+#: src/tcp.c:2570
 msgid ""
 "TCP turns the unreliable, unordered packet service of IP into a reliable byte stream between two ports. A connection starts with the three-way handshake (SYN, SYN+ACK, ACK) in which the two ends choose initial sequence numbers and exchange options: the maximum segment size, the window scale, and whether selective acknowledgements are permitted. Every byte has a sequence number; the receiver answers with cumulative acknowledgements (\"I have everything before N\"), delayed so that one ACK covers two segments, and buffers segments that arrive out of order. A segment that is not acknowledged before the retransmission timeout (RTO, computed from the smoothed round-trip time and its variance, doubled at each expiry) is sent again. The connection ends when each side has sent a FIN and seen it acknowledged.\n"
+"\n"
+"TCP is the same over IPv4 and IPv6: only the pseudo-header that the checksum covers and the room left for data differ (an MSS of 1460 bytes on a 1500-byte MTU over IPv4, 1440 over IPv6, whose header is 20 bytes longer). The MSS the ends announce reflects their own links only, so the sender also discovers the smallest MTU of the path: its IPv4 segments carry the don't-fragment flag, and IPv6 routers never fragment, so a router that cannot forward a segment discards it and reports the MTU of the next hop (ICMP \"fragmentation needed\", ICMPv6 \"packet too big\"). The sender lowers its MSS, cuts the segments in flight that no longer fit and sends them again.\n"
 "\n"
 "Waiting for the timer is slow, so the sender reads the ACKs for signs of loss. With selective acknowledgements (SACK) every ACK also lists the blocks received beyond the hole; the sender keeps a scoreboard of what is SACKed, declares a segment lost when three segments' worth of data above it have arrived, and retransmits every hole of the window in one round trip, sending whenever its estimate of the data still in the network (the pipe) is below the congestion window. Without SACK it only has duplicate ACKs: three of them trigger a fast retransmit of the first hole, and NewReno repairs the following ones one per round trip, each revealed by a partial ACK.\n"
 "\n"

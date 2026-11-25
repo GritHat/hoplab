@@ -32,8 +32,10 @@ typedef struct {                        /* one `http get` */
     http_node *hn;
     int        used, done;
     nl_ip      ip;
+    nl_ip6     ip6;
+    int        v6;                      /* the request goes over IPv6 */
     int        port, keepalive, embedded;
-    char       host[32];
+    char       host[64];
     char       paths[MAX_PATHS][64];
     int        npaths, cur;
     nl_tcp    *conn;
@@ -87,11 +89,19 @@ static void srv_request(nl_tcp *c, srv_conn *s, const char *path)
     const char *p = path + 1;
     long long size = -1;
     nl_ip rip;
+    nl_ip6 rip6;
+    char peer[64];
     uint16_t rport;
     int html = 0, i;
     size_t k = 0;
 
-    nl_tcp_peer(c, &rip, &rport);
+    if (nl_tcp_family(c) == 6) {
+        nl_tcp_peer6(c, &rip6, &rport);
+        snprintf(peer, sizeof(peer), "[%s]", nl_ip6_str(&rip6));
+    } else {
+        nl_tcp_peer(c, &rip, &rport);
+        snprintf(peer, sizeof(peer), "%s", nl_ip_str(rip));
+    }
     if (strcmp(path, "/") == 0 || strcmp(path, "/index.html") == 0) {
         html = 1;
         k += (size_t)snprintf(page + k, sizeof(page) - k,
@@ -113,7 +123,7 @@ static void srv_request(nl_tcp *c, srv_conn *s, const char *path)
 
         hn->served_404++;
         nl_count(hn->n, "http.served_404", 1);
-        nl_log(hn->n, NL_L_APP, 2, 0, T_FIN "HTTP" T_RESET " %s:%u GET %s → " T_ERR "404 Not Found", nl_ip_str(rip),
+        nl_log(hn->n, NL_L_APP, 2, 0, T_FIN "HTTP" T_RESET " %s:%u GET %s → " T_ERR "404 Not Found", peer,
                rport, path);
         snprintf(head, sizeof(head), "HTTP/1.1 404 Not Found\r\nServer: netlab\r\nContent-Type: text/html\r\n"
                  "Content-Length: %d\r\nConnection: %s\r\n\r\n", (int)sizeof(nf) - 1,
@@ -126,7 +136,7 @@ static void srv_request(nl_tcp *c, srv_conn *s, const char *path)
     hn->served++;
     nl_count(hn->n, "http.served", 1);
     nl_log(hn->n, NL_L_APP, 2, 0, T_FIN "HTTP" T_RESET " %s:%u GET %s → " T_OK "200 OK" T_RESET " (%lld B)",
-           nl_ip_str(rip), rport, path, size);
+           peer, rport, path, size);
     snprintf(head, sizeof(head), "HTTP/1.1 200 OK\r\nServer: netlab\r\nContent-Type: %s\r\n"
              "Content-Length: %lld\r\nConnection: %s\r\n\r\n", html ? "text/html" : "application/octet-stream",
              size, s->close_after ? "close" : "keep-alive");
@@ -237,7 +247,8 @@ static void cl_open(client *s)
 {
     s->nconn++;
     nl_count(s->hn->n, "http.connections", 1);
-    s->conn = nl_tcp_connect(s->hn->n, s->ip, (uint16_t)s->port, &cl_ops, s, NULL);
+    s->conn = s->v6 ? nl_tcp_connect6(s->hn->n, &s->ip6, (uint16_t)s->port, &cl_ops, s, NULL)
+                    : nl_tcp_connect(s->hn->n, s->ip, (uint16_t)s->port, &cl_ops, s, NULL);
     if (!s->conn) {
         s->done = 1;
         nl_count(s->hn->n, "http.failed", 1);
@@ -444,10 +455,26 @@ static int http_run(nl_node *n, const nl_args *a)
         memset(s, 0, sizeof(*s));
         s->hn = hn;
         slash = strchr(url, '/');
-        snprintf(s->host, sizeof(s->host), "%.*s", slash ? (int)(slash - url) : 31, url);
+        snprintf(s->host, sizeof(s->host), "%.*s", slash ? (int)(slash - url) : 63, url);
         snprintf(s->paths[0], sizeof(s->paths[0]), "%s", slash ? slash : "/");
         s->npaths = 1;
-        if (!nl_resolve(s->host, &s->ip)) {
+        /* IPv6 for a literal (in brackets as in a URL, or bare), for v6=1 with a
+         * name, or when the name only has an IPv6 address */
+        if (s->host[0] == '[' && strchr(s->host, ']')) {
+            char lit[64];
+            snprintf(lit, sizeof(lit), "%.*s", (int)(strchr(s->host, ']') - s->host - 1), s->host + 1);
+            s->v6 = nl_parse_ip6(lit, &s->ip6);
+        } else if (nl_parse_ip6(s->host, &s->ip6)) {
+            char lit[64];
+            s->v6 = 1;
+            snprintf(lit, sizeof(lit), "[%.60s]", s->host);
+            snprintf(s->host, sizeof(s->host), "%s", lit);
+        } else if (nl_arg_int(a, "v6", 0)) {
+            s->v6 = nl_resolve6(s->host, &s->ip6);
+        } else if (!nl_resolve(s->host, &s->ip)) {
+            s->v6 = nl_ip6_enabled() && nl_resolve6(s->host, &s->ip6);
+        }
+        if (!s->v6 && (s->host[0] == '[' || nl_arg_int(a, "v6", 0) || !nl_resolve(s->host, &s->ip))) {
             nl_log(n, NL_L_APP, 1, 0, T_ERR "http get: %s '%s'", _("unknown host"), s->host);
             return -1;
         }
@@ -457,7 +484,7 @@ static int http_run(nl_node *n, const nl_args *a)
         s->embedded = (int)nl_arg_int(a, "embedded", 1);
         s->t0 = nl_now();
         nl_log(n, NL_L_APP, 1, 0, T_INFO "http get" T_RESET " http://%s%s (%s, %s)", s->host, s->paths[0],
-               nl_ip_str(s->ip), s->keepalive ? _("persistent connection") : _("one connection per object"));
+               s->v6 ? nl_ip6_str(&s->ip6) : nl_ip_str(s->ip), s->keepalive ? _("persistent connection") : _("one connection per object"));
         cl_open(s);
         return s->done ? -1 : 0;
     }
@@ -529,11 +556,13 @@ static int http_panel(nl_node *n, int x, int y, int w, int h, int detail)
 static const nl_module http_mod = {
     .name = "http", .title = N_("HTTP/1.1 — web server and client"), .layer = NL_L_APP,
     .usage = N_("run NODE http server [port=80] [objects=3] [objsize=5000]\n"
-                "run NODE http get HOST[/PATH] [port=80] [keepalive=1] [embedded=1]\n"
+                "run NODE http get HOST[/PATH] [port=80] [keepalive=1] [embedded=1] [v6=1]\n"
                 "  The server answers / and /index.html with a page that embeds `objects`\n"
                 "  images, and /N with N bytes. The client fetches the page and then, with\n"
                 "  embedded=1, every object it references: over the same connection\n"
-                "  (keepalive=1) or opening a new connection for each (keepalive=0)."),
+                "  (keepalive=1) or opening a new connection for each (keepalive=0).\n"
+                "  HOST is a node name or an address; an IPv6 address ([2001:db8::1] as in a\n"
+                "  URL), or v6=1 with a name, fetches over IPv6. The server answers both."),
     .theory = N_("HTTP is a request/response protocol carried by a TCP connection. The client sends a "
                  "request made of text lines: a request line (method, path, version), headers such as "
                  "Host, and an empty line. The server answers with a status line (200 OK, 404 Not "

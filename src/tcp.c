@@ -73,10 +73,60 @@ typedef struct {
     nl_time  rtt_min;                   /* smallest over the segments delivered: for RTprop */
 } rsamp;
 
+/* An endpoint address of either family. The whole of TCP is the same over
+ * IPv4 and IPv6: only the pseudo-header of the checksum, the room left for
+ * the MSS and the network-layer send call differ. */
+typedef struct { int v6; nl_ip v4; nl_ip6 a6; } taddr;
+
+static taddr A4(nl_ip ip)
+{
+    taddr a;
+    memset(&a, 0, sizeof(a));
+    a.v4 = ip;
+    return a;
+}
+
+static taddr A6(const nl_ip6 *ip)
+{
+    taddr a;
+    memset(&a, 0, sizeof(a));
+    a.v6 = 1;
+    a.a6 = *ip;
+    return a;
+}
+
+static int taddr_eq(const taddr *a, const taddr *b)
+{
+    return a->v6 == b->v6 && (a->v6 ? nl_ip6_eq(&a->a6, &b->a6) : a->v4 == b->v4);
+}
+
+/* "10.0.0.1" or "[2001:db8::1]", ready to be followed by :port */
+static const char *taddr_str(const taddr *a)
+{
+    static char buf[4][64];
+    static int k;
+
+    if (!a->v6)
+        return nl_ip_str(a->v4);
+    k = (k + 1) % 4;
+    snprintf(buf[k], sizeof(buf[k]), "[%s]", nl_ip6_str(&a->a6));
+    return buf[k];
+}
+
+/* A received segment, whichever network layer delivered it */
+typedef struct {
+    taddr    src, dst;
+    uint8_t  tos;
+    uint32_t pkt_id;
+    const uint8_t *l4;
+    int      l4len;
+} seg_in;
+
 struct nl_tcp {
     nl_node *n;
     struct nl_tcp *next;
-    nl_ip    lip, rip;
+    taddr    lip, rip;
+    int      pmtud;                     /* path MTU discovery: DF on IPv4, always on IPv6 */
     uint16_t lport, rport;
     int      state, active;             /* active = we sent the first SYN */
     const nl_tcp_ops *ops;
@@ -167,7 +217,10 @@ typedef struct {
 } tcp_node;
 
 static const nl_module tcp_mod;
-static void tcp_input(nl_node *n, void *ctx, const nl_ipmeta *m);
+static void tcp_input4(nl_node *n, void *ctx, const nl_ipmeta *m);
+static void tcp_input6(nl_node *n, void *ctx, const nl_ip6meta *m);
+static void tcp_icmp4(nl_node *n, void *ctx, const nl_icmpmeta *m);
+static void tcp_icmp6(nl_node *n, void *ctx, const nl_icmp6meta *m);
 static void tcp_output(nl_tcp *c);
 static void rto_fire(void *ctx);
 
@@ -183,7 +236,10 @@ static tcp_node *tcp_get(nl_node *n)
     tn->n = n;
     tn->eph = (uint16_t)(49152 + n->idx * 16);
     nl_mod_set(n, &tcp_mod, tn);
-    nl_ip_bind(n, NL_PROTO_TCP, tcp_input, tn);
+    nl_ip_bind(n, NL_PROTO_TCP, tcp_input4, tn);
+    nl_ip6_bind(n, NL_PROTO_TCP, tcp_input6, tn);
+    nl_icmp_watch(n, tcp_icmp4, tn);
+    nl_icmp6_watch(n, tcp_icmp6, tn);
     return tn;
 }
 
@@ -259,6 +315,7 @@ static void conn_opts(nl_tcp *c, const char *opts)
         if (strcmp(cc, CC_NAME[i]) == 0)
             c->cc = i;
     c->mss = (int)nl_arg_int(&a, "mss", 1460);
+    c->pmtud = (int)nl_arg_int(&a, "pmtud", 1);
     c->rwnd_max = (int)nl_arg_rate(&a, "rwnd", 1 << 20);     /* sizes accept k and M */
     if (c->rwnd_max < 256) c->rwnd_max = 256;
     if (c->rwnd_max > (1 << 24)) c->rwnd_max = 1 << 24;
@@ -278,7 +335,7 @@ static void conn_opts(nl_tcp *c, const char *opts)
         c->rcv_wscale++;
 }
 
-static nl_tcp *conn_new(tcp_node *tn, nl_ip lip, uint16_t lport, nl_ip rip, uint16_t rport, const char *opts)
+static nl_tcp *conn_new(tcp_node *tn, taddr lip, uint16_t lport, taddr rip, uint16_t rport, const char *opts)
 {
     nl_tcp *c = calloc(1, sizeof(*c));
     int pmtu;
@@ -291,7 +348,8 @@ static nl_tcp *conn_new(tcp_node *tn, nl_ip lip, uint16_t lport, nl_ip rip, uint
     c->rip = rip;
     c->rport = rport;
     conn_opts(c, opts);
-    pmtu = nl_ip_mtu(tn->n, rip) - 40;
+    /* room for the segment: the MTU less the IP and TCP headers (40 or 60 bytes) */
+    pmtu = rip.v6 ? nl_ip6_mtu(tn->n, &rip.a6) - 60 : nl_ip_mtu(tn->n, rip.v4) - 40;
     if (c->mss > pmtu) c->mss = pmtu;
     if (c->mss < 64) c->mss = 64;
     c->sbuf = malloc((size_t)c->scap);
@@ -316,12 +374,12 @@ static nl_tcp *conn_new(tcp_node *tn, nl_ip lip, uint16_t lport, nl_ip rip, uint
     return c;
 }
 
-static nl_tcp *conn_find(tcp_node *tn, nl_ip lip, uint16_t lport, nl_ip rip, uint16_t rport)
+static nl_tcp *conn_find(tcp_node *tn, taddr lip, uint16_t lport, taddr rip, uint16_t rport)
 {
     nl_tcp *c;
 
     for (c = tn->conns; c; c = c->next)
-        if (c->lport == lport && c->rport == rport && c->rip == rip && c->lip == lip)
+        if (c->lport == lport && c->rport == rport && taddr_eq(&c->rip, &rip) && taddr_eq(&c->lip, &lip))
             return c;
     return NULL;
 }
@@ -335,9 +393,9 @@ static int rcv_window(const nl_tcp *c)
     return c->rwnd_max - c->rlen;
 }
 
-static void raw_xmit(nl_node *n, nl_ip src, nl_ip dst, uint16_t sport, uint16_t dport, uint32_t seq,
+static void raw_xmit(nl_node *n, taddr src, taddr dst, uint16_t sport, uint16_t dport, uint32_t seq,
                      uint32_t ack, int flags, int win, const uint8_t *opt, int optlen,
-                     const uint8_t *data, int len, uint8_t tos)
+                     const uint8_t *data, int len, uint8_t tos, int df)
 {
     static uint8_t b[60 + NL_FRAME_MAX];
     nl_iptx tx;
@@ -356,12 +414,25 @@ static void raw_xmit(nl_node *n, nl_ip src, nl_ip dst, uint16_t sport, uint16_t 
         memcpy(b + 20, opt, (size_t)optlen);
     if (len)
         memcpy(b + hl, data, (size_t)len);
-    nl_put16(b + 16, nl_l4_cksum(src, dst, NL_PROTO_TCP, b, hl + len));
+    if (dst.v6) {
+        nl_ip6tx tx6;
+
+        nl_put16(b + 16, nl_l4_cksum6(&src.a6, &dst.a6, NL_PROTO_TCP, b, hl + len));
+        memset(&tx6, 0, sizeof(tx6));
+        tx6.src = src.a6;
+        tx6.dst = dst.a6;
+        tx6.proto = NL_PROTO_TCP;
+        tx6.tclass = tos;
+        nl_ip6_send(n, &tx6, b, hl + len);
+        return;
+    }
+    nl_put16(b + 16, nl_l4_cksum(src.v4, dst.v4, NL_PROTO_TCP, b, hl + len));
     memset(&tx, 0, sizeof(tx));
-    tx.src = src;
-    tx.dst = dst;
+    tx.src = src.v4;
+    tx.dst = dst.v4;
     tx.proto = NL_PROTO_TCP;
     tx.tos = tos;
+    tx.df = df;
     nl_ip_send(n, &tx, b, hl + len);
 }
 
@@ -458,7 +529,7 @@ static void seg_xmit(nl_tcp *c, uint32_t seq, int flags, const uint8_t *data, in
         nl_cancel(&c->delack_timer);
     }
     raw_xmit(c->n, c->lip, c->rip, c->lport, c->rport, seq, c->rcv_nxt, flags, win, opt, optlen, data, len,
-             (uint8_t)(c->ecn_ok && len > 0 ? 2 : 0));
+             (uint8_t)(c->ecn_ok && len > 0 ? 2 : 0), c->pmtud);
 }
 
 static void send_ack(nl_tcp *c)
@@ -692,7 +763,7 @@ static void tcp_output(nl_tcp *c)
             else if (c->state == ST_CLOSE_WAIT)
                 c->state = ST_LAST_ACK;
             nl_log(c->n, NL_L_TRANSPORT, 2, 0, T_DATA "TCP" T_RESET " :%u → %s:%u FIN (%s)", c->lport,
-                   nl_ip_str(c->rip), c->rport, ST_NAME[c->state]);
+                   taddr_str(&c->rip), c->rport, ST_NAME[c->state]);
             if (!c->rto_timer)
                 rto_arm(c);
         }
@@ -1033,7 +1104,7 @@ static void rto_fire(void *ctx)
         return;
     if (c->state == ST_SYN_SENT || c->state == ST_SYN_RCVD) {
         if (++c->tries > 5) {
-            nl_log(c->n, NL_L_TRANSPORT, 1, 0, T_ERR "TCP" T_RESET " %s:%u: %s", nl_ip_str(c->rip), c->rport,
+            nl_log(c->n, NL_L_TRANSPORT, 1, 0, T_ERR "TCP" T_RESET " %s:%u: %s", taddr_str(&c->rip), c->rport,
                    _("no answer to SYN: giving up"));
             conn_abort(c, NL_TCP_CLOSED_TIMEOUT);
             return;
@@ -1047,7 +1118,7 @@ static void rto_fire(void *ctx)
     if (c->snd_una == c->snd_max)
         return;
     if (++c->tries > 9) {
-        nl_log(c->n, NL_L_TRANSPORT, 1, 0, T_ERR "TCP" T_RESET " %s:%u: %s", nl_ip_str(c->rip), c->rport,
+        nl_log(c->n, NL_L_TRANSPORT, 1, 0, T_ERR "TCP" T_RESET " %s:%u: %s", taddr_str(&c->rip), c->rport,
                _("too many retransmissions: connection dropped"));
         conn_abort(c, NL_TCP_CLOSED_TIMEOUT);
         return;
@@ -1138,7 +1209,7 @@ static void enter_time_wait(nl_tcp *c)
     c->state = ST_TIME_WAIT;
     nl_cancel(&c->rto_timer);
     nl_cancel(&c->persist_timer);
-    nl_log(c->n, NL_L_TRANSPORT, 2, 0, T_DATA "TCP" T_RESET " :%u ⇄ %s:%u %s", c->lport, nl_ip_str(c->rip),
+    nl_log(c->n, NL_L_TRANSPORT, 2, 0, T_DATA "TCP" T_RESET " :%u ⇄ %s:%u %s", c->lport, taddr_str(&c->rip),
            c->rport, _("connection closed (TIME_WAIT)"));
     conn_gone(c, NL_TCP_CLOSED_FIN);
     if (c->state != ST_CLOSED && !c->wait_timer)
@@ -1344,7 +1415,7 @@ static void established(nl_tcp *c)
     cc_init(c);
     nl_count(c->n, "tcp.connections", 1);
     nl_log(c->n, NL_L_TRANSPORT, 2, 0, T_OK "TCP" T_RESET " :%u ⇄ %s:%u %s (MSS %d, %s%s%s)", c->lport,
-           nl_ip_str(c->rip), c->rport, _("connection established"), c->mss, CC_NAME[c->cc],
+           taddr_str(&c->rip), c->rport, _("connection established"), c->mss, CC_NAME[c->cc],
            c->sack_ok ? ", SACK" : "", c->ecn_ok ? ", ECN" : "");
     if (!c->active) {
         c->ops = c->lops;
@@ -1598,9 +1669,8 @@ static void ack_input(nl_tcp *c, uint32_t ack, int flags, int len, uint32_t wnd,
         c->ops->on_sent(c, c->ctx, data_acked);
 }
 
-static void tcp_input(nl_node *n, void *ctx, const nl_ipmeta *m)
+static void tcp_input(nl_node *n, tcp_node *tn, const seg_in *m)
 {
-    tcp_node *tn = ctx;
     const uint8_t *h = m->l4;
     int hl, len, flags, i, in_order = 0;
     uint16_t sport, dport;
@@ -1612,7 +1682,8 @@ static void tcp_input(nl_node *n, void *ctx, const nl_ipmeta *m)
     hl = (h[12] >> 4) * 4;
     if (hl < 20 || hl > m->l4len)
         return;
-    if (nl_l4_cksum(m->src, m->dst, NL_PROTO_TCP, h, m->l4len) != 0) {
+    if ((m->src.v6 ? nl_l4_cksum6(&m->src.a6, &m->dst.a6, NL_PROTO_TCP, h, m->l4len)
+                   : nl_l4_cksum(m->src.v4, m->dst.v4, NL_PROTO_TCP, h, m->l4len)) != 0) {
         nl_log(n, NL_L_TRANSPORT, 2, m->pkt_id, T_ERR "TCP" T_RESET " %s", _("wrong checksum: segment discarded"));
         nl_count(n, "tcp.bad_checksum", 1);
         return;
@@ -1640,11 +1711,11 @@ static void tcp_input(nl_node *n, void *ctx, const nl_ipmeta *m)
                 nl_log(n, NL_L_TRANSPORT, 2, m->pkt_id, T_ERR "TCP" T_RESET " %s %u: RST", _("no listener on port"),
                        dport);
             if (flags & TH_ACK)
-                raw_xmit(n, m->dst, m->src, dport, sport, ack, 0, TH_RST, 0, NULL, 0, NULL, 0, 0);
+                raw_xmit(n, m->dst, m->src, dport, sport, ack, 0, TH_RST, 0, NULL, 0, NULL, 0, 0, 0);
             else
                 raw_xmit(n, m->dst, m->src, dport, sport, 0,
                          seq + (uint32_t)len + ((flags & TH_SYN) ? 1 : 0) + ((flags & TH_FIN) ? 1 : 0),
-                         TH_RST | TH_ACK, 0, NULL, 0, NULL, 0, 0);
+                         TH_RST | TH_ACK, 0, NULL, 0, NULL, 0, 0, 0);
             return;
         }
         c = conn_new(tn, m->dst, dport, m->src, sport, l->opts);
@@ -1664,7 +1735,7 @@ static void tcp_input(nl_node *n, void *ctx, const nl_ipmeta *m)
             c->ecn_ok = 1;
         c->snd_nxt = c->snd_max = c->iss + 1;
         nl_log(n, NL_L_TRANSPORT, 2, m->pkt_id, T_DATA "TCP" T_RESET " :%u ← %s:%u SYN → SYN+ACK", dport,
-               nl_ip_str(m->src), sport);
+               taddr_str(&m->src), sport);
         seg_xmit(c, c->iss, TH_SYN | TH_ACK, NULL, 0);
         rto_arm(c);
         return;
@@ -1678,7 +1749,7 @@ static void tcp_input(nl_node *n, void *ctx, const nl_ipmeta *m)
             return;
         }
         nl_count(n, "tcp.resets", 1);
-        nl_log(n, NL_L_TRANSPORT, refused ? 1 : 2, m->pkt_id, T_ERR "TCP" T_RESET " %s:%u: %s", nl_ip_str(c->rip),
+        nl_log(n, NL_L_TRANSPORT, refused ? 1 : 2, m->pkt_id, T_ERR "TCP" T_RESET " %s:%u: %s", taddr_str(&c->rip),
                c->rport, refused ? _("connection refused (RST)") : _("connection reset by peer"));
         conn_abort(c, refused ? NL_TCP_CLOSED_REFUSED : NL_TCP_CLOSED_RST);
         return;
@@ -1744,7 +1815,7 @@ static void tcp_input(nl_node *n, void *ctx, const nl_ipmeta *m)
                 return;
             } else if (c->state == ST_LAST_ACK) {
                 nl_log(n, NL_L_TRANSPORT, 2, 0, T_DATA "TCP" T_RESET " :%u ⇄ %s:%u %s", c->lport,
-                       nl_ip_str(c->rip), c->rport, _("connection closed"));
+                       taddr_str(&c->rip), c->rport, _("connection closed"));
                 conn_abort(c, NL_TCP_CLOSED_FIN);
                 return;
             }
@@ -1773,7 +1844,7 @@ static void tcp_input(nl_node *n, void *ctx, const nl_ipmeta *m)
         (c->state == ST_ESTABLISHED || c->state == ST_FIN_WAIT_1 || c->state == ST_FIN_WAIT_2)) {
         c->rcv_nxt++;
         nl_log(n, NL_L_TRANSPORT, 2, m->pkt_id, T_DATA "TCP" T_RESET " :%u ← %s:%u FIN", c->lport,
-               nl_ip_str(c->rip), c->rport);
+               taddr_str(&c->rip), c->rport);
         send_ack(c);
         if (c->state == ST_ESTABLISHED) {
             c->state = ST_CLOSE_WAIT;
@@ -1805,24 +1876,111 @@ static void tcp_input(nl_node *n, void *ctx, const nl_ipmeta *m)
 /* Public API                                                         */
 /* ------------------------------------------------------------------ */
 
-nl_tcp *nl_tcp_connect(nl_node *n, nl_ip dst, uint16_t dport, const nl_tcp_ops *ops, void *ctx, const char *opts)
+static void tcp_input4(nl_node *n, void *ctx, const nl_ipmeta *m)
+{
+    seg_in in;
+
+    in.src = A4(m->src);
+    in.dst = A4(m->dst);
+    in.tos = m->tos;
+    in.pkt_id = m->pkt_id;
+    in.l4 = m->l4;
+    in.l4len = m->l4len;
+    tcp_input(n, ctx, &in);
+}
+
+static void tcp_input6(nl_node *n, void *ctx, const nl_ip6meta *m)
+{
+    seg_in in;
+
+    in.src = A6(&m->src);
+    in.dst = A6(&m->dst);
+    in.tos = m->tclass;
+    in.pkt_id = m->pkt_id;
+    in.l4 = m->l4;
+    in.l4len = m->l4len;
+    tcp_input(n, ctx, &in);
+}
+
+/* ------------------------------------------------------------------ */
+/* Path MTU discovery (RFC 1191, RFC 8201)                            */
+/* ------------------------------------------------------------------ */
+
+/* A router on the path could not forward a segment of ours (IPv4 with DF,
+ * or any IPv6 packet: IPv6 routers never fragment) and reported the MTU of
+ * its next hop. Lower the MSS, cut the segments in flight that no longer
+ * fit and send them again at once: they were discarded, not lost to
+ * congestion, so the window is left alone. */
+static void pmtu_shrink(nl_tcp *c, int mss, nl_node *n, uint32_t pkt_id, int mtu)
+{
+    int i;
+
+    if (mss < 64)
+        mss = 64;
+    if (mss >= c->mss || c->state == ST_CLOSED)
+        return;
+    nl_log(n, NL_L_TRANSPORT, 1, pkt_id, T_WARN "TCP" T_RESET " %s:%u: %s %d → MSS %d → %d", taddr_str(&c->rip),
+           c->rport, _("path MTU is"), mtu, c->mss, mss);
+    nl_count(n, "tcp.pmtu_reductions", 1);
+    nl_count_set(n, "tcp.mss", mss);
+    c->mss = mss;
+    for (i = 0; i < c->sq_n; i++) {
+        txseg rest;
+
+        if (c->sq[i].fin || c->sq[i].sacked || c->sq[i].len <= mss)
+            continue;
+        rest = c->sq[i];
+        rest.seq += (uint32_t)mss;
+        rest.len -= mss;
+        if (!sq_push(c, 0, 0))
+            break;
+        memmove(&c->sq[i + 2], &c->sq[i + 1], (size_t)(c->sq_n - i - 2) * sizeof(c->sq[0]));
+        c->sq[i + 1] = rest;
+        c->sq[i].len = mss;
+        c->sq[i].lost = c->sq[i + 1].lost = 1;
+        c->sq[i].retx = c->sq[i + 1].retx = 0;
+    }
+    c->force_retx = 1;
+    tcp_output(c);
+}
+
+static void tcp_icmp4(nl_node *n, void *ctx, const nl_icmpmeta *m)
+{
+    tcp_node *tn = ctx;
+    nl_tcp *c;
+
+    if (m->type != NL_ICMP_UNREACH || m->code != 4 || m->orig_proto != NL_PROTO_TCP || m->mtu < 68)
+        return;
+    c = conn_find(tn, A4(m->orig_src), m->orig_sport, A4(m->orig_dst), m->orig_dport);
+    if (c && c->pmtud)
+        pmtu_shrink(c, m->mtu - 40, n, m->pkt_id, m->mtu);
+}
+
+static void tcp_icmp6(nl_node *n, void *ctx, const nl_icmp6meta *m)
+{
+    tcp_node *tn = ctx;
+    nl_tcp *c;
+
+    if (m->type != NL_ICMP6_TOO_BIG || m->orig_proto != NL_PROTO_TCP || m->mtu < 1280)
+        return;
+    c = conn_find(tn, A6(&m->orig_src), m->orig_sport, A6(&m->orig_dst), m->orig_dport);
+    if (c)
+        pmtu_shrink(c, m->mtu - 60, n, m->pkt_id, m->mtu);
+}
+
+/* ------------------------------------------------------------------ */
+/* The nl_tcp_* API                                                   */
+/* ------------------------------------------------------------------ */
+
+static nl_tcp *tcp_open(nl_node *n, taddr lip, taddr dst, uint16_t dport, const nl_tcp_ops *ops, void *ctx,
+                        const char *opts)
 {
     tcp_node *tn = tcp_get(n);
-    const nl_route *r;
-    nl_ip lip = dst;
     nl_tcp *c;
     uint16_t lport;
 
-    if (!tn || !n->up)
+    if (!tn)
         return NULL;
-    if (!nl_ip_is_local(n, dst)) {
-        r = nl_route_lookup(n, dst);
-        if (!r) {
-            nl_log(n, NL_L_TRANSPORT, 1, 0, T_ERR "TCP" T_RESET " %s %s", _("no route to"), nl_ip_str(dst));
-            return NULL;
-        }
-        lip = n->ifc[r->ifx].ip;
-    }
     do {
         lport = tn->eph++;
         if (tn->eph < 49152)
@@ -1837,11 +1995,43 @@ nl_tcp *nl_tcp_connect(nl_node *n, nl_ip dst, uint16_t dport, const nl_tcp_ops *
     c->state = ST_SYN_SENT;
     c->snd_nxt = c->snd_max = c->iss + 1;
     c->rtt_time = nl_now();
-    nl_log(n, NL_L_TRANSPORT, 2, 0, T_DATA "TCP" T_RESET " :%u → %s:%u SYN (%s)", lport, nl_ip_str(dst), dport,
+    nl_log(n, NL_L_TRANSPORT, 2, 0, T_DATA "TCP" T_RESET " :%u → %s:%u SYN (%s)", lport, taddr_str(&dst), dport,
            _("opening a connection"));
     seg_xmit(c, c->iss, TH_SYN, NULL, 0);
     rto_arm(c);
     return c;
+}
+
+nl_tcp *nl_tcp_connect(nl_node *n, nl_ip dst, uint16_t dport, const nl_tcp_ops *ops, void *ctx, const char *opts)
+{
+    const nl_route *r;
+    nl_ip lip = dst;
+
+    if (!n->up)
+        return NULL;
+    if (!nl_ip_is_local(n, dst)) {
+        r = nl_route_lookup(n, dst);
+        if (!r) {
+            nl_log(n, NL_L_TRANSPORT, 1, 0, T_ERR "TCP" T_RESET " %s %s", _("no route to"), nl_ip_str(dst));
+            return NULL;
+        }
+        lip = n->ifc[r->ifx].ip;
+    }
+    return tcp_open(n, A4(lip), A4(dst), dport, ops, ctx, opts);
+}
+
+nl_tcp *nl_tcp_connect6(nl_node *n, const nl_ip6 *dst, uint16_t dport, const nl_tcp_ops *ops, void *ctx,
+                        const char *opts)
+{
+    nl_ip6 lip;
+
+    if (!n->up)
+        return NULL;
+    if (!nl_ip6_src(n, dst, &lip)) {
+        nl_log(n, NL_L_TRANSPORT, 1, 0, T_ERR "TCP" T_RESET " %s %s", _("no route to"), nl_ip6_str(dst));
+        return NULL;
+    }
+    return tcp_open(n, A6(&lip), A6(dst), dport, ops, ctx, opts);
 }
 
 int nl_tcp_listen(nl_node *n, uint16_t port, const nl_tcp_ops *ops, void *listen_ctx, const char *opts)
@@ -1927,20 +2117,34 @@ void nl_tcp_abort(nl_tcp *c)
         return;
     if (c->state >= ST_SYN_RCVD && c->state != ST_TIME_WAIT)
         raw_xmit(c->n, c->lip, c->rip, c->lport, c->rport, c->snd_nxt, c->rcv_nxt, TH_RST | TH_ACK, 0,
-                 NULL, 0, NULL, 0, 0);
+                 NULL, 0, NULL, 0, 0, 0);
     c->ops = NULL;
     conn_destroy(c);
 }
 
+int nl_tcp_family(const nl_tcp *c) { return c->rip.v6 ? 6 : 4; }
+
+void nl_tcp_peer6(const nl_tcp *c, nl_ip6 *ip, uint16_t *port)
+{
+    if (ip) *ip = c->rip.a6;
+    if (port) *port = c->rport;
+}
+
+void nl_tcp_local6(const nl_tcp *c, nl_ip6 *ip, uint16_t *port)
+{
+    if (ip) *ip = c->lip.a6;
+    if (port) *port = c->lport;
+}
+
 void nl_tcp_peer(const nl_tcp *c, nl_ip *ip, uint16_t *port)
 {
-    if (ip) *ip = c->rip;
+    if (ip) *ip = c->rip.v4;
     if (port) *port = c->rport;
 }
 
 void nl_tcp_local(const nl_tcp *c, nl_ip *ip, uint16_t *port)
 {
-    if (ip) *ip = c->lip;
+    if (ip) *ip = c->lip.v4;
     if (port) *port = c->lport;
 }
 
@@ -1958,9 +2162,9 @@ typedef struct {
     nl_time  t_mark;                    /* start of the steady-state measurement */
     uint64_t acked_mark;
     nl_ev    deadline, start;
-    nl_ip    dst;
+    taddr    dst;
     int      port;
-    char     dest[24], cc[12], opts[200];
+    char     dest[48], cc[12], opts[200];
 } xfer;
 typedef struct { nl_node *n; unsigned long long bytes; nl_time t0; } sink_conn;
 
@@ -2101,12 +2305,13 @@ static void xfer_start(void *ctx)
     x->start = 0;
     x->t0 = nl_now();
     if (x->total < 0)
-        nl_log(x->n, NL_L_APP, 1, 0, T_INFO "tcp send %s" T_RESET " (%s:%d): %s, %s", x->dest, nl_ip_str(x->dst),
+        nl_log(x->n, NL_L_APP, 1, 0, T_INFO "tcp send %s" T_RESET " (%s:%d): %s, %s", x->dest, taddr_str(&x->dst),
                x->port, nl_time_str(x->duration), x->cc);
     else
         nl_log(x->n, NL_L_APP, 1, 0, T_INFO "tcp send %s" T_RESET " (%s:%d): %lld B, %s", x->dest,
-               nl_ip_str(x->dst), x->port, x->total, x->cc);
-    x->c = nl_tcp_connect(x->n, x->dst, (uint16_t)x->port, &xfer_ops, x, x->opts);
+               taddr_str(&x->dst), x->port, x->total, x->cc);
+    x->c = x->dst.v6 ? nl_tcp_connect6(x->n, &x->dst.a6, (uint16_t)x->port, &xfer_ops, x, x->opts)
+                     : nl_tcp_connect(x->n, x->dst.v4, (uint16_t)x->port, &xfer_ops, x, x->opts);
     if (!x->c) {
         nl_count(x->n, "tcp.send_failed", 1);
         free(x);
@@ -2148,7 +2353,7 @@ static void sink_eof(nl_tcp *c, void *ctx)
 
     if (s) {
         nl_log(c->n, NL_L_APP, 1, 0, T_OK "tcp sink:" T_RESET " %llu B %s %s:%u, %.3f s, %s", s->bytes, _("from"),
-               nl_ip_str(c->rip), c->rport, secs, nl_rate_str(secs > 0 ? (double)s->bytes * 8.0 / secs : 0));
+               taddr_str(&c->rip), c->rport, secs, nl_rate_str(secs > 0 ? (double)s->bytes * 8.0 / secs : 0));
         nl_count(c->n, "tcp.sink_done", 1);
     }
     nl_tcp_close(c);
@@ -2205,10 +2410,17 @@ static int tcp_run(nl_node *n, const nl_args *a)
         const char *target = nl_arg_pos(a, 1), *b = nl_arg_str(a, "bytes", "1M");
         double total = 0;
         nl_time jitter;
-        nl_ip dst;
+        taddr dst;
+        nl_ip6 d6;
         xfer *x;
 
-        if (!target || !nl_resolve(target, &dst)) {
+        /* IPv6 for an IPv6 literal, for v6=1, or when the name only has an IPv6 address */
+        memset(&dst, 0, sizeof(dst));
+        if (target && (nl_parse_ip6(target, &d6) || (nl_arg_int(a, "v6", 0) && nl_resolve6(target, &d6)) ||
+                       (!nl_arg_int(a, "v6", 0) && !nl_resolve(target, &dst.v4) && nl_ip6_enabled() &&
+                        nl_resolve6(target, &d6))))
+            dst = A6(&d6);
+        if (!target || (!dst.v6 && (nl_arg_int(a, "v6", 0) || !nl_resolve(target, &dst.v4)))) {
             nl_log(n, NL_L_APP, 1, 0, T_ERR "tcp send: %s '%s'", _("unknown destination"), target ? target : "");
             return -1;
         }
@@ -2289,7 +2501,7 @@ static int tcp_panel(nl_node *n, int x, int y, int w, int h, int detail)
         tui_print(x, y + row++, w, TS(C_TEXT, C_DEFAULT, 0), T_DIM "LISTEN" T_RESET " :%u", tn->lis[i].port);
     for (c = tn->conns; c && row < h; c = c->next) {
         tui_print(x, y + row++, w, TS(C_TEXT, C_DEFAULT, 0), "%s:%u → %s:%u  %s%s",
-                  T_DATA, c->lport, nl_ip_str(c->rip), c->rport,
+                  T_DATA, c->lport, taddr_str(&c->rip), c->rport,
                   c->state == ST_ESTABLISHED ? T_OK : T_WARN, ST_NAME[c->state]);
         if (row < h)
             tui_print(x + 2, y + row++, w - 2, TS(C_TEXT, C_DEFAULT, 0),
@@ -2343,13 +2555,17 @@ static const nl_module tcp_mod = {
                 "run NODE tcp send DEST [port=5001] [bytes=1M | duration=TIME] [cc=reno|tahoe|newreno|cubic|bbr]\n"
                 "             [sack=1] [ecn=1] [nagle=1] [delack=40ms] [mss=1460] [iw=10] [sndbuf=256k]\n"
                 "             [ssthresh=SEGMENTS] [rto_min=200ms] [jitter=TIME] [warmup=TIME]\n"
+                "             [v6=1] [pmtud=1]\n"
                 "  sink accepts connections and discards the data; readrate makes it a slow\n"
                 "  reader (flow control). send transfers `bytes`, or sends for `duration`, and\n"
                 "  reports time, goodput and the steady-state rate (after the first quarter);\n"
                 "  when several transfers to the same port end, Jain's fairness index too.\n"
                 "  sack=0 falls back to NewReno recovery; delack=0 acknowledges every segment;\n"
                 "  jitter delays the start by a random time up to TIME.\n"
-                "  Not implemented: timestamps, path-MTU discovery, tail-loss probes; bbr is\n"
+                "  DEST may be an IPv6 address, or a node name with v6=1: the transfer then runs\n"
+                "  over IPv6 (the sink accepts both). pmtud=0 clears DF on IPv4 and lets routers\n"
+                "  fragment instead of discovering the path MTU.\n"
+                "  Not implemented: timestamps, tail-loss probes; bbr is\n"
                 "  version 1 without long-term (policer) sampling; tahoe never uses SACK."),
     .theory = N_("TCP turns the unreliable, unordered packet service of IP into a reliable byte stream "
                  "between two ports. A connection starts with the three-way handshake (SYN, SYN+ACK, ACK) "
@@ -2361,6 +2577,14 @@ static const nl_module tcp_mod = {
                  "acknowledged before the retransmission timeout (RTO, computed from the smoothed "
                  "round-trip time and its variance, doubled at each expiry) is sent again. The connection "
                  "ends when each side has sent a FIN and seen it acknowledged.\n\n"
+                 "TCP is the same over IPv4 and IPv6: only the pseudo-header that the checksum covers "
+                 "and the room left for data differ (an MSS of 1460 bytes on a 1500-byte MTU over IPv4, "
+                 "1440 over IPv6, whose header is 20 bytes longer). The MSS the ends announce reflects "
+                 "their own links only, so the sender also discovers the smallest MTU of the path: its "
+                 "IPv4 segments carry the don't-fragment flag, and IPv6 routers never fragment, so a "
+                 "router that cannot forward a segment discards it and reports the MTU of the next hop "
+                 "(ICMP \"fragmentation needed\", ICMPv6 \"packet too big\"). The sender lowers its MSS, "
+                 "cuts the segments in flight that no longer fit and sends them again.\n\n"
                  "Waiting for the timer is slow, so the sender reads the ACKs for signs of loss. With "
                  "selective acknowledgements (SACK) every ACK also lists the blocks received beyond the "
                  "hole; the sender keeps a scoreboard of what is SACKed, declares a segment lost when "

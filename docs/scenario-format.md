@@ -523,7 +523,8 @@ Counters worth using in `expect`: `ip6.forwarded`, `ip6.too_big`,
 `slaac.addresses`, `ra.sent`, `icmp6.echo_served`, `icmp6.errors_sent`.
 
 Limits: no MLD, no DHCPv6, extension headers other than Fragment are skipped,
-and the routing protocols (RIP, OSPF, BGP) and TCP still run over IPv4 only.
+and the routing protocols (RIP, OSPF, BGP), DNS and DHCP still run over IPv4
+only (UDP, TCP and HTTP run over both).
 In a distributed run a node name resolves only to the addresses written in
 the file (or assigned by `auto addr6`), not to those formed by SLAAC in
 another process.
